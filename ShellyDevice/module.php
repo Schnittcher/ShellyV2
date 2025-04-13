@@ -20,8 +20,22 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             parent::Create();
             $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
             $this->RegisterPropertyString('MQTTTopic', '');
-            $this->RegisterPropertyString('Components', '');
-            $this->SetBuffer('ComponentsID', null);
+            $this->RegisterAttributeString('Components', '');
+        }
+
+        public function RequestAction($Ident, $Value)
+        {
+            $IdentKeyPath = $this->convertIdentToKeyPath($Ident);
+            IPS_LogMessage('IdentKeyPath', print_r($IdentKeyPath, true));
+            $tmpComponents = $this->getValueByKeyPath($IdentKeyPath[0]);
+
+            // 1. Hole alle Keys als Array
+            $keys = array_keys($tmpComponents['action']['params']);
+
+            $tmpComponents['action']['params'][$keys[0]] = $IdentKeyPath[1];
+            $tmpComponents['action']['params'][$keys[1]] = $Value;
+
+            $this->callRPCFunction($tmpComponents['action']['method'], $tmpComponents['action']['params']);
         }
 
         public function Destroy()
@@ -48,24 +62,35 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                 if (fnmatch('getComponents/rpc', $Buffer['Topic'])) {
                     $tmpComponents = $Payload['result'];
                     $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
+                    $this->WriteAttributeString('Components', json_encode($allComponentsFromShelly));
 
-                    IPS_LogMessage('allComponentsFromShelly', print_r($allComponentsFromShelly, true));
+                    IPS_LogMessage('test', print_r($allComponentsFromShelly, true));
 
-                    $allComponentsFromDefinition = $this->getArrayKeyPaths(self::$components);
+                    //$allComponentsFromDefinition = $this->getArrayKeyPaths(self::$components);
                     // Duplikate entfernen
                     $allComponentsFromShelly = array_unique($allComponentsFromShelly);
-                    $allComponentsFromDefinition = array_unique($allComponentsFromDefinition);
+                    //$allComponentsFromDefinition = array_unique($allComponentsFromDefinition);
 
                     // Vergleich
-                    $commonKeys = array_intersect($allComponentsFromShelly, $allComponentsFromDefinition);
+                    //$commonKeys = array_intersect($allComponentsFromShelly, $allComponentsFromDefinition);
 
                     //IPS_LogMessage('All Keys', print_r($commonKeys, true));
 
                     foreach ($allComponentsFromShelly as $value) {
                         $this->registerComponentVariables($allComponentsFromShelly);
                     }
+                }
+                if (fnmatch('*/events/rpc', $Buffer['Topic'])) {
+                    if (array_key_exists('params', $Payload)) {
+                        $components = $this->getArrayLeafKeyPaths($Payload['params']);
+                        IPS_LogMessage('components', print_r($components, true));
 
-                    //$this->searchComponents($tmpComponents);
+                        foreach ($components as $key => $value) {
+                            $componentsFromShellyResult = $this->cleanComponentPath($value);
+                            $this->SetValue($componentsFromShellyResult['ident'], $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']));
+                            IPS_LogMessage('test', print_r($componentsFromShellyResult, true));
+                        }
+                    }
                 }
             }
         }
@@ -82,56 +107,22 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             $this->sendMQTT($Topic, json_encode($Payload));
         }
 
-        private function searchComponents($tmpComponents)
+        public function callRPCFunction($method, $params)
         {
-            // Ein neues Array für die gefundenen Keys
-            $foundKeys = [];
+            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
 
-            // Schleife durch die Keys des ersten Arrays
-            foreach ($tmpComponents as $key => $value) {
-                // Entferne den Teil nach dem Doppelpunkt
-                $keyWithoutColon = strtok($key, ':'); // strtok() teilt den Key am Doppelpunkt und gibt nur den ersten Teil zurück
+            $Payload['id'] = 1;
+            $Payload['src'] = 'user_1';
+            $Payload['method'] = $method;
+            $Payload['params'] = $params; //['id' => $switch, 'on' => $value];
 
-                // Überprüfe, ob der Key ohne den Doppelpunkt im zweiten Array existiert
-                if (array_key_exists($keyWithoutColon, self::$components)) {
-                    // Wenn der Key gefunden wird, füge ihn zum neuen Array hinzu
-                    $foundKeys[$key] = $value;
-                    $this->registerComponentVariables($keyWithoutColon, $tmpComponents[$key], self::$components[$keyWithoutColon]);
-                    //IPS_LogMessage('found', print_r(self::$components[$keyWithoutColon], true));
-                    //IPS_LogMessage('found', print_r($tmpComponents[$key], true));
-                }
-            }
-
-            // Ausgabe der gefundenen Keys
-            //IPS_LogMessage('found',print_r($foundKeys,true));
+            $this->sendMQTT($Topic, json_encode($Payload));
         }
 
         private function registerComponentVariables($allComponentsFromShelly)
         {
             foreach ($allComponentsFromShelly as $entry) {
-                // Prüfen auf Doppelpunkt mit Zahl
-                if (preg_match('/(.*):(\d+)(.*)/', $entry, $matches)) {
-                    $base = $matches[1];      // z. B. "input"
-                    $number = $matches[2];    // z. B. "0"
-                    $rest = $matches[3];      // z. B. ".id" oder ".temperature.tC"
-
-                    $cleanKey = $base . $rest;
-                    $tempVar = $number;
-                } else {
-                    $cleanKey = $entry;
-                    $tempVar = '';
-                }
-
-                // ident = original mit . und : ersetzt durch _
-                $ident = str_replace(['.', ':'], '_', $entry);
-
-                $componentsFromShellyResult = [
-                    'original' => $entry,
-                    'clean'    => $cleanKey,
-                    'number'   => $tempVar,
-                    'ident'    => $ident
-                ];
-
+                $componentsFromShellyResult = $this->cleanComponentPath($entry);
                 $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
                 if ($tmpComponent != null) {
                     switch ($tmpComponent['type']) {

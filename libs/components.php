@@ -4,6 +4,15 @@ declare(strict_types=1);
 trait Components
 {
     public static $components = [
+        'cloud' => [
+            'connected' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Cloud State',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+            ],
+        ],
         'input' => [
             'state' => [
                 'type'         => VARIABLETYPE_BOOLEAN,
@@ -224,7 +233,11 @@ trait Components
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
                 ],
-                'writable' => true
+                'writable'      => true,
+                'action'        => [
+                    'method' => 'Switch.Set',
+                    'params' => ['id' => '', 'on' => '']
+                ],
             ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
