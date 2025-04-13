@@ -5,12 +5,14 @@ declare(strict_types=1);
 require_once __DIR__ . '/../libs/MQTTHelper.php';
 require_once __DIR__ . '/../libs/vendor/SymconModulHelper/DebugHelper.php';
 require_once __DIR__ . '/../libs/components.php';
+require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 
     class ShellyDevice extends IPSModule
     {
         use MQTTHelper;
         use DebugHelper;
         use Components;
+        use ComponentDefinitionHelper;
 
         public function Create()
         {
@@ -19,6 +21,7 @@ require_once __DIR__ . '/../libs/components.php';
             $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
             $this->RegisterPropertyString('MQTTTopic', '');
             $this->RegisterPropertyString('Components', '');
+            $this->SetBuffer('ComponentsID', null);
         }
 
         public function Destroy()
@@ -44,7 +47,25 @@ require_once __DIR__ . '/../libs/components.php';
             if (array_key_exists('Topic', $Buffer)) {
                 if (fnmatch('getComponents/rpc', $Buffer['Topic'])) {
                     $tmpComponents = $Payload['result'];
-                    $this->searchComponents($tmpComponents);
+                    $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
+
+                    IPS_LogMessage('allComponentsFromShelly', print_r($allComponentsFromShelly, true));
+
+                    $allComponentsFromDefinition = $this->getArrayKeyPaths(self::$components);
+                    // Duplikate entfernen
+                    $allComponentsFromShelly = array_unique($allComponentsFromShelly);
+                    $allComponentsFromDefinition = array_unique($allComponentsFromDefinition);
+
+                    // Vergleich
+                    $commonKeys = array_intersect($allComponentsFromShelly, $allComponentsFromDefinition);
+
+                    //IPS_LogMessage('All Keys', print_r($commonKeys, true));
+
+                    foreach ($allComponentsFromShelly as $value) {
+                        $this->registerComponentVariables($allComponentsFromShelly);
+                    }
+
+                    //$this->searchComponents($tmpComponents);
                 }
             }
         }
@@ -85,34 +106,49 @@ require_once __DIR__ . '/../libs/components.php';
             //IPS_LogMessage('found',print_r($foundKeys,true));
         }
 
-        private function registerComponentVariables($component, $tmpComponents, $components)
+        private function registerComponentVariables($allComponentsFromShelly)
         {
-            $id = $tmpComponents['id'];
-            foreach ($tmpComponents as $key => $value) {
-                if (array_key_exists($key, $components)) {
-                    if (!is_array($value)) {
-                        switch ($components[$key]['type']) {
-                            case VARIABLETYPE_BOOLEAN:
-                                //IPS_LogMessage('test', $firstKey);
-                                $this->RegisterVariableBoolean($key . '_' . $id, $components[$key]['name'], $components[$key]['presentation'], 0);
-                                break;
-							case VARIABLETYPE_FLOAT:
-								//IPS_LogMessage('test', $firstKey);
-								$this->RegisterVariableFLOAT($key . '_' . $id, $components[$key]['name'], $components[$key]['presentation'], 0);
-								break;
+            foreach ($allComponentsFromShelly as $entry) {
+                // Prüfen auf Doppelpunkt mit Zahl
+                if (preg_match('/(.*):(\d+)(.*)/', $entry, $matches)) {
+                    $base = $matches[1];      // z. B. "input"
+                    $number = $matches[2];    // z. B. "0"
+                    $rest = $matches[3];      // z. B. ".id" oder ".temperature.tC"
 
-                            default:
+                    $cleanKey = $base . $rest;
+                    $tempVar = $number;
+                } else {
+                    $cleanKey = $entry;
+                    $tempVar = '';
+                }
 
-                                break;
-                        }
-                        if ($components[$key]['writable']) {
-                            $this->EnableAction($key . '_' . $id);
-                        }
-                    } else {
-						//TODO Array mit Komponenten
-						$this->registerComponentVariables($component,$value, $components);
-						IPS_LogMessage('test',print_r($value,true));
-					}
+                // ident = original mit . und : ersetzt durch _
+                $ident = str_replace(['.', ':'], '_', $entry);
+
+                $componentsFromShellyResult = [
+                    'original' => $entry,
+                    'clean'    => $cleanKey,
+                    'number'   => $tempVar,
+                    'ident'    => $ident
+                ];
+
+                $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
+                if ($tmpComponent != null) {
+                    switch ($tmpComponent['type']) {
+                case VARIABLETYPE_BOOLEAN:
+                    $this->RegisterVariableBoolean($componentsFromShellyResult['ident'], $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'], $tmpComponent['presentation'], 0);
+                    break;
+                case VARIABLETYPE_FLOAT:
+                    $this->RegisterVariableFloat($componentsFromShellyResult['ident'], $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'], $tmpComponent['presentation'], 0);
+                    break;
+
+                default:
+
+                    break;
+            }
+                    if ($tmpComponent['writable']) {
+                        $this->EnableAction($componentsFromShellyResult['ident']);
+                    }
                 }
             }
         }
