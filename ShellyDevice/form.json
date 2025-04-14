@@ -1,9 +1,16 @@
 {
-    "elements": [        {
-        "type": "ValidationTextBox",
-        "name": "MQTTTopic",
-        "caption": "MQTT Topic"
-    }],
+    "elements": [
+        {
+            "type": "ValidationTextBox",
+            "name": "MQTTTopic",
+            "caption": "MQTT Topic"
+        },
+        {
+            "type": "CheckBox",
+            "name": "DebugMissingIdents",
+            "caption": "Debug: Missing Idents"
+        }
+    ],
     "actions": [],
     "status": []
 }

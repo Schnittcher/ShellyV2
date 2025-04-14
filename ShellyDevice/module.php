@@ -21,6 +21,7 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
             $this->RegisterPropertyString('MQTTTopic', '');
             $this->RegisterAttributeString('Components', '');
+            $this->RegisterPropertyBoolean('DebugMissingIdents', false);
         }
 
         public function RequestAction($Ident, $Value)
@@ -50,6 +51,11 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             parent::ApplyChanges();
             $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
             $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
+
+            if ($MQTTTopic != '') {
+                $this->getComponents();
+            } 
+        
         }
 
         public function ReceiveData($JSONString)
@@ -64,7 +70,7 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                     $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
                     $this->WriteAttributeString('Components', json_encode($allComponentsFromShelly));
 
-                    IPS_LogMessage('test', print_r($allComponentsFromShelly, true));
+                    //IPS_LogMessage('test', print_r($allComponentsFromShelly, true));
 
                     //$allComponentsFromDefinition = $this->getArrayKeyPaths(self::$components);
                     // Duplikate entfernen
@@ -117,6 +123,18 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             $Payload['params'] = $params; //['id' => $switch, 'on' => $value];
 
             $this->sendMQTT($Topic, json_encode($Payload));
+        }
+
+        protected function SetValue($Ident, $Value)
+        {
+            if (@$this->GetIDForIdent($Ident)) {
+                $this->SendDebug('SetValue :: ' . $Ident, $Value, 0);
+                parent::SetValue($Ident, $Value);
+            } else {
+                if ($this->ReadPropertyBoolean('DebugMissingIdents')) {
+                    $this->SendDebug('Missing Ident :: Value', $Ident . ' :: ' . $Value, 0);
+                }
+            }
         }
 
         private function registerComponentVariables($allComponentsFromShelly)

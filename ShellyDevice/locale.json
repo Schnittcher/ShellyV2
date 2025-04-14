@@ -1,7 +1,7 @@
 {
     "translations": {
         "de": {
-            "Translation 1": "Übersetzung 1",
+            "Debug: Missing Idents": "Debug: Fehlende Idents",
             "Translation 2": "Übersetzung 2"
         }
     }
