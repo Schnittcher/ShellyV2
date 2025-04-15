@@ -20,16 +20,14 @@ trait Components
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
                 ],
-                'writable' => false
             ],
             'percent' => [
                 'type'         => VARIABLETYPE_INTEGER,
                 'name'         => 'Input Percent',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                    'SUFFIX'       => '%',
+                    'SUFFIX'       => ' %',
                 ],
-                'writable' => false
             ],
 
         ],
@@ -226,6 +224,91 @@ trait Components
                 'writable' => false
             ],
         ],
+        'temperature' => [
+            'tC' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Temperature',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' °C'
+
+                ],
+            ],
+        ],
+        'humidity' => [
+            'rh' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Humidity',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' %',
+                    'ICON'         => 'Gauge',
+                    'MIN'          => 0,
+                    'MAX'          => 100,
+                    'DIGITS'       => 2,
+                ],
+            ],
+        ],
+        'light' => [
+            'output' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'State',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'Light.Set',
+                    'params' => ['id' => '', 'on' => '']
+                ],
+            ],
+            'brightness' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Brightness',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                    'SUFFIX'       => ' %'
+                ],
+                'action'        => [
+                    'method' => 'Light.Set',
+                    'params' => ['id' => '', 'brightness' => '']
+                ],
+            ],
+            'apower' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured instantaneous active power',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+            ],
+            'voltage' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured voltage',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+            ],
+            'current' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured current in Amperes',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+            ],
+            'aenergy' => [
+                'total' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Total energy consumed in',
+                    'factor'       => 0.001,
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' kw/h'
+                    ],
+                ],
+            ],
+        ],
         'switch' => [
             'output' => [
                 'type'         => VARIABLETYPE_BOOLEAN,
@@ -233,7 +316,6 @@ trait Components
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
                 ],
-                'writable'      => true,
                 'action'        => [
                     'method' => 'Switch.Set',
                     'params' => ['id' => '', 'on' => '']
@@ -244,27 +326,24 @@ trait Components
                 'name'         => 'Last measured instantaneous active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                    'SUFFIX'       => 'W',
+                    'SUFFIX'       => ' W',
                 ],
-                'writable' => false
             ],
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
                 'name'         => 'Last measured voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                    'SUFFIX'       => 'V',
+                    'SUFFIX'       => ' V',
                 ],
-                'writable' => false
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
                 'name'         => 'Last measured current in Amperes',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                    'SUFFIX'       => 'A',
+                    'SUFFIX'       => ' A',
                 ],
-                'writable' => false
             ],
             'pf' => [
                 'type'         => VARIABLETYPE_FLOAT,
@@ -272,16 +351,14 @@ trait Components
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
-                'writable' => false
             ],
             'freq' => [
                 'type'         => VARIABLETYPE_FLOAT,
                 'name'         => 'Last measured network frequency',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                    'SUFFIX'       => 'Hz'
+                    'SUFFIX'       => ' Hz'
                 ],
-                'writable' => false
             ],
             'aenergy' => [
                 'total' => [
@@ -290,9 +367,8 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => 'kw/h'
+                        'SUFFIX'       => ' kw/h'
                     ],
-                    'writable' => false
                 ],
             ],
             'ret_aenergy' => [
@@ -302,9 +378,8 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => 'kw/h'
+                        'SUFFIX'       => ' kw/h'
                     ],
-                    'writable' => false
                 ],
             ],
             'temperature' => [
@@ -313,9 +388,8 @@ trait Components
                     'name'         => 'Temperature',
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => '°C'
+                        'SUFFIX'       => ' °C'
                     ],
-                    'writable' => false
                 ],
             ],
             'errors' => [
@@ -324,7 +398,6 @@ trait Components
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
-                'writable' => false
             ],
         ],
     ];
