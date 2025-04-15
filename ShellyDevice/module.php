@@ -27,7 +27,7 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
         public function RequestAction($Ident, $Value)
         {
             $IdentKeyPath = $this->convertIdentToKeyPath($Ident);
-            IPS_LogMessage('IdentKeyPath', print_r($IdentKeyPath, true));
+            //IPS_LogMessage('IdentKeyPath', print_r($IdentKeyPath, true));
             $tmpComponents = $this->getValueByKeyPath($IdentKeyPath[0]);
 
             // 1. Hole alle Keys als Array
@@ -54,8 +54,7 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 
             if ($MQTTTopic != '') {
                 $this->getComponents();
-            } 
-        
+            }
         }
 
         public function ReceiveData($JSONString)
@@ -89,12 +88,12 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                 if (fnmatch('*/events/rpc', $Buffer['Topic'])) {
                     if (array_key_exists('params', $Payload)) {
                         $components = $this->getArrayLeafKeyPaths($Payload['params']);
-                        IPS_LogMessage('components', print_r($components, true));
+                        //IPS_LogMessage('components', print_r($components, true));
 
                         foreach ($components as $key => $value) {
                             $componentsFromShellyResult = $this->cleanComponentPath($value);
                             $this->SetValue($componentsFromShellyResult['ident'], $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']));
-                            IPS_LogMessage('test', print_r($componentsFromShellyResult, true));
+                            //IPS_LogMessage('test', print_r($componentsFromShellyResult, true));
                         }
                     }
                 }
@@ -141,7 +140,9 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
         {
             foreach ($allComponentsFromShelly as $entry) {
                 $componentsFromShellyResult = $this->cleanComponentPath($entry);
+                //IPS_LogMessage('register', print_r($componentsFromShellyResult, true));
                 $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
+                //IPS_LogMessage('register2', print_r($tmpComponent, true));
                 if ($tmpComponent != null) {
                     switch ($tmpComponent['type']) {
                 case VARIABLETYPE_BOOLEAN:
@@ -150,12 +151,15 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                 case VARIABLETYPE_FLOAT:
                     $this->RegisterVariableFloat($componentsFromShellyResult['ident'], $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'], $tmpComponent['presentation'], 0);
                     break;
-
+                case VARIABLETYPE_INTEGER:
+                    $this->RegisterVariableInteger($componentsFromShellyResult['ident'], $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'], $tmpComponent['presentation'], 0);
+                    break;
                 default:
 
                     break;
             }
-                    if ($tmpComponent['writable']) {
+                    //IPS_LogMessage('test1', print_r($tmpComponent, true));
+                    if (array_key_exists('action', $tmpComponent)) {
                         $this->EnableAction($componentsFromShellyResult['ident']);
                     }
                 }
