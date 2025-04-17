@@ -498,6 +498,63 @@ trait Components
                 ],
             ],
         ],
+        'em1' => [
+            'current' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured current in Amperes',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+            ],
+            'voltage' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured voltage',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+            ],
+            'act_power' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured instantaneous active power',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+            ],
+            'aprt_power' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured instantaneous apparent power',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' VA',
+                ],
+                'writable' => false
+            ],
+            'pf' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured power factor',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'freq' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured network frequency',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' Hz'
+                ],
+            ],
+            'errors' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Errors',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
         'cover' => [
             'state' => [
                 'type'         => VARIABLETYPE_STRING,
