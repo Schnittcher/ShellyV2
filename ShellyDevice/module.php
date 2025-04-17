@@ -26,15 +26,29 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 
         public function RequestAction($Ident, $Value)
         {
+            if (strpos($Ident, 'ExtraAction') !== false) {
+                $Ident = preg_replace('/_?ExtraAction/', '', $Ident);
+            }
+
             $IdentKeyPath = $this->convertIdentToKeyPath($Ident);
             //IPS_LogMessage('IdentKeyPath', print_r($IdentKeyPath, true));
             $tmpComponents = $this->getValueByKeyPath($IdentKeyPath[0]);
+
+            if (array_key_exists('actionWithExtraVariable', $tmpComponents)) {
+                $tmpComponents = $tmpComponents['actionWithExtraVariable'];
+            }
+
+            if (array_key_exists('list', $tmpComponents['action'])) {
+                $tmpComponents['action']['method'] = $tmpComponents['action']['method'] . $Value;
+            }
 
             // 1. Hole alle Keys als Array
             $keys = array_keys($tmpComponents['action']['params']);
 
             $tmpComponents['action']['params'][$keys[0]] = $IdentKeyPath[1];
-            $tmpComponents['action']['params'][$keys[1]] = $Value;
+            if (count($keys) > 1) {
+                $tmpComponents['action']['params'][$keys[1]] = $Value;
+            }
 
             $this->callRPCFunction($tmpComponents['action']['method'], $tmpComponents['action']['params']);
         }
@@ -114,6 +128,9 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 
         public function callRPCFunction($method, $params)
         {
+            //IPS_LogMessage('method', print_r($method, true));
+            //IPS_LogMessage('params', print_r($params, true));
+
             $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
 
             $Payload['id'] = 1;
@@ -142,17 +159,24 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                 $componentsFromShellyResult = $this->cleanComponentPath($entry);
                 //IPS_LogMessage('register', print_r($componentsFromShellyResult, true));
                 $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
+                $name = $tmpComponent['name'];
                 //IPS_LogMessage('register2', print_r($tmpComponent, true));
                 if ($tmpComponent != null) {
+                    if ($componentsFromShellyResult['number'] > 0) {
+                        $name = $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'];
+                    }
                     switch ($tmpComponent['type']) {
                 case VARIABLETYPE_BOOLEAN:
-                    $this->RegisterVariableBoolean($componentsFromShellyResult['ident'], $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'], $tmpComponent['presentation'], 0);
+                    $this->RegisterVariableBoolean($componentsFromShellyResult['ident'], $name, $tmpComponent['presentation'], 0);
                     break;
                 case VARIABLETYPE_FLOAT:
-                    $this->RegisterVariableFloat($componentsFromShellyResult['ident'], $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'], $tmpComponent['presentation'], 0);
+                    $this->RegisterVariableFloat($componentsFromShellyResult['ident'], $name, $tmpComponent['presentation'], 0);
                     break;
                 case VARIABLETYPE_INTEGER:
-                    $this->RegisterVariableInteger($componentsFromShellyResult['ident'], $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'], $tmpComponent['presentation'], 0);
+                    $this->RegisterVariableInteger($componentsFromShellyResult['ident'], $name, $tmpComponent['presentation'], 0);
+                    break;
+                case VARIABLETYPE_STRING:
+                    $this->RegisterVariableString($componentsFromShellyResult['ident'], $name, $tmpComponent['presentation'], 0);
                     break;
                 default:
 
@@ -161,6 +185,34 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                     //IPS_LogMessage('test1', print_r($tmpComponent, true));
                     if (array_key_exists('action', $tmpComponent)) {
                         $this->EnableAction($componentsFromShellyResult['ident']);
+                    }
+
+                    //With Extra Action Variable
+                    //IPS_LogMessage('tmpComponent', print_r($tmpComponent, true));
+                    if (array_key_exists('actionWithExtraVariable', $tmpComponent)) {
+                        $name = $tmpComponent['actionWithExtraVariable']['name'];
+                        if ($componentsFromShellyResult['number'] > 0) {
+                            $name = $tmpComponent['actionWithExtraVariable']['name'] . ' ' . $componentsFromShellyResult['number'];
+                        }
+                        $plusIdent = '_ExtraAction';
+                        switch ($tmpComponent['type']) {
+                        case VARIABLETYPE_BOOLEAN:
+                            $this->RegisterVariableBoolean($componentsFromShellyResult['ident'] . $plusIdent, $name, $tmpComponent['actionWithExtraVariable']['presentation'], 0);
+                            break;
+                        case VARIABLETYPE_FLOAT:
+                            $this->RegisterVariableFloat($componentsFromShellyResult['ident'] . $plusIdent, $name, $tmpComponent['actionWithExtraVariable']['presentation'], 0);
+                            break;
+                        case VARIABLETYPE_INTEGER:
+                            $this->RegisterVariableInteger($componentsFromShellyResult['ident'] . $plusIdent, $name, $tmpComponent['actionWithExtraVariable']['presentation'], 0);
+                            break;
+                        case VARIABLETYPE_STRING:
+                            $this->RegisterVariableString($componentsFromShellyResult['ident'] . $plusIdent, $name, $tmpComponent['actionWithExtraVariable']['presentation'], 0);
+                            break;
+                        default:
+
+                            break;
+                    }
+                        $this->EnableAction($componentsFromShellyResult['ident'] . $plusIdent);
                     }
                 }
             }

@@ -400,5 +400,90 @@ trait Components
                 ],
             ],
         ],
+        'cover' => [
+            'state' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'State',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                    'ICON'         => 'Shutter',
+                    'LAYOUT'       => 1,
+                    'OPTIONS'      => '[
+                                            {"Value":"opening","Caption":"Opening","IconActive":false,"Icon":"" ,"Color":65280},
+                                            {"Value":"stopped","Caption":"Stopped","IconActive":false,"Icon":"" ,"Color":16711680},
+                                            {"Value":"closing","Caption":"Closing","IconActive":false,"Icon":"" ,"Color":16711680}
+                                       ]',
+                ],
+                'actionWithExtraVariable' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'Action State',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                        'ICON'         => 'Shutter',
+                        'LAYOUT'       => 1,
+                        'OPTIONS'      => '[
+                                                {"Value":"open","Caption":"Open","IconActive":false,"Icon":"" ,"Color":65280},
+                                                {"Value":"stop","Caption":"Stop","IconActive":false,"Icon":"" ,"Color":16753920},
+                                                {"Value":"close","Caption":"Close","IconActive":false,"Icon":"" ,"Color":16711680}
+                                           ]',
+                    ],
+                    'action'        => [
+                        'list'   => true,
+                        'method' => 'Cover.',
+                        'params' => ['id' => '']
+                    ],
+                ],
+            ],
+            'apower' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured instantaneous active power',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+            ],
+            'voltage' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured voltage',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+            ],
+            'current' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured current in Amperes',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+            ],
+            'pf' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured power factor',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'freq' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured network frequency',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' Hz'
+                ],
+            ],
+            'aenergy' => [
+                'total' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Total energy consumed in',
+                    'factor'       => 0.001,
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' kw/h'
+                    ],
+                ],
+            ],
+        ],
     ];
 }

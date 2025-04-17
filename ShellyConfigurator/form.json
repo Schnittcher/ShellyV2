@@ -12,6 +12,12 @@
             },
             "columns": [
                 {
+                    "caption": "Name",
+                    "name": "name",
+                    "width": "auto",
+                    "visible": false
+                },
+                {
                     "caption": "MQTT Topic",
                     "name": "MQTTTopic",
                     "width": "auto"
