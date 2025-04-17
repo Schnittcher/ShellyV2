@@ -504,5 +504,44 @@ trait Components
                 ],
             ],
         ],
+        'smoke' => [
+            'alarm' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Alarm',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'ICON'         => 'Alert',
+                    'OPTIONS'      => '[
+                        {
+                          "Value": true,
+                          "Caption": "Smoke",
+                          "IconActive": false,
+                          "Icon": "",
+                          "ColorActive": true,
+                          "Color": 65280
+                        },
+                        {
+                          "Value": false,
+                          "Caption": "No smoke",
+                          "IconActive": false,
+                          "Icon": "",
+                          "ColorActive": true,
+                          "Color": 16711680
+                        }
+                      ]',
+                ],
+            ],
+            'mute' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Mute',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'Smoke.Mute',
+                    'params' => ['id' => '']
+                ],
+            ],
+        ]
     ];
 }
