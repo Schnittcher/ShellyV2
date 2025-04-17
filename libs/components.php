@@ -419,6 +419,85 @@ trait Components
                 ],
             ],
         ],
+        'pm1' => [
+            'voltage' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured voltage',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+            ],
+            'current' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured current in Amperes',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+            ],
+            'apower' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured instantaneous active power',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+            ],
+            'aprtpower' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured instantaneous apparent power',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' VA',
+                ],
+                'writable' => false
+            ],
+            'pf' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured power factor',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'freq' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Last measured network frequency',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' Hz'
+                ],
+            ],
+            'aenergy' => [
+                'total' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Total energy consumed in',
+                    'factor'       => 0.001,
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' kw/h'
+                    ],
+                ],
+            ],
+            'ret_aenergy' => [
+                'total' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Total returned energy',
+                    'factor'       => 0.001,
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' kw/h'
+                    ],
+                ],
+            ],
+            'errors' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Errors',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
         'cover' => [
             'state' => [
                 'type'         => VARIABLETYPE_STRING,
