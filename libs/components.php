@@ -13,6 +13,15 @@ trait Components
                 ],
             ],
         ],
+        'modbus' => [
+            'connected' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Modbus State',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+            ],
+        ],
         'input' => [
             'state' => [
                 'type'         => VARIABLETYPE_BOOLEAN,
