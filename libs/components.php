@@ -410,7 +410,7 @@ trait Components
                     'LAYOUT'       => 1,
                     'OPTIONS'      => '[
                                             {"Value":"opening","Caption":"Opening","IconActive":false,"Icon":"" ,"Color":65280},
-                                            {"Value":"stopped","Caption":"Stopped","IconActive":false,"Icon":"" ,"Color":16711680},
+                                            {"Value":"stopped","Caption":"Stopped","IconActive":false,"Icon":"" ,"Color":16753920},
                                             {"Value":"closing","Caption":"Closing","IconActive":false,"Icon":"" ,"Color":16711680}
                                        ]',
                 ],

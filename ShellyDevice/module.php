@@ -22,6 +22,29 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             $this->RegisterPropertyString('MQTTTopic', '');
             $this->RegisterAttributeString('Components', '');
             $this->RegisterPropertyBoolean('DebugMissingIdents', false);
+
+            $this->RegisterVariableBoolean('Reachable', $this->Translate('Reachable'), [
+                'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                'OPTIONS'         => json_encode([
+                    [
+                        'Value'       => true,
+                        'Caption'     => 'Online',
+                        'IconActive'  => false,
+                        'Icon'        => 'Information',
+                        'ColorActive' => true,
+                        'Color'       => 65280
+                    ],
+                    [
+                        'Value'       => false,
+                        'Caption'     => 'Offline',
+                        'IconActive'  => false,
+                        'Icon'        => 'Information',
+                        'ColorActive' => true,
+                        'Color'       => 16711680,
+                    ],
+                ]
+                    )
+            ], 99);
         }
 
         public function RequestAction($Ident, $Value)
@@ -78,6 +101,9 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 
             $Payload = json_decode($Buffer['Payload'], true);
             if (array_key_exists('Topic', $Buffer)) {
+                if (fnmatch('*/online', $Buffer['Topic'])) {
+                    $this->SetValue('Reachable', $Payload);
+                }
                 if (fnmatch('getComponents/rpc', $Buffer['Topic'])) {
                     $tmpComponents = $Payload['result'];
                     $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
