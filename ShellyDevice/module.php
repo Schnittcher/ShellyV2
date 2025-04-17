@@ -221,7 +221,7 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                             $name = $tmpComponent['actionWithExtraVariable']['name'] . ' ' . $componentsFromShellyResult['number'];
                         }
                         $plusIdent = '_ExtraAction';
-                        switch ($tmpComponent['type']) {
+                        switch ($tmpComponent['actionWithExtraVariable']['type']) {
                         case VARIABLETYPE_BOOLEAN:
                             $this->RegisterVariableBoolean($componentsFromShellyResult['ident'] . $plusIdent, $name, $tmpComponent['actionWithExtraVariable']['presentation'], 0);
                             break;

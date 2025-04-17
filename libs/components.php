@@ -272,6 +272,25 @@ trait Components
                     'method' => 'Light.Set',
                     'params' => ['id' => '', 'brightness' => '']
                 ],
+                'actionWithExtraVariable' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'Brightness Action',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                        'ICON'         => 'Light',
+                        'LAYOUT'       => 1,
+                        'OPTIONS'      => '[
+                                                {"Value":"DimUp","Caption":"Dim up","IconActive":false,"Icon":"" ,"Color":65280},
+                                                {"Value":"DimDown","Caption":"Dim down","IconActive":false,"Icon":"" ,"Color":16753920},
+                                                {"Value":"DimStop","Caption":"Dim stop","IconActive":false,"Icon":"" ,"Color":16711680}
+                                           ]',
+                    ],
+                    'action'        => [
+                        'list'   => true,
+                        'method' => 'Light.',
+                        'params' => ['id' => '']
+                    ],
+                ],
             ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
