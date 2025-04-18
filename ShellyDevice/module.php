@@ -130,9 +130,14 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                         $components = $this->getArrayLeafKeyPaths($Payload['params']);
                         //IPS_LogMessage('components', print_r($components, true));
 
-                        foreach ($components as $key => $value) {
-                            $componentsFromShellyResult = $this->cleanComponentPath($value);
-                            $this->SetValue($componentsFromShellyResult['ident'], $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']));
+                        foreach ($components as $key => $component) {
+                            $componentsFromShellyResult = $this->cleanComponentPath($component);
+                            $value = $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']);
+                            if (array_key_exists('factor', $component)) {
+                                $this->SendDebug('Factor calculation', 'Factor: ' . $component['factor']);
+                                $value = $value * $component['factor'];
+                            }
+                            $this->SetValue($componentsFromShellyResult['ident'], $value);
                             //IPS_LogMessage('test', print_r($componentsFromShellyResult, true));
                         }
                     }
