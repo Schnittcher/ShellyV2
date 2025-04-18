@@ -185,9 +185,8 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                 $componentsFromShellyResult = $this->cleanComponentPath($entry);
                 //IPS_LogMessage('register', print_r($componentsFromShellyResult, true));
                 $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
-                $name = $tmpComponent['name'];
-                //IPS_LogMessage('register2', print_r($tmpComponent, true));
                 if ($tmpComponent != null) {
+                    $name = $tmpComponent['name'];
                     if ($componentsFromShellyResult['number'] > 0) {
                         $name = $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'];
                     }
