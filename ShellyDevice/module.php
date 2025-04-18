@@ -143,7 +143,7 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                             //ggf. umrechnung druchführen
                             if ($tmpComponent != null) {
                                 if (array_key_exists('factor', $tmpComponent)) {
-                                    $this->SendDebug('Factor calculation', 'Factor: ' . $tmpComponent['factor']);
+                                    $this->SendDebug('Factor calculation', 'Factor: ' . $tmpComponent['factor'], 0);
                                     $value = $value * $tmpComponent['factor'];
                                 }
                             }
