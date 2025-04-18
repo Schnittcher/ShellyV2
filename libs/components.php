@@ -340,7 +340,7 @@ trait Components
         'rgb' => [
             'output' => [
                 'type'         => VARIABLETYPE_BOOLEAN,
-                'name'         => 'State',
+                'name'         => 'RGB State',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
                 ],
@@ -363,7 +363,7 @@ trait Components
             ],
             'brightness' => [
                 'type'         => VARIABLETYPE_INTEGER,
-                'name'         => 'Brightness',
+                'name'         => 'RGB Brightness',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
                     'SUFFIX'       => ' %'
@@ -374,7 +374,7 @@ trait Components
                 ],
                 'actionWithExtraVariable' => [
                     'type'         => VARIABLETYPE_STRING,
-                    'name'         => 'Brightness Action',
+                    'name'         => 'RGB Brightness Action',
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
                         'ICON'         => 'Light',
@@ -392,9 +392,19 @@ trait Components
                     ],
                 ],
             ],
+            'temperature' => [
+                'tC' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'RGB Temperature',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' °C'
+                    ],
+                ],
+            ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured instantaneous active power',
+                'name'         => 'RGB Last measured instantaneous active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -402,7 +412,7 @@ trait Components
             ],
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured voltage',
+                'name'         => 'RGB Last measured voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -410,7 +420,7 @@ trait Components
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured current in Amperes',
+                'name'         => 'RGB Last measured current in Amperes',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -419,11 +429,111 @@ trait Components
             'aenergy' => [
                 'total' => [
                     'type'         => VARIABLETYPE_FLOAT,
-                    'name'         => 'Total energy consumed in',
+                    'name'         => 'RGB Total energy consumed in',
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                         'SUFFIX'       => ' kw/h'
+                    ],
+                ],
+            ],
+        ],
+        'cct' => [
+            'output' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'CCT State',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'CCT.Set',
+                    'params' => ['id' => '', 'on' => '']
+                ],
+            ],
+            'ct' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'CCT CT',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_TEMPLATE_SLIDER_COLOR_TEMPERATURE,
+                ],
+                'action'        => [
+                    'method' => 'CCT.Set',
+                    'params' => ['id' => '', 'ct' => '']
+                ],
+            ],
+            'brightness' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'CCT Brightness',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                    'SUFFIX'       => ' %'
+                ],
+                'action'        => [
+                    'method' => 'CCT.Set',
+                    'params' => ['id' => '', 'brightness' => '']
+                ],
+                'actionWithExtraVariable' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'CCT Brightness Action',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                        'ICON'         => 'Light',
+                        'LAYOUT'       => 1,
+                        'OPTIONS'      => '[
+                                                {"Value":"DimUp","Caption":"Dim up","IconActive":false,"Icon":"" ,"Color":65280},
+                                                {"Value":"DimDown","Caption":"Dim down","IconActive":false,"Icon":"" ,"Color":16753920},
+                                                {"Value":"DimStop","Caption":"Dim stop","IconActive":false,"Icon":"" ,"Color":16711680}
+                                           ]',
+                    ],
+                    'action'        => [
+                        'list'   => true,
+                        'method' => 'CCT.',
+                        'params' => ['id' => '']
+                    ],
+                ],
+            ],
+            'apower' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'CCT Last measured instantaneous active power',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+            ],
+            'voltage' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'CCT Last measured voltage',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+            ],
+            'current' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'CCT Last measured current in Amperes',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+            ],
+            'aenergy' => [
+                'total' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'CCT Total energy consumed in',
+                    'factor'       => 0.001,
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' kw/h'
+                    ],
+                ],
+            ],
+            'temperature' => [
+                'tC' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'CCT Temperature',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' °C'
                     ],
                 ],
             ],
