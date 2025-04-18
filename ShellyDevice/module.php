@@ -127,15 +127,25 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                 }
                 if (fnmatch('*/events/rpc', $Buffer['Topic'])) {
                     if (array_key_exists('params', $Payload)) {
+                        //Components vom Shelly Params Payload holen.
                         $components = $this->getArrayLeafKeyPaths($Payload['params']);
                         //IPS_LogMessage('components', print_r($components, true));
 
                         foreach ($components as $key => $component) {
+                            //IPS_LogMessage('component', print_r($component, true));
+                            //Clean Path holen
                             $componentsFromShellyResult = $this->cleanComponentPath($component);
+                            //Mit clean keypath Value vom self::components array holen
+                            $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
+                            //IPS_LogMessage('test', print_r($componentsFromShellyResult, true));
+                            //Value vom Patams array holen mit dem originalen keypath
                             $value = $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']);
-                            if (array_key_exists('factor', $component)) {
-                                $this->SendDebug('Factor calculation', 'Factor: ' . $component['factor']);
-                                $value = $value * $component['factor'];
+                            //ggf. umrechnung druchführen
+                            if ($tmpComponent != null) {
+                                if (array_key_exists('factor', $tmpComponent)) {
+                                    $this->SendDebug('Factor calculation', 'Factor: ' . $tmpComponent['factor']);
+                                    $value = $value * $tmpComponent['factor'];
+                                }
                             }
                             $this->SetValue($componentsFromShellyResult['ident'], $value);
                             //IPS_LogMessage('test', print_r($componentsFromShellyResult, true));

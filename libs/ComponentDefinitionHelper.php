@@ -37,7 +37,7 @@ trait ComponentDefinitionHelper
 //        IPS_LogMessage('keys', print_r($keys,true));
         foreach ($keys as $key) {
 
-          //  IPS_LogMessage('getValueByKeyPath values', print_r($value,true));
+          // IPS_LogMessage('getValueByKeyPath values', print_r($value,true));
             if (is_array($value) && array_key_exists($key, $value)) {
                 $value = $value[$key];
             } else {
