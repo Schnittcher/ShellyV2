@@ -49,16 +49,17 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 
         public function RequestAction($Ident, $Value)
         {
-            if (strpos($Ident, 'ExtraAction') !== false) {
-                $Ident = preg_replace('/_?ExtraAction/', '', $Ident);
-            }
+            //Um den originalen Ident zu behalten, zum Beispeil für actionWithExtraVariable
+            $originalIdent = $Ident;
+            $Ident = preg_replace('/_?ExtraAction/', '', $Ident);
 
             $IdentKeyPath = $this->convertIdentToKeyPath($Ident);
-            //IPS_LogMessage('IdentKeyPath', print_r($IdentKeyPath, true));
             $tmpComponents = $this->getValueByKeyPath($IdentKeyPath[0]);
 
-            if (array_key_exists('actionWithExtraVariable', $tmpComponents)) {
-                $tmpComponents = $tmpComponents['actionWithExtraVariable'];
+            if (strpos($originalIdent, 'ExtraAction') !== false) {
+                if (array_key_exists('actionWithExtraVariable', $tmpComponents)) {
+                    $tmpComponents = $tmpComponents['actionWithExtraVariable'];
+                }
             }
 
             if (array_key_exists('list', $tmpComponents['action'])) {
