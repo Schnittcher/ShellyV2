@@ -888,6 +888,35 @@ trait Components
                     'params' => ['id' => '']
                 ],
             ],
+        ],
+        'devicepower' => [
+            'battery' => [
+                'V' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Battery voltage',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' V',
+                    ],
+                ],
+                'percet' => [
+                    'type'         => VARIABLETYPE_INTEGR,
+                    'name'         => 'Battery status',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                        'SUFFIX'       => ' %'
+                    ],
+                ],
+            ],
+            'external' => [
+                'present' => [
+                    'type'         => VARIABLETYPE_BOOLEAN,
+                    'name'         => 'External power source',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                    ],
+                ],
+            ],
         ]
     ];
 }
