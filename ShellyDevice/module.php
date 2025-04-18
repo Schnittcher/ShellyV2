@@ -67,10 +67,16 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 
             // 1. Hole alle Keys als Array
             $keys = array_keys($tmpComponents['action']['params']);
-
             $tmpComponents['action']['params'][$keys[0]] = $IdentKeyPath[1];
+
             if (count($keys) > 1) {
                 $tmpComponents['action']['params'][$keys[1]] = $Value;
+                //Ausnahme für RGB
+                if ($IdentKeyPath[0] == 'rgb.rgb.0') {
+                    $rgb = json_decode($Value, true);
+                    $tmpComponents['action']['params'][$keys[1]] = array_values($rgb);
+                    IPS_LogMessage('rgb action', print_r($tmpComponents, true));
+                }
             }
 
             $this->callRPCFunction($tmpComponents['action']['method'], $tmpComponents['action']['params']);
@@ -129,14 +135,13 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                     if (array_key_exists('params', $Payload)) {
                         //Components vom Shelly Params Payload holen.
                         $components = $this->getArrayLeafKeyPaths($Payload['params']);
-                        //IPS_LogMessage('components', print_r($components, true));
-
                         foreach ($components as $key => $component) {
                             //IPS_LogMessage('component', print_r($component, true));
                             //Clean Path holen
                             $componentsFromShellyResult = $this->cleanComponentPath($component);
                             //Mit clean keypath Value vom self::components array holen
                             $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
+
                             //IPS_LogMessage('test', print_r($componentsFromShellyResult, true));
                             //Value vom Patams array holen mit dem originalen keypath
                             $value = $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']);
@@ -147,6 +152,16 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                                     $value = $value * $tmpComponent['factor'];
                                 }
                             }
+
+                            //Ausnahme RGB
+                            if ($componentsFromShellyResult['clean'] == 'rgb.rgb.0') {
+                                $value = json_encode([
+                                    'r' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][0],
+                                    'g' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][1],
+                                    'b' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][2]
+                                ]);
+                            }
+
                             $this->SetValue($componentsFromShellyResult['ident'], $value);
                             //IPS_LogMessage('test', print_r($componentsFromShellyResult, true));
                         }
