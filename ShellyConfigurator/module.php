@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../libs/MQTTHelper.php';
 require_once __DIR__ . '/../libs/ShellyModels.php';
-require_once __DIR__ . '/../libs/DebugHelper.php';
+require_once __DIR__ . '/../libs/vendor/SymconModulHelper/DebugHelper.php';
 const GUID_SHELLY_DEVICE = '{86104D43-1A2F-EFA8-CB86-EBE8979F8D1A}';
 
     class ShellyConfigurator extends IPSModule
