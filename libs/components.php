@@ -900,7 +900,7 @@ trait Components
                     ],
                 ],
                 'percet' => [
-                    'type'         => VARIABLETYPE_INTEGR,
+                    'type'         => VARIABLETYPE_INTEGER,
                     'name'         => 'Battery status',
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
