@@ -59,6 +59,15 @@
                             }
                         },
                         {
+                            "caption": "ActionWithExtraVariable",
+                            "name": "actionWithExtraVariable",
+                            "width": "150px",
+                            "add": "",
+                            "edit": {
+                                "type": "CheckBox"
+                            }
+                        },
+                        {
                             "caption": "Auswählen",
                             "name": "Selected",
                             "width": "100px",

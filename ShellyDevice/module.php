@@ -67,7 +67,7 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 
         public function RequestAction($Ident, $Value)
         {
-            //Um den originalen Ident zu behalten, zum Beispeil für actionWithExtraVariable
+            //Um den originalen Ident zu behalten, zum Beispiel für actionWithExtraVariable
             $originalIdent = $Ident;
             $Ident = preg_replace('/_?ExtraAction/', '', $Ident);
 
@@ -233,28 +233,29 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 
             foreach ($allVariables as $variable) {
                 $tmpComponent = $this->getValueByKeyPath($variable['CleanKeyPath']);
-                if ($tmpComponent != null) {
-                    $name = $this->Translate($tmpComponent['name']);
-                    if ($variable['Channel'] > 0) {
-                        $name = $this->Translate($tmpComponent['name']) . ' ' . $variable['CHannel'];
+                if (!$variable['actionWithExtraVariable']) {
+                    if ($tmpComponent != null) {
+                        $name = $this->Translate($tmpComponent['name']);
+                        if ($variable['Channel'] > 0) {
+                            $name = $this->Translate($tmpComponent['name']) . ' ' . $variable['Channel'];
+                        }
                     }
-                }
-                //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
-                $this->MaintainVariable($variable['Ident'], $name, $tmpComponent['type'], $tmpComponent['presentation'], 0, $variable['Selected']);
-                //Wenn die Komponetene eine Aktion besitzt, wird EnableAction aufgerufen
-                if (array_key_exists('action', $tmpComponent)) {
-                    $this->EnableAction($variable['Ident']);
-                }
-
-                //Mit Extra Action Variable - sprich wenn die Komponente mehrere Variablen zum bedienen hat z.B. Helligkeit in % und Dim down, Dim up, Dim stop
-                if (array_key_exists('actionWithExtraVariable', $tmpComponent)) {
-                    $name = $this->Translate($tmpComponent['name']);
-                    if ($variable['Channel'] > 0) {
-                        $name = $this->Translate($tmpComponent['actionWithExtraVariable']['name']) . ' ' . $variable['number'];
+                    //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
+                    $this->MaintainVariable($variable['Ident'], $name, $tmpComponent['type'], $tmpComponent['presentation'], 0, $variable['Selected']);
+                    //Wenn die Komponetene eine Aktion besitzt, wird EnableAction aufgerufen
+                    if (array_key_exists('action', $tmpComponent)) {
+                        $this->EnableAction($variable['Ident']);
                     }
-                    $plusIdent = '_ExtraAction';
-                    $this->MaintainVariable($variable['Ident'] . $plusIdent, $name, VARIABLETYPE_BOOLEAN, $tmpComponent['presentation'], 0, $variable['Selected']);
-                    $this->EnableAction($componentsFromShellyResult['Ident'] . $plusIdent);
+                } else {
+                    //Mit Extra Action Variable - sprich wenn die Komponente mehrere Variablen zum bedienen hat z.B. Helligkeit in % und Dim down, Dim up, Dim stop
+                    if (array_key_exists('actionWithExtraVariable', $tmpComponent)) {
+                        $name = $this->Translate($tmpComponent['actionWithExtraVariable']['name']);
+                        if ($variable['Channel'] > 0) {
+                            $name = $this->Translate($tmpComponent['actionWithExtraVariable']['name']) . ' ' . $variable['Channel'];
+                        }
+                        $this->MaintainVariable($variable['Ident'], $name, $tmpComponent['actionWithExtraVariable']['type'], $tmpComponent['actionWithExtraVariable']['presentation'], 0, $variable['Selected']);
+                        $this->EnableAction($variable['Ident']);
+                    }
                 }
             }
         }
@@ -299,12 +300,13 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                     }
 
                     $variableList[] = [
-                        'Name'         => $this->Translate($name),
-                        'Ident'        => $componentsFromShellyResult['ident'],
-                        'CleanKeyPath' => $componentsFromShellyResult['clean'],
-                        'Channel'      => $componentsFromShellyResult['number'],
-                        'Selected'     => $selected,
-                        'Zeroing'      => $zeroing
+                        'Name'                        => $this->Translate($name),
+                        'Ident'                       => $componentsFromShellyResult['ident'],
+                        'CleanKeyPath'                => $componentsFromShellyResult['clean'],
+                        'Channel'                     => $componentsFromShellyResult['number'],
+                        'actionWithExtraVariable'     => false,
+                        'Selected'                    => $selected,
+                        'Zeroing'                     => $zeroing
                     ];
 
                     //Mit Extra Action Variable - sprich wenn die Komponente mehrere Variablen zum bedienen hat z.B. Helligkeit in % und Dim down, Dim up, Dim stop
@@ -316,10 +318,13 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                         $extraIdent = $componentsFromShellyResult['ident'] . '_ExtraAction';
 
                         $variableList[] = [
-                            'Name'     => $this->Translate($name),
-                            'Ident'    => $extraIdent,
-                            'Selected' => $selected,
-                            'Zeroing'  => $zeroing
+                            'Name'                        => $this->Translate($name),
+                            'Ident'                       => $extraIdent,
+                            'CleanKeyPath'                => $componentsFromShellyResult['clean'],
+                            'Channel'                     => $componentsFromShellyResult['number'],
+                            'actionWithExtraVariable'     => true,
+                            'Selected'                    => $selected,
+                            'Zeroing'                     => $zeroing
                         ];
                     }
                 }
