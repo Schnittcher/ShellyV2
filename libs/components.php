@@ -32,18 +32,17 @@ trait Components
             ],
             'percent' => [
                 'type'         => VARIABLETYPE_INTEGER,
-                'name'         => 'Input Percent',
+                'name'         => 'Input (Percent)',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' %',
                 ],
             ],
-
         ],
         'em' => [
             'a_current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase A current measurement value',
+                'name'         => 'Phase A current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -52,7 +51,7 @@ trait Components
             ],
             'a_voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase A voltage measurement value',
+                'name'         => 'Phase A voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -61,7 +60,7 @@ trait Components
             ],
             'a_act_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase A active power measurement value',
+                'name'         => 'Phase A active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -70,7 +69,7 @@ trait Components
             ],
             'a_aprt_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase A apparent power measurement value,',
+                'name'         => 'Phase A apparent power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' VA',
@@ -79,7 +78,7 @@ trait Components
             ],
             'a_pf' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase A power factor measurement value',
+                'name'         => 'Phase A power factor',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -87,7 +86,7 @@ trait Components
             ],
             'a_freq' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase A network frequency measurement value',
+                'name'         => 'Phase A network frequency',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -95,7 +94,7 @@ trait Components
             ],
             'b_current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase B current measurement value',
+                'name'         => 'Phase B current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -104,7 +103,7 @@ trait Components
             ],
             'b_voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase B voltage measurement value',
+                'name'         => 'Phase B voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -113,7 +112,7 @@ trait Components
             ],
             'b_act_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase B active power measurement value',
+                'name'         => 'Phase B active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -122,7 +121,7 @@ trait Components
             ],
             'b_aprt_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase B apparent power measurement value,',
+                'name'         => 'Phase B apparent power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' VA',
@@ -131,7 +130,7 @@ trait Components
             ],
             'b_pf' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase B power factor measurement value',
+                'name'         => 'Phase B power factor',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -139,7 +138,7 @@ trait Components
             ],
             'b_freq' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase B network frequency measurement value',
+                'name'         => 'Phase B network frequency',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -147,7 +146,7 @@ trait Components
             ],
             'c_current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase C current measurement value',
+                'name'         => 'Phase C current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -156,7 +155,7 @@ trait Components
             ],
             'c_voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase C voltage measurement value',
+                'name'         => 'Phase C voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -165,7 +164,7 @@ trait Components
             ],
             'c_act_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase C active power measurement value',
+                'name'         => 'Phase C active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -174,7 +173,7 @@ trait Components
             ],
             'c_aprt_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase C apparent power measurement value,',
+                'name'         => 'Phase C apparent power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' VA',
@@ -183,7 +182,7 @@ trait Components
             ],
             'c_pf' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase C power factor measurement value',
+                'name'         => 'Phase C power factor',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -191,7 +190,7 @@ trait Components
             ],
             'c_freq' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Phase C network frequency measurement value',
+                'name'         => 'Phase C network frequency',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -199,7 +198,7 @@ trait Components
             ],
             'n_current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Neutral current measurement value',
+                'name'         => 'Neutral current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -207,7 +206,7 @@ trait Components
             ],
             'total_current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Sum of the current on all phases',
+                'name'         => 'Current on all phases',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -216,7 +215,7 @@ trait Components
             ],
             'total_act_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Sum of the active power on all phases',
+                'name'         => 'Active power on all phases',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -225,7 +224,7 @@ trait Components
             ],
             'total_aprt_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Sum of the apparent power on all phases',
+                'name'         => 'Aapparent power on all phases',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' VA',
@@ -240,7 +239,6 @@ trait Components
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' °C'
-
                 ],
             ],
         ],
@@ -267,7 +265,8 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'Light.Set',
-                    'params' => ['id' => '', 'on' => '']
+                    'params' => ['id' => '', 'on' => ''
+                    ]
                 ],
             ],
             'brightness' => [
@@ -279,7 +278,8 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'Light.Set',
-                    'params' => ['id' => '', 'brightness' => '']
+                    'params' => ['id' => '', 'brightness' => ''
+                    ]
                 ],
                 'actionWithExtraVariable' => [
                     'type'         => VARIABLETYPE_STRING,
@@ -289,21 +289,40 @@ trait Components
                         'ICON'         => 'Light',
                         'LAYOUT'       => 1,
                         'OPTIONS'      => '[
-                                                {"Value":"DimUp","Caption":"Dim up","IconActive":false,"Icon":"" ,"Color":65280},
-                                                {"Value":"DimDown","Caption":"Dim down","IconActive":false,"Icon":"" ,"Color":16753920},
-                                                {"Value":"DimStop","Caption":"Dim stop","IconActive":false,"Icon":"" ,"Color":16711680}
-                                           ]',
+                            {
+                                "Value": "DimUp",
+                                "Caption": "Dim up",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 65280
+                            },
+                            {
+                                "Value": "DimDown",
+                                "Caption": "Dim down",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16753920
+                            },
+                            {
+                                "Value": "DimStop",
+                                "Caption": "Dim stop",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16711680
+                            }
+                        ]',
                     ],
                     'action'        => [
                         'list'   => true,
                         'method' => 'Light.',
-                        'params' => ['id' => '']
+                        'params' => ['id' => ''
+                        ]
                     ],
                 ],
             ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured instantaneous active power',
+                'name'         => 'Active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -311,7 +330,7 @@ trait Components
             ],
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured voltage',
+                'name'         => 'Voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -319,7 +338,7 @@ trait Components
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured current in Amperes',
+                'name'         => 'Current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -328,7 +347,7 @@ trait Components
             'aenergy' => [
                 'total' => [
                     'type'         => VARIABLETYPE_FLOAT,
-                    'name'         => 'Total energy consumed in',
+                    'name'         => 'Total energy',
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -346,7 +365,8 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'RGB.Set',
-                    'params' => ['id' => '', 'on' => '']
+                    'params' => ['id' => '', 'on' => ''
+                    ]
                 ],
             ],
             'rgb' => [
@@ -358,7 +378,8 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'RGB.Set',
-                    'params' => ['id' => '', 'rgb' => '']
+                    'params' => ['id' => '', 'rgb' => ''
+                    ]
                 ],
             ],
             'brightness' => [
@@ -370,7 +391,8 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'RGB.Set',
-                    'params' => ['id' => '', 'brightness' => '']
+                    'params' => ['id' => '', 'brightness' => ''
+                    ]
                 ],
                 'actionWithExtraVariable' => [
                     'type'         => VARIABLETYPE_STRING,
@@ -380,15 +402,34 @@ trait Components
                         'ICON'         => 'Light',
                         'LAYOUT'       => 1,
                         'OPTIONS'      => '[
-                                                {"Value":"DimUp","Caption":"Dim up","IconActive":false,"Icon":"" ,"Color":65280},
-                                                {"Value":"DimDown","Caption":"Dim down","IconActive":false,"Icon":"" ,"Color":16753920},
-                                                {"Value":"DimStop","Caption":"Dim stop","IconActive":false,"Icon":"" ,"Color":16711680}
-                                           ]',
+                            {
+                                "Value": "DimUp",
+                                "Caption": "Dim up",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 65280
+                            },
+                            {
+                                "Value": "DimDown",
+                                "Caption": "Dim down",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16753920
+                            },
+                            {
+                                "Value": "DimStop",
+                                "Caption": "Dim stop",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16711680
+                            }
+                        ]',
                     ],
                     'action'        => [
                         'list'   => true,
                         'method' => 'RGB.',
-                        'params' => ['id' => '']
+                        'params' => ['id' => ''
+                        ]
                     ],
                 ],
             ],
@@ -404,7 +445,7 @@ trait Components
             ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'RGB Last measured instantaneous active power',
+                'name'         => 'RGB active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -412,7 +453,7 @@ trait Components
             ],
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'RGB Last measured voltage',
+                'name'         => 'RGB voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -420,7 +461,7 @@ trait Components
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'RGB Last measured current in Amperes',
+                'name'         => 'RGB current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -429,7 +470,7 @@ trait Components
             'aenergy' => [
                 'total' => [
                     'type'         => VARIABLETYPE_FLOAT,
-                    'name'         => 'RGB Total energy consumed in',
+                    'name'         => 'RGB Total energy',
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -447,18 +488,20 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'CCT.Set',
-                    'params' => ['id' => '', 'on' => '']
+                    'params' => ['id' => '', 'on' => ''
+                    ]
                 ],
             ],
             'ct' => [
                 'type'         => VARIABLETYPE_INTEGER,
-                'name'         => 'CCT CT',
+                'name'         => 'CCT color temperature',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_TEMPLATE_SLIDER_COLOR_TEMPERATURE,
                 ],
                 'action'        => [
                     'method' => 'CCT.Set',
-                    'params' => ['id' => '', 'ct' => '']
+                    'params' => ['id' => '', 'ct' => ''
+                    ]
                 ],
             ],
             'brightness' => [
@@ -470,7 +513,8 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'CCT.Set',
-                    'params' => ['id' => '', 'brightness' => '']
+                    'params' => ['id' => '', 'brightness' => ''
+                    ]
                 ],
                 'actionWithExtraVariable' => [
                     'type'         => VARIABLETYPE_STRING,
@@ -480,21 +524,40 @@ trait Components
                         'ICON'         => 'Light',
                         'LAYOUT'       => 1,
                         'OPTIONS'      => '[
-                                                {"Value":"DimUp","Caption":"Dim up","IconActive":false,"Icon":"" ,"Color":65280},
-                                                {"Value":"DimDown","Caption":"Dim down","IconActive":false,"Icon":"" ,"Color":16753920},
-                                                {"Value":"DimStop","Caption":"Dim stop","IconActive":false,"Icon":"" ,"Color":16711680}
-                                           ]',
+                            {
+                                "Value": "DimUp",
+                                "Caption": "Dim up",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 65280
+                            },
+                            {
+                                "Value": "DimDown",
+                                "Caption": "Dim down",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16753920
+                            },
+                            {
+                                "Value": "DimStop",
+                                "Caption": "Dim stop",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16711680
+                            }
+                        ]',
                     ],
                     'action'        => [
                         'list'   => true,
                         'method' => 'CCT.',
-                        'params' => ['id' => '']
+                        'params' => ['id' => ''
+                        ]
                     ],
                 ],
             ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'CCT Last measured instantaneous active power',
+                'name'         => 'CCT active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -502,7 +565,7 @@ trait Components
             ],
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'CCT Last measured voltage',
+                'name'         => 'CCT voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -510,7 +573,7 @@ trait Components
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'CCT Last measured current in Amperes',
+                'name'         => 'CCT current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -519,7 +582,7 @@ trait Components
             'aenergy' => [
                 'total' => [
                     'type'         => VARIABLETYPE_FLOAT,
-                    'name'         => 'CCT Total energy consumed in',
+                    'name'         => 'CCT Total energy',
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -547,12 +610,13 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'Switch.Set',
-                    'params' => ['id' => '', 'on' => '']
+                    'params' => ['id' => '', 'on' => ''
+                    ]
                 ],
             ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured instantaneous active power',
+                'name'         => 'Active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -560,7 +624,7 @@ trait Components
             ],
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured voltage',
+                'name'         => 'Voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -568,7 +632,7 @@ trait Components
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured current in Amperes',
+                'name'         => 'Current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -576,14 +640,14 @@ trait Components
             ],
             'pf' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured power factor',
+                'name'         => 'Power factor',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
             'freq' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured network frequency',
+                'name'         => 'Network frequency',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' Hz'
@@ -592,7 +656,7 @@ trait Components
             'aenergy' => [
                 'total' => [
                     'type'         => VARIABLETYPE_FLOAT,
-                    'name'         => 'Total energy consumed in',
+                    'name'         => 'Total energy',
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -632,7 +696,7 @@ trait Components
         'pm1' => [
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured voltage',
+                'name'         => 'Voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -640,7 +704,7 @@ trait Components
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured current in Amperes',
+                'name'         => 'Current in Amperes',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -648,7 +712,7 @@ trait Components
             ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured instantaneous active power',
+                'name'         => 'Active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -656,7 +720,7 @@ trait Components
             ],
             'aprtpower' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured instantaneous apparent power',
+                'name'         => 'Apparent power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' VA',
@@ -665,14 +729,14 @@ trait Components
             ],
             'pf' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured power factor',
+                'name'         => 'Power factor',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
             'freq' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured network frequency',
+                'name'         => 'Network frequency',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' Hz'
@@ -681,7 +745,7 @@ trait Components
             'aenergy' => [
                 'total' => [
                     'type'         => VARIABLETYPE_FLOAT,
-                    'name'         => 'Total energy consumed in',
+                    'name'         => 'Total energy',
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -711,7 +775,7 @@ trait Components
         'em1' => [
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured current in Amperes',
+                'name'         => 'Current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -719,7 +783,7 @@ trait Components
             ],
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured voltage',
+                'name'         => 'Voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -727,7 +791,7 @@ trait Components
             ],
             'act_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured instantaneous active power',
+                'name'         => 'Active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -735,7 +799,7 @@ trait Components
             ],
             'aprt_power' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured instantaneous apparent power',
+                'name'         => 'Apparent power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' VA',
@@ -744,14 +808,14 @@ trait Components
             ],
             'pf' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured power factor',
+                'name'         => 'Power factor',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
             'freq' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured network frequency',
+                'name'         => 'Network frequency',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' Hz'
@@ -774,10 +838,28 @@ trait Components
                     'ICON'         => 'Shutter',
                     'LAYOUT'       => 1,
                     'OPTIONS'      => '[
-                                            {"Value":"opening","Caption":"Opening","IconActive":false,"Icon":"" ,"Color":65280},
-                                            {"Value":"stopped","Caption":"Stopped","IconActive":false,"Icon":"" ,"Color":16753920},
-                                            {"Value":"closing","Caption":"Closing","IconActive":false,"Icon":"" ,"Color":16711680}
-                                       ]',
+                        {
+                            "Value": "opening",
+                            "Caption": "Opening",
+                            "IconActive": false,
+                            "Icon": "",
+                            "Color": 65280
+                        },
+                        {
+                            "Value": "stopped",
+                            "Caption": "Stopped",
+                            "IconActive": false,
+                            "Icon": "",
+                            "Color": 16753920
+                        },
+                        {
+                            "Value": "closing",
+                            "Caption": "Closing",
+                            "IconActive": false,
+                            "Icon": "",
+                            "Color": 16711680
+                        }
+                    ]',
                 ],
                 'actionWithExtraVariable' => [
                     'type'         => VARIABLETYPE_STRING,
@@ -787,21 +869,40 @@ trait Components
                         'ICON'         => 'Shutter',
                         'LAYOUT'       => 1,
                         'OPTIONS'      => '[
-                                                {"Value":"open","Caption":"Open","IconActive":false,"Icon":"" ,"Color":65280},
-                                                {"Value":"stop","Caption":"Stop","IconActive":false,"Icon":"" ,"Color":16753920},
-                                                {"Value":"close","Caption":"Close","IconActive":false,"Icon":"" ,"Color":16711680}
-                                           ]',
+                            {
+                                "Value": "open",
+                                "Caption": "Open",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 65280
+                            },
+                            {
+                                "Value": "stop",
+                                "Caption": "Stop",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16753920
+                            },
+                            {
+                                "Value": "close",
+                                "Caption": "Close",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16711680
+                            }
+                        ]',
                     ],
                     'action'        => [
                         'list'   => true,
                         'method' => 'Cover.',
-                        'params' => ['id' => '']
+                        'params' => ['id' => ''
+                        ]
                     ],
                 ],
             ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured instantaneous active power',
+                'name'         => 'Active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -809,7 +910,7 @@ trait Components
             ],
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured voltage',
+                'name'         => 'Voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -817,7 +918,7 @@ trait Components
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured current in Amperes',
+                'name'         => 'Current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -825,14 +926,14 @@ trait Components
             ],
             'pf' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured power factor',
+                'name'         => 'Power factor',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
             'freq' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Last measured network frequency',
+                'name'         => 'Network frequency',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' Hz'
@@ -841,7 +942,7 @@ trait Components
             'aenergy' => [
                 'total' => [
                     'type'         => VARIABLETYPE_FLOAT,
-                    'name'         => 'Total energy consumed in',
+                    'name'         => 'Total energy',
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -859,22 +960,22 @@ trait Components
                     'ICON'         => 'Alert',
                     'OPTIONS'      => '[
                         {
-                          "Value": true,
-                          "Caption": "Smoke",
-                          "IconActive": false,
-                          "Icon": "",
-                          "ColorActive": true,
-                          "Color": 65280
+                            "Value": true,
+                            "Caption": "Smoke",
+                            "IconActive": false,
+                            "Icon": "",
+                            "ColorActive": true,
+                            "Color": 65280
                         },
                         {
-                          "Value": false,
-                          "Caption": "No smoke",
-                          "IconActive": false,
-                          "Icon": "",
-                          "ColorActive": true,
-                          "Color": 16711680
+                            "Value": false,
+                            "Caption": "No smoke",
+                            "IconActive": false,
+                            "Icon": "",
+                            "ColorActive": true,
+                            "Color": 16711680
                         }
-                      ]',
+                    ]',
                 ],
             ],
             'mute' => [
@@ -885,7 +986,8 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'Smoke.Mute',
-                    'params' => ['id' => '']
+                    'params' => ['id' => ''
+                    ]
                 ],
             ],
         ],
