@@ -34,11 +34,7 @@ trait ComponentDefinitionHelper
     {
         $keys = explode($separator, $keyPath);
         $value = self::$components;
-//        IPS_LogMessage('keys', print_r($keys,true));
         foreach ($keys as $key) {
-
-          // IPS_LogMessage('getValueByKeyPath values', print_r($value,true));
-
             //Ausnahme für RGB
             if (is_array($value) && $keyPath == 'rgb.rgb.0' && array_key_exists($key, $value)) {
                 return $value[$key][$key];
@@ -90,13 +86,13 @@ trait ComponentDefinitionHelper
     protected function cleanComponentPath($componentPath)
     {
 
-                    // Prüfen auf Doppelpunkt mit Zahl
+        // Prüfen auf Doppelpunkt mit Zahl
         if (preg_match('/(.*):(\d+)(.*)/', $componentPath, $matches)) {
             $base = $matches[1];      // z. B. "input"
-                        $number = $matches[2];    // z. B. "0"
-                        $rest = $matches[3];      // z. B. ".id" oder ".temperature.tC"
+            $number = $matches[2];    // z. B. "0"
+            $rest = $matches[3];      // z. B. ".id" oder ".temperature.tC"
 
-                        $cleanKey = $base . $rest;
+            $cleanKey = $base . $rest;
             $tempVar = $number;
         } else {
             $cleanKey = $componentPath;
