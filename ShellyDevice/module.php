@@ -20,8 +20,8 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             parent::Create();
             $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
             $this->RegisterPropertyString('MQTTTopic', '');
-            $this->RegisterAttributeString('Components', '');
             $this->RegisterPropertyBoolean('DebugMissingIdents', false);
+            $this->RegisterPropertyString('VariableList', '{}');
 
             $this->RegisterVariableBoolean('Reachable', $this->Translate('Reachable'), [
                 'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -45,6 +45,24 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                 ]
                     )
             ], 99);
+        }
+
+        public function Destroy()
+        {
+            //Never delete this line!
+            parent::Destroy();
+        }
+
+        public function ApplyChanges()
+        {
+            parent::ApplyChanges();
+            //Never delete this line!
+            $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
+            $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
+
+            if ($MQTTTopic != '') {
+                $this->getComponents();
+            }
         }
 
         public function RequestAction($Ident, $Value)
@@ -76,29 +94,18 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                 if ($IdentKeyPath[0] == 'rgb.rgb.0') {
                     $rgb = json_decode($Value, true);
                     $tmpComponents['action']['params'][$keys[1]] = array_values($rgb);
-                    IPS_LogMessage('rgb action', print_r($tmpComponents, true));
                 }
             }
 
             $this->callRPCFunction($tmpComponents['action']['method'], $tmpComponents['action']['params']);
         }
 
-        public function Destroy()
+        public function GetConfigurationForm()
         {
-            //Never delete this line!
-            parent::Destroy();
-        }
+            $Form = json_decode(file_get_contents(__DIR__ . '/form.json'), true);
 
-        public function ApplyChanges()
-        {
-            //Neverdelete this line!
-            parent::ApplyChanges();
-            $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
-            $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
-
-            if ($MQTTTopic != '') {
-                $this->getComponents();
-            }
+            $Form['elements'][2]['items'][0]['values'] = json_decode($this->GetBuffer('variableList'), true);
+            return json_encode($Form);
         }
 
         public function ReceiveData($JSONString)
@@ -110,41 +117,31 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             if (array_key_exists('Topic', $Buffer)) {
                 if (fnmatch('*/online', $Buffer['Topic'])) {
                     $this->SetValue('Reachable', $Payload);
+                    if (!$Payload) {
+                        $this->zeroingValues();
+                    }
                 }
                 if (fnmatch('getComponents/rpc', $Buffer['Topic'])) {
                     $tmpComponents = $Payload['result'];
                     $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
-                    $this->WriteAttributeString('Components', json_encode($allComponentsFromShelly));
 
-                    //IPS_LogMessage('test', print_r($allComponentsFromShelly, true));
-
-                    //$allComponentsFromDefinition = $this->getArrayKeyPaths(self::$components);
                     // Duplikate entfernen
                     $allComponentsFromShelly = array_unique($allComponentsFromShelly);
-                    //$allComponentsFromDefinition = array_unique($allComponentsFromDefinition);
 
-                    // Vergleich
-                    //$commonKeys = array_intersect($allComponentsFromShelly, $allComponentsFromDefinition);
-
-                    //IPS_LogMessage('All Keys', print_r($commonKeys, true));
-
-                    foreach ($allComponentsFromShelly as $value) {
-                        $this->registerComponentVariables($allComponentsFromShelly);
-                    }
+                    $this->createariableListForForm($allComponentsFromShelly);
+                    $this->registerComponentVariables();
                 }
                 if (fnmatch('*/events/rpc', $Buffer['Topic'])) {
                     if (array_key_exists('params', $Payload)) {
                         //Components vom Shelly Params Payload holen.
                         $components = $this->getArrayLeafKeyPaths($Payload['params']);
                         foreach ($components as $key => $component) {
-                            //IPS_LogMessage('component', print_r($component, true));
                             //Clean Path holen
                             $componentsFromShellyResult = $this->cleanComponentPath($component);
                             //Mit clean keypath Value vom self::components array holen
                             $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
 
-                            //IPS_LogMessage('test', print_r($componentsFromShellyResult, true));
-                            //Value vom Patams array holen mit dem originalen keypath
+                            //Value vom Params array holen mit dem originalen keypath
                             $value = $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']);
                             //ggf. umrechnung druchführen
                             if ($tmpComponent != null) {
@@ -164,7 +161,6 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
                             }
 
                             $this->SetValue($componentsFromShellyResult['ident'], $value);
-                            //IPS_LogMessage('test', print_r($componentsFromShellyResult, true));
                         }
                     }
                 }
@@ -178,22 +174,17 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             $Payload['id'] = 1;
             $Payload['src'] = 'getComponents';
             $Payload['method'] = 'Shelly.GetStatus';
-            //$Payload['params'] = ['id' => $switch, 'on' => $value];
-
             $this->sendMQTT($Topic, json_encode($Payload));
         }
 
         public function callRPCFunction($method, $params)
         {
-            //IPS_LogMessage('method', print_r($method, true));
-            //IPS_LogMessage('params', print_r($params, true));
-
             $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
 
             $Payload['id'] = 1;
             $Payload['src'] = 'user_1';
             $Payload['method'] = $method;
-            $Payload['params'] = $params; //['id' => $switch, 'on' => $value];
+            $Payload['params'] = $params;
 
             $this->sendMQTT($Topic, json_encode($Payload));
         }
@@ -210,67 +201,133 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
             }
         }
 
-        private function registerComponentVariables($allComponentsFromShelly)
+        //Alle Werte auf 0, false oder leer setzen, wenn die Funktion zeroing bei den Variablen aktiv geschaltet wurde
+        protected function zeroingValues()
         {
+            $Variables = json_decode($this->GetBuffer('variableList'), true);
+
+            foreach ($Variables as $key => $variable) {
+                if ($variable['Zeroing']) {
+                    switch ($variable['VarType']) {
+                        case VARIABLETYPE_BOOLEAN:
+                            $this->SetValue($variable['Ident'], false);
+                            break;
+                        case VARIABLETYPE_STRING:
+                            $this->SetValue($variable['Ident'], '');
+                            break;
+                        case VARIABLETYPE_FLOAT:
+                        case VARIABLETYPE_INTEGER:
+                            $this->SetValue($variable['Ident'], 0);
+                            break;
+                        default:
+                            $this->LogMessage('Error by zeroing Values.', KL_ERROR);
+                            break;
+                    }
+                }
+            }
+        }
+
+        private function registerComponentVariables()
+        {
+            $allVariables = json_decode($this->GetBuffer('variableList'), true);
+
+            foreach ($allVariables as $variable) {
+                $tmpComponent = $this->getValueByKeyPath($variable['CleanKeyPath']);
+                if ($tmpComponent != null) {
+                    $name = $this->Translate($tmpComponent['name']);
+                    if ($variable['Channel'] > 0) {
+                        $name = $this->Translate($tmpComponent['name']) . ' ' . $variable['CHannel'];
+                    }
+                }
+                //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
+                $this->MaintainVariable($variable['Ident'], $name, $tmpComponent['type'], $tmpComponent['presentation'], 0, $variable['Selected']);
+                //Wenn die Komponetene eine Aktion besitzt, wird EnableAction aufgerufen
+                if (array_key_exists('action', $tmpComponent)) {
+                    $this->EnableAction($variable['Ident']);
+                }
+
+                //Mit Extra Action Variable - sprich wenn die Komponente mehrere Variablen zum bedienen hat z.B. Helligkeit in % und Dim down, Dim up, Dim stop
+                if (array_key_exists('actionWithExtraVariable', $tmpComponent)) {
+                    $name = $this->Translate($tmpComponent['name']);
+                    if ($variable['Channel'] > 0) {
+                        $name = $this->Translate($tmpComponent['actionWithExtraVariable']['name']) . ' ' . $variable['number'];
+                    }
+                    $plusIdent = '_ExtraAction';
+                    $this->MaintainVariable($variable['Ident'] . $plusIdent, $name, VARIABLETYPE_BOOLEAN, $tmpComponent['presentation'], 0, $variable['Selected']);
+                    $this->EnableAction($componentsFromShellyResult['Ident'] . $plusIdent);
+                }
+            }
+        }
+
+        ################### Test für Liste mit Variablen um diese aktivieren / deaktivieren zu können.
+
+        private function createariableListForForm($allComponentsFromShelly)
+        {
+            $variableList = [];
+
+            //Alte Liste laden, um die aktuellen Einstellungen (Selected / Zeroing) zu übernehmen
+            $oldList = json_decode($this->ReadPropertyString('VariableList'), true);
+            // Map zur schnellen Suche: Ident => Selected-Wert / Ident => Zeroiung
+            $oldMap = [];
+            foreach ($oldList as $item) {
+                if (!empty($item['Ident'])) {
+                    $oldMap[$item['Ident']]['selected'] = $item['Selected'];
+                    $oldMap[$item['Ident']]['zeroing'] = $item['Zeroing'];
+                }
+            }
+
+            //Standardwert für "Selected"
+            $selected = true;
+            //Standardwert für "Zeroing"
+            $zeroing = false;
+
             foreach ($allComponentsFromShelly as $entry) {
                 $componentsFromShellyResult = $this->cleanComponentPath($entry);
-                //IPS_LogMessage('register', print_r($componentsFromShellyResult, true));
+
+                // Überprüfen, ob der Ident in der alten Liste vorhanden ist
+                if (!empty($componentsFromShellyResult['ident']) && isset($oldMap[$componentsFromShellyResult['ident']])) {
+                    // Falls der Ident in der alten Liste existiert, den "Selected"-Wert übernehmen
+                    $selected = $oldMap[$componentsFromShellyResult['ident']]['selected'];
+                    $zeroing = $oldMap[$componentsFromShellyResult['ident']]['zeroing'];
+                }
+
                 $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
                 if ($tmpComponent != null) {
                     $name = $tmpComponent['name'];
                     if ($componentsFromShellyResult['number'] > 0) {
                         $name = $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'];
                     }
-                    switch ($tmpComponent['type']) {
-                case VARIABLETYPE_BOOLEAN:
-                    $this->RegisterVariableBoolean($componentsFromShellyResult['ident'], $name, $tmpComponent['presentation'], 0);
-                    break;
-                case VARIABLETYPE_FLOAT:
-                    $this->RegisterVariableFloat($componentsFromShellyResult['ident'], $name, $tmpComponent['presentation'], 0);
-                    break;
-                case VARIABLETYPE_INTEGER:
-                    $this->RegisterVariableInteger($componentsFromShellyResult['ident'], $name, $tmpComponent['presentation'], 0);
-                    break;
-                case VARIABLETYPE_STRING:
-                    $this->RegisterVariableString($componentsFromShellyResult['ident'], $name, $tmpComponent['presentation'], 0);
-                    break;
-                default:
 
-                    break;
-            }
-                    //IPS_LogMessage('test1', print_r($tmpComponent, true));
-                    if (array_key_exists('action', $tmpComponent)) {
-                        $this->EnableAction($componentsFromShellyResult['ident']);
-                    }
+                    $variableList[] = [
+                        'Name'         => $this->Translate($name),
+                        'Ident'        => $componentsFromShellyResult['ident'],
+                        'CleanKeyPath' => $componentsFromShellyResult['clean'],
+                        'Channel'      => $componentsFromShellyResult['number'],
+                        'Selected'     => $selected,
+                        'Zeroing'      => $zeroing
+                    ];
 
-                    //With Extra Action Variable
-                    //IPS_LogMessage('tmpComponent', print_r($tmpComponent, true));
+                    //Mit Extra Action Variable - sprich wenn die Komponente mehrere Variablen zum bedienen hat z.B. Helligkeit in % und Dim down, Dim up, Dim stop
                     if (array_key_exists('actionWithExtraVariable', $tmpComponent)) {
                         $name = $tmpComponent['actionWithExtraVariable']['name'];
                         if ($componentsFromShellyResult['number'] > 0) {
                             $name = $tmpComponent['actionWithExtraVariable']['name'] . ' ' . $componentsFromShellyResult['number'];
                         }
-                        $plusIdent = '_ExtraAction';
-                        switch ($tmpComponent['actionWithExtraVariable']['type']) {
-                        case VARIABLETYPE_BOOLEAN:
-                            $this->RegisterVariableBoolean($componentsFromShellyResult['ident'] . $plusIdent, $name, $tmpComponent['actionWithExtraVariable']['presentation'], 0);
-                            break;
-                        case VARIABLETYPE_FLOAT:
-                            $this->RegisterVariableFloat($componentsFromShellyResult['ident'] . $plusIdent, $name, $tmpComponent['actionWithExtraVariable']['presentation'], 0);
-                            break;
-                        case VARIABLETYPE_INTEGER:
-                            $this->RegisterVariableInteger($componentsFromShellyResult['ident'] . $plusIdent, $name, $tmpComponent['actionWithExtraVariable']['presentation'], 0);
-                            break;
-                        case VARIABLETYPE_STRING:
-                            $this->RegisterVariableString($componentsFromShellyResult['ident'] . $plusIdent, $name, $tmpComponent['actionWithExtraVariable']['presentation'], 0);
-                            break;
-                        default:
+                        $extraIdent = $componentsFromShellyResult['ident'] . '_ExtraAction';
 
-                            break;
-                    }
-                        $this->EnableAction($componentsFromShellyResult['ident'] . $plusIdent);
+                        $variableList[] = [
+                            'Name'     => $this->Translate($name),
+                            'Ident'    => $extraIdent,
+                            'Selected' => $selected,
+                            'Zeroing'  => $zeroing
+                        ];
                     }
                 }
             }
+
+            $this->SendDebug('variableList', $variableList, 0);
+            //Setze variableList in Buffer, für GetConfiguration Form & zum Anlegen der Variablen
+            $this->SetBuffer('variableList', json_encode($variableList));
         }
     }
+

@@ -9,6 +9,79 @@
             "type": "CheckBox",
             "name": "DebugMissingIdents",
             "caption": "Debug: Missing Idents"
+        },
+        {
+            "type": "ExpansionPanel",
+            "caption": "Specific features for shelly device",
+            "items": [
+                {
+                    "type": "List",
+                    "name": "VariableList",
+                    "caption": "Variablen",
+                    "rowCount": 10,
+                    "add": true,
+                    "delete": false,
+                    "columns": [
+                        {
+                            "caption": "Name",
+                            "name": "Name",
+                            "width": "auto",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "Ident",
+                            "name": "Ident",
+                            "width": "150px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "CleanKeyPath",
+                            "name": "CleanKeyPath",
+                            "width": "150px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "Channel",
+                            "name": "Channel",
+                            "width": "150px",
+                            "add": "",
+                            "edit": {
+                                "type": "ValidationTextBox"
+                            }
+                        },
+                        {
+                            "caption": "Auswählen",
+                            "name": "Selected",
+                            "width": "100px",
+                            "add": true,
+                            "edit": {
+                                "type": "CheckBox"
+                            }
+                        },
+                        {
+                            "caption": "Zeroing",
+                            "name": "Zeroing",
+                            "width": "100px",
+                            "add": false,
+                            "edit": {
+                                "type": "CheckBox"
+                            }
+                        }
+                    ],
+                    "values": [
+                        {}
+                    ]
+                }
+            ]
         }
     ],
     "actions": [
