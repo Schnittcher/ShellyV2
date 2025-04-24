@@ -263,6 +263,9 @@ trait ShellyModels
         ],
         'S3GW-1DBT001' => [
             'Name'  => 'Shelly BLU Gateway Gen3',
+        ],
+        'S3PL-20112EU' => [
+            'Name'  => 'Shelly Outdoor Plug S Gen3',
         ]
     ];
 }
