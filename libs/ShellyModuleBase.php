@@ -123,10 +123,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $propertyChannel = @$this->ReadPropertyString('Channel');
                     $propertyComponent = @$this->ReadPropertyString('Component');
 
-                    IPS_LogMessage('propertyComponent', 'sdfsadf');
-                    IPS_LogMessage('propertyChannel', $propertyChannel);
-                    IPS_LogMessage('propertyComponent', $propertyComponent);
-
                     $this->createariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
                     $this->registerComponentVariables();
                 }
