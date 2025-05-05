@@ -274,7 +274,8 @@ trait Components
                 'name'         => 'Brightness',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-                    'SUFFIX'       => ' %'
+                    'SUFFIX'       => ' %',
+                    'USAGE_TYPE'   => 2
                 ],
                 'action'        => [
                     'method' => 'Light.Set',
@@ -387,7 +388,8 @@ trait Components
                 'name'         => 'RGB Brightness',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-                    'SUFFIX'       => ' %'
+                    'SUFFIX'       => ' %',
+                    'USAGE_TYPE'   => 2
                 ],
                 'action'        => [
                     'method' => 'RGB.Set',
@@ -496,7 +498,10 @@ trait Components
                 'type'         => VARIABLETYPE_INTEGER,
                 'name'         => 'CCT color temperature',
                 'presentation' => [
-                    'PRESENTATION' => VARIABLE_TEMPLATE_SLIDER_COLOR_TEMPERATURE,
+                    'PRESENTATION'  => VARIABLE_PRESENTATION_SLIDER,
+                    'GRADIENT_TYPE' => 2,
+                    'USAGE_TYPE'    => 1,
+                    'PERCENTAGE'    => false
                 ],
                 'action'        => [
                     'method' => 'CCT.Set',
@@ -509,7 +514,8 @@ trait Components
                 'name'         => 'CCT Brightness',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
-                    'SUFFIX'       => ' %'
+                    'SUFFIX'       => ' %',
+                    'USAGE_TYPE'   => 2
                 ],
                 'action'        => [
                     'method' => 'CCT.Set',

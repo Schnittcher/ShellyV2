@@ -30,6 +30,16 @@ trait ComponentDefinitionHelper
 
         return $keys;
     }
+
+    protected function componentDefinitionExists($component)
+    {
+        //IPS_LogMessage('test', $component);
+        if (array_key_exists($component, self::$components)) {
+            return true;
+        }
+        return false;
+    }
+
     protected function getValueByKeyPath(string $keyPath, string $separator = '.')
     {
         $keys = explode($separator, $keyPath);
@@ -97,12 +107,14 @@ trait ComponentDefinitionHelper
         } else {
             $cleanKey = $componentPath;
             $tempVar = '';
+            $base = explode('.', $componentPath)[0];
         }
 
         // ident = original mit . und : ersetzt durch _
         $ident = str_replace(['.', ':'], '_', $componentPath);
 
         return [
+            'base'     => $base,
             'original' => $componentPath,
             'clean'    => $cleanKey,
             'number'   => $tempVar,
