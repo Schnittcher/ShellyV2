@@ -68,12 +68,11 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                     }
 
                     $shellyComponents = $this->getComponents($Shelly['ID']);
-                    if ($shellyComponents != NULL) {
+                    if ($shellyComponents != null) {
                         $shellyComponents = json_decode($this->getComponents($Shelly['ID']), true);
                     } else {
                         $shellyComponents = [];
                     }
-                    
 
                     if (array_key_exists($Shelly['Model'], self::$shellyModels)) {
                         $DeviceType = self::$shellyModels[$Shelly['Model']]['Name'];
@@ -98,30 +97,32 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                         ]
                     ];
 
-                    foreach ($shellyComponents['result'] as $key => $shellyComponent) {
-                        $component = $this->cleanComponentPath($key)['clean'];
-                        $componentInstanceID = $this->getShellyComopnentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
-                        if ($this->componentDefinitionExists($component)) {
-                            $AddComponent = [
-                                'parent'                    => $idCount,
-                                'name'                      => $key,
-                                'MQTTTopic'                 => $key,
-                                'InstanceName'              => $this->getInstanceName($componentInstanceID),
-                                'DeviceType'                => '', //$DeviceType,
-                                'IPAddress'                 => '', //$Shelly['IP'],
-                                'Firmware'                  => '', //$Shelly['Firmware'],
-                                'instanceID'                => $componentInstanceID, //$instanceID,
-                                'create'                    => [
-                                    'moduleID'      => GUID_SHELLY_COMOPONENT_DEVICE,
-                                    'info'          => $Shelly['ID'],
-                                    'configuration' => [
-                                        'MQTTTopic' => $Shelly['ID'],
-                                        'Component' => $this->cleanComponentPath($key)['clean'],
-                                        'Channel'   => intval($this->cleanComponentPath($key)['number']),
+                    if (array_key_exists('result', $shellyComponents)) {
+                        foreach ($shellyComponents['result'] as $key => $shellyComponent) {
+                            $component = $this->cleanComponentPath($key)['clean'];
+                            $componentInstanceID = $this->getShellyComopnentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
+                            if ($this->componentDefinitionExists($component)) {
+                                $AddComponent = [
+                                    'parent'                    => $idCount,
+                                    'name'                      => $key,
+                                    'MQTTTopic'                 => $key,
+                                    'InstanceName'              => $this->getInstanceName($componentInstanceID),
+                                    'DeviceType'                => '', //$DeviceType,
+                                    'IPAddress'                 => '', //$Shelly['IP'],
+                                    'Firmware'                  => '', //$Shelly['Firmware'],
+                                    'instanceID'                => $componentInstanceID, //$instanceID,
+                                    'create'                    => [
+                                        'moduleID'      => GUID_SHELLY_COMOPONENT_DEVICE,
+                                        'info'          => $Shelly['ID'],
+                                        'configuration' => [
+                                            'MQTTTopic' => $Shelly['ID'],
+                                            'Component' => $this->cleanComponentPath($key)['clean'],
+                                            'Channel'   => intval($this->cleanComponentPath($key)['number']),
+                                        ]
                                     ]
-                                ]
-                            ];
-                            $Values[] = $AddComponent;
+                                ];
+                                $Values[] = $AddComponent;
+                            }
                         }
                     }
                 }
