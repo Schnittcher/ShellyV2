@@ -67,7 +67,13 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                         continue;
                     }
 
-                    $shellyComponents = json_decode($this->getComponents($Shelly['ID']), true);
+                    $shellyComponents = $this->getComponents($Shelly['ID']);
+                    if ($shellyComponents != NULL) {
+                        $shellyComponents = json_decode($this->getComponents($Shelly['ID']), true);
+                    } else {
+                        $shellyComponents = [];
+                    }
+                    
 
                     if (array_key_exists($Shelly['Model'], self::$shellyModels)) {
                         $DeviceType = self::$shellyModels[$Shelly['Model']]['Name'];
