@@ -120,7 +120,8 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     // Duplikate entfernen
                     $allComponentsFromShelly = array_unique($allComponentsFromShelly);
 
-                    $propertyChannel = @$this->ReadPropertyString('Channel');
+                    $propertyChannel = @$this->ReadPropertyInteger('Channel');
+                    IPS_LogMessage('test',$propertyChannel);
                     $propertyComponent = @$this->ReadPropertyString('Component');
 
                     $this->createariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
