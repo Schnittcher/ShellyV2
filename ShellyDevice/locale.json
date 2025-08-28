@@ -63,6 +63,8 @@
             "External power source": "Externe Stromquelle",
             "Debug: Missing Idents": "Debug: Fehlende Idents",
             "Specific features for shelly device": "Spezifische Funktionen für das Shelly-Gerät",
+            "Total active energy": "Gesamtwirkenergie",
+            "Total active returned energy": "Gesamtwirkenergie Einspeisung",
             "Reachable": "Erreichbar"
         }
     }

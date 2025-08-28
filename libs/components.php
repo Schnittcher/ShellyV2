@@ -39,6 +39,28 @@ trait Components
                 ],
             ],
         ],
+        'EM1Data' => [
+            'total_act_energy' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Total active energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
+            'total_act_ret_energy' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Total active returned energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
+        ],
         'em' => [
             'a_current' => [
                 'type'         => VARIABLETYPE_FLOAT,
@@ -352,7 +374,7 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kw/h'
+                        'SUFFIX'       => ' kwh'
                     ],
                 ],
             ],
