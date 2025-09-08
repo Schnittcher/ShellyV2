@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 require_once __DIR__ . '/../libs/ShellyModuleBase.php';
-require_once __DIR__ . '/../libs/notDefinedShellyComponents.php';
 
 //Die Ausnahme für Shellys, welche nicht korrekt definiert sind, wie zum Beispiel WaterValve, werden hier in dieser Datei fest hinterlegt
 
