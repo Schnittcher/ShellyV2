@@ -5,11 +5,8 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
 
 //Die Ausnahme für Shellys, welche nicht korrekt definiert sind, wie zum Beispiel WaterValve, werden hier in dieser Datei fest hinterlegt
 
-
     class ShellyDevice extends ShellyModuleBase
     {
-        use notDefinedComponents;
-
         public function Create()
         {
             parent::Create();
