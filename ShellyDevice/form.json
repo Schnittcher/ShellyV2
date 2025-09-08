@@ -91,6 +91,11 @@
                     ]
                 }
             ]
+        },
+                {
+            "type": "ValidationTextBox",
+            "name": "ModelID",
+            "caption": "Shelly Model"
         }
     ],
     "actions": [

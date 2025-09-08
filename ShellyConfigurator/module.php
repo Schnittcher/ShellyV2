@@ -60,6 +60,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             if (count($Shellies) > 0) {
                 $idCount++;
                 foreach ($Shellies as $key => $Shelly) {
+                    IPS_LogMessage('Array', print_r($Shelly, true));
                     $DeviceType = '';
                     $instanceID = $this->getShellyInstances($Shelly['ID']);
                     if ($Shelly['Model'] == '') {
@@ -86,6 +87,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                         'InstanceName'          => $this->getInstanceName($instanceID),
                         'DeviceType'            => $DeviceType,
                         'IPAddress'             => $Shelly['IP'],
+                        'App'                   => $Shelly['App'],
                         'Firmware'              => $Shelly['Firmware'],
                         'instanceID'            => $instanceID,
                         'create'                => [
@@ -93,6 +95,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                             'info'          => $Shelly['ID'],
                             'configuration' => [
                                 'MQTTTopic' => $Shelly['ID'],
+                                'ModelID'   => $Shelly['Model'],
                             ]
                         ]
                     ];
@@ -109,6 +112,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                                     'InstanceName'              => $this->getInstanceName($componentInstanceID),
                                     'DeviceType'                => '', //$DeviceType,
                                     'IPAddress'                 => '', //$Shelly['IP'],
+                                    'App'                       => '', //$Shelly['App'],
                                     'Firmware'                  => '', //$Shelly['Firmware'],
                                     'instanceID'                => $componentInstanceID, //$instanceID,
                                     'create'                    => [
@@ -200,6 +204,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                                 if (array_key_exists('gen', $Payload)) {
                                     $Shellies[$foundedKey]['Name'] = $Payload['name'];
                                     $Shellies[$foundedKey]['Firmware'] = $Payload['fw_id'];
+                                    $Shellies[$foundedKey]['App'] = $Payload['app'];
                                 } else {
                                     $Shellies[$foundedKey]['Firmware'] = $Payload['fw_ver'];
                                     $Shellies[$foundedKey]['IP'] = $Payload['ip'];
