@@ -140,6 +140,8 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
         {
             $Topic = $ShellyMQTTGTopic . '/rpc';
 
+            $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic, 0);
+
             $Payload['id'] = 1;
             $Payload['src'] = 'getComponentsConfigurator';
             $Payload['method'] = 'Shelly.GetStatus';
@@ -176,6 +178,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
 
         public function ReceiveData($JSONString)
         {
+            $this->SendDebug('JSONString', $JSONString, 0);
             $Buffer = json_decode($JSONString, true);
             $this->SendDebug('JSON', $Buffer, 0);
 
@@ -190,14 +193,23 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                     $this->SetBuffer('LastComponentResponse', $Buffer['Payload']);
                 }
 
-                if ($Buffer['Topic'] == 'shellies/announce') {
+                //if ($Buffer['Topic'] == 'shellies/announce') {
+                if (strpos($Buffer['Topic'], '/announce') !== false) {
                     $Shelly = [];
+
+                    $parts = explode('/announce', $Buffer['Topic'], 2);
+                    $MQTTTopic = $parts[0];
+
+                    if ($MQTTTopic == 'shellies') {
+                        return;
+                    }
 
                     $Payload = json_decode($Buffer['Payload'], true);
 
                     if (array_key_exists('gen', $Payload)) {
                         if ($Payload['gen'] >= 2) {
-                            $foundedKey = array_search($Payload['id'], array_column($Shellies, 'ID'));
+                            $foundedKey = array_search($MQTTTopic, array_column($Shellies, 'ID'));
+                            //$foundedKey = array_search($Payload['id'], array_column($Shellies, 'ID'));
                             if ($foundedKey !== false) {
                                 $Shellies[$foundedKey]['LastActivity'] = time();
                                 $Shellies[$foundedKey]['Model'] = (array_key_exists('model', $Payload)) ? ($Payload['model']) : '';
@@ -215,7 +227,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                             }
                             $Shelly = [];
                             $Shelly['Name'] = '-';
-                            $Shelly['ID'] = $Payload['id'];
+                            $Shelly['ID'] = $MQTTTopic; //$Payload['id'];
                             //$Shelly['Model'] = $Payload['model'];
                             $Shelly['Model'] = (array_key_exists('model', $Payload)) ? ($Payload['model']) : '';
                             $Shelly['MAC'] = $Payload['mac'];
