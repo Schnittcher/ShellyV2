@@ -127,7 +127,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $this->createariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
                     $this->registerComponentVariables();
                 }
-                if (fnmatch('*/events/rpc', $Buffer['Topic'])) {
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/events/rpc', $Buffer['Topic'])) {
                     if (array_key_exists('params', $Payload)) {
                         //Components vom Shelly Params Payload holen.
                         $components = $this->getArrayLeafKeyPaths($Payload['params']);
