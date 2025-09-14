@@ -70,7 +70,8 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
 
                     $shellyComponents = $this->getComponents($Shelly['ID']);
                     if ($shellyComponents != null) {
-                        $shellyComponents = json_decode($this->getComponents($Shelly['ID']), true);
+                        $shellyComponents = json_decode($shellyComponents, true);
+                    //$shellyComponents = json_decode($this->getComponents($Shelly['ID']), true);
                     } else {
                         $shellyComponents = [];
                     }
@@ -87,7 +88,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                         'InstanceName'          => $this->getInstanceName($instanceID),
                         'DeviceType'            => $DeviceType,
                         'IPAddress'             => $Shelly['IP'],
-                        'App'                   => $Shelly['App'],
+                        'App'                   => $Shelly['App'] ?? '',
                         'Firmware'              => $Shelly['Firmware'],
                         'instanceID'            => $instanceID,
                         'create'                => [
