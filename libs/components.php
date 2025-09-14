@@ -39,7 +39,7 @@ trait Components
                 ],
             ],
         ],
-        'EM1Data' => [
+        'em1data' => [
             'total_act_energy' => [
                 'type'         => VARIABLETYPE_FLOAT,
                 'name'         => 'Total active energy',
