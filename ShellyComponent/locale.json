@@ -63,7 +63,9 @@
             "External power source": "Externe Stromquelle",
             "Debug: Missing Idents": "Debug: Fehlende Idents",
             "Specific features for shelly device": "Spezifische Funktionen für das Shelly-Gerät",
-            "Reachable": "Erreichbar"
+            "Reachable": "Erreichbar",
+            "Alarm": "Alarm",
+            "No alarm": "Kein Alarm"
         }
     }
 }

@@ -39,6 +39,34 @@ trait Components
                 ],
             ],
         ],
+        'flood' => [
+            'alarm' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Alarm',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'ICON'         => 'Alert',
+                    'OPTIONS'      => '[
+                        {
+                            "Value": true,
+                            "Caption": "Alarm",
+                            "IconActive": false,
+                            "Icon": "",
+                            "ColorActive": true,
+                            "Color": 65280
+                        },
+                        {
+                            "Value": false,
+                            "Caption": "No alarm",
+                            "IconActive": false,
+                            "Icon": "",
+                            "ColorActive": true,
+                            "Color": 16711680
+                        }
+                    ]',
+                ],
+            ]
+        ],
         'em1data' => [
             'total_act_energy' => [
                 'type'         => VARIABLETYPE_FLOAT,
