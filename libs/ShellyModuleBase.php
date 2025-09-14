@@ -113,7 +113,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         $this->zeroingValues();
                     }
                 }
-                if (fnmatch('getComponents/rpc', $Buffer['Topic'])) {
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic'])) {
                     $tmpComponents = $Payload['result'];
                     $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
 
@@ -121,7 +121,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $allComponentsFromShelly = array_unique($allComponentsFromShelly);
 
                     $propertyChannel = @$this->ReadPropertyInteger('Channel');
-                    IPS_LogMessage('test',$propertyChannel);
+                    IPS_LogMessage('test', $propertyChannel);
                     $propertyComponent = @$this->ReadPropertyString('Component');
 
                     $this->createariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
@@ -168,9 +168,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
 
             $Payload['id'] = 1;
-            $Payload['src'] = 'getComponents';
+            $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponents';
             $Payload['method'] = 'Shelly.GetStatus';
-            $this->sendMQTT($Topic, json_encode($Payload));
+            $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
         }
 
         public function callRPCFunction($method, $params)
