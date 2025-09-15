@@ -1057,7 +1057,7 @@ trait Components
                         'SUFFIX'       => ' V',
                     ],
                 ],
-                'percet' => [
+                'percent' => [
                     'type'         => VARIABLETYPE_INTEGER,
                     'name'         => 'Battery status',
                     'presentation' => [
