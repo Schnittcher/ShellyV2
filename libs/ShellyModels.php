@@ -266,6 +266,12 @@ trait ShellyModels
         ],
         'S3PL-20112EU' => [
             'Name'  => 'Shelly Outdoor Plug S Gen3',
+        ],
+        'S3EM-003CXCEU63' => [
+            'Name' => 'Shelly 3EM-63W Gen3'
+        ],
+        'S3EM-002CXCEU' => [
+            'Name' => 'Shelly EM Gen3'
         ]
     ];
 }

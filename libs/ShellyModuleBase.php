@@ -121,8 +121,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $allComponentsFromShelly = array_unique($allComponentsFromShelly);
 
                     $propertyChannel = @$this->ReadPropertyInteger('Channel');
-                    IPS_LogMessage('test', $propertyChannel);
+                    IPS_LogMessage('test', $this->InstanceID . ' ' . $propertyChannel);
                     $propertyComponent = @$this->ReadPropertyString('Component');
+                    IPS_LogMessage('test', $this->InstanceID . ' ' . $propertyComponent);
 
                     $this->createariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
                     $this->registerComponentVariables();
@@ -295,7 +296,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         $name = $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'];
                     }
 
-                    if (($componentsFromShellyResult['base'] == $component && $componentsFromShellyResult['number'] == $channel) || $component == '' && $channel == '') {
+                    if (($componentsFromShellyResult['base'] == $component && $componentsFromShellyResult['number'] == $channel) || $componentsFromShellyResult['base'] == $component && $componentsFromShellyResult['number'] == '' || $component == '' && $channel == '') {
                         $variableList[] = [
                             'Name'                        => $this->Translate($name),
                             'Ident'                       => $componentsFromShellyResult['ident'],

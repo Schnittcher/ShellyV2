@@ -13,6 +13,31 @@ trait Components
                 ],
             ],
         ],
+        'eth' => [
+            'ip' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Ethernet IP-Address',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
+        'wifi' => [
+            'sta_ip' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Wifi IP-Address',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'ssid' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Wifi SSID',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
         /**         'modbus' => [
          * 'enabled' => [
          * 'type'         => VARIABLETYPE_BOOLEAN,
@@ -65,7 +90,101 @@ trait Components
                         }
                     ]',
                 ],
-            ]
+            ],
+            'mute' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Mute',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'Flood.Mute',
+                    'params' => ['id' => ''
+                    ]
+                ],
+            ],
+        ],
+        'emdata' => [
+            'a_total_act_energy' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Phase A total active energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
+            'a_total_act_ret_energy' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Phase A total active returned energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
+            'a_total_act_energy' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Phase B total active energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
+            'b_total_act_ret_energy' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Phase B total active returned energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
+            'c_total_act_energy' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Phase C total active energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
+            'c_total_act_ret_energy' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Phase C total active returned energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
+            'total_act' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Total active energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
+            'total_act_ret' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Total active returned energy',
+                'factor'       => 0.001,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'writable' => false
+            ],
         ],
         'em1data' => [
             'total_act_energy' => [
@@ -1003,6 +1122,16 @@ trait Components
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                         'SUFFIX'       => ' kw/h'
+                    ],
+                ],
+            ],
+            'temperature' => [
+                'tC' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Temperature',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' °C'
                     ],
                 ],
             ],
