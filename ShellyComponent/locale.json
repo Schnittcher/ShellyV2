@@ -63,9 +63,20 @@
             "External power source": "Externe Stromquelle",
             "Debug: Missing Idents": "Debug: Fehlende Idents",
             "Specific features for shelly device": "Spezifische Funktionen für das Shelly-Gerät",
+            "Total active energy": "Gesamtwirkenergie",
+            "Total active returned energy": "Gesamtwirkenergie Einspeisung",
+            "Phase A total active energy": "Phase A Gesamtwirkenergie",
+            "Phase B total active energy": "Phase B Gesamtwirkenergie",
+            "Phase C total active energy": "Phase C Gesamtwirkenergie",
+            "Phase A total active returned energy": "Phase A Gesamtwirkenergie Einspeisung",
+            "Phase B total active returned energy": "Phase B Gesamtwirkenergie Einspeisung",
+            "Phase C total active returned energy": "Phase C Gesamtwirkenergie Einspeisung",
             "Reachable": "Erreichbar",
             "Alarm": "Alarm",
-            "No alarm": "Kein Alarm"
+            "No alarm": "Kein Alarm",
+            "Ethernet IP-Address": "Ethernet IP-Adresse",
+            "Wifi SSID" :"Wifi SSID",
+            "Wifi IP-Address" :"Wifi IP-Adresse"
         }
     }
 }

@@ -125,7 +125,7 @@ trait Components
                 ],
                 'writable' => false
             ],
-            'a_total_act_energy' => [
+            'b_total_act_energy' => [
                 'type'         => VARIABLETYPE_FLOAT,
                 'name'         => 'Phase B total active energy',
                 'factor'       => 0.001,
