@@ -121,9 +121,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $allComponentsFromShelly = array_unique($allComponentsFromShelly);
 
                     $propertyChannel = @$this->ReadPropertyInteger('Channel');
-                    IPS_LogMessage('test', $this->InstanceID . ' ' . $propertyChannel);
+                    //IPS_LogMessage('test', $this->InstanceID . ' ' . $propertyChannel);
                     $propertyComponent = @$this->ReadPropertyString('Component');
-                    IPS_LogMessage('test', $this->InstanceID . ' ' . $propertyComponent);
+                    //IPS_LogMessage('test', $this->InstanceID . ' ' . $propertyComponent);
 
                     $this->createariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
                     $this->registerComponentVariables();
