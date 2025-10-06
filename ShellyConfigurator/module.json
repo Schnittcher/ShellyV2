@@ -3,7 +3,7 @@
     "name": "ShellyConfigurator",
     "type": 4,
     "vendor": "Shelly",
-    "aliases": ["Shelly Konfigurator Neu"],
+    "aliases": ["Shelly Konfigurator Neu V2"],
     "parentRequirements": [
         "{043EA491-0325-4ADD-8FC2-A30C8EEB4D3F}"
     ],
