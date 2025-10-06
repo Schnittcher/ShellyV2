@@ -645,7 +645,7 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kw/h'
+                        'SUFFIX'       => ' kWh'
                     ],
                 ],
             ],
@@ -761,7 +761,7 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kw/h'
+                        'SUFFIX'       => ' kWh'
                     ],
                 ],
             ],
@@ -835,7 +835,7 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kw/h'
+                        'SUFFIX'       => ' kWh'
                     ],
                 ],
             ],
@@ -846,7 +846,7 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kw/h'
+                        'SUFFIX'       => ' kWh'
                     ],
                 ],
             ],
@@ -879,7 +879,7 @@ trait Components
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Current in Amperes',
+                'name'         => 'Current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -924,7 +924,7 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kw/h'
+                        'SUFFIX'       => ' kWh'
                     ],
                 ],
             ],
@@ -935,7 +935,7 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kw/h'
+                        'SUFFIX'       => ' kWh'
                     ],
                 ],
             ],
@@ -1121,7 +1121,7 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kw/h'
+                        'SUFFIX'       => ' kWh'
                     ],
                 ],
             ],
