@@ -131,6 +131,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     if (array_key_exists('result', $Payload)) {
                         $this->parsePayloadIntoVariables($Payload['result']);
                     }
+
+                    //Shelly muss online sein, da es sonst keine Antwort gegeben hatte, deswegen die Variable auf true setzen.
+                    $this->SetValue('Reachable', true);
                 }
                 if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/events/rpc', $Buffer['Topic'])) {
                     if (array_key_exists('params', $Payload)) {
