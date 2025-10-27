@@ -183,6 +183,15 @@ trait ShellyModels
         'S3SW-002P16EU' => [
             'Name'  => 'Shelly 2PM Gen3',
         ],
+        'S3SW-0A1X1EUL' => [
+            'Name'  => ' Shelly 1L Gen3',
+        ],
+        'S3SW-0A2X4EUL' => [
+            'Name'  => ' Shelly 2L Gen3',
+        ],
+        'S3SH-0A2P4EU' => [
+            'Name'  => ' Shelly Shutter Gen 3',
+        ],
         'S3PL-00112EU' => [
             'Name'  => 'Shelly Plug S MTR Gen3',
         ],
@@ -199,6 +208,9 @@ trait ShellyModels
             'Name'  => 'Shelly Pro 1 v.1',
         ],
         'SPSW-001PE16EU' => [
+            'Name'  => 'Shelly Pro 1PM',
+        ],
+        'SPSW-201PE15UL' => [
             'Name'  => 'Shelly Pro 1PM',
         ],
         'SPSW-201PE16EU' => [
@@ -255,6 +267,13 @@ trait ShellyModels
         'SPDM-002PE01EU' => [
             'Name'  => 'Shelly Pro Dimmer 2PM',
         ],
+        'SPCC-001PE10EU' => [
+            'Name'  => 'Shelly Pro Dimmer 0/1-10V PM',
+        ],
+        'SPDC-0D5PE16EU' => [
+            'Name'  => 'Shelly Pro RGBWW PM',
+        ],
+
         'SNSN-0043X' => [
             'Name'  => 'Shelly Plus Uni',
         ],
@@ -272,6 +291,36 @@ trait ShellyModels
         ],
         'S3EM-002CXCEU' => [
             'Name' => 'Shelly EM Gen3'
-        ]
+        ],
+        'S3EM-002CXCEU' => [
+            'Name' => 'Shelly EM Gen3'
+        ],
+        'S4SW-001X16EU' => [
+            'Name' => 'Shelly 1 Gen4'
+        ],
+        'S4SW-001P16EU' => [
+            'Name' => 'Shelly 1PM Gen4'
+        ],
+        'S4PL-00416EU' => [
+            'Name' => 'Shelly Power Strip 4 Gen4'
+        ],
+        'S4SW-002P16EU' => [
+            'Name' => 'Shelly 2PM Gen4'
+        ],
+        'S4SN-0071A' => [
+            'Name' => 'Shelly Flood Gen4'
+        ],
+        'S4SW-001X8EU' => [
+            'Name' => 'Shelly 1 Mini Gen4'
+        ],
+        'S4SW-001P8EU' => [
+            'Name' => 'Shelly 1PM Mini Gen4'
+        ],
+        'S4EM-001PXCEU16' => [
+            'Name' => 'Shelly EM Mini Gen4'
+        ],
+        'S4PL-00116US' => [
+            'Name' => 'Shelly Plug US Gen4'
+        ],
     ];
 }
