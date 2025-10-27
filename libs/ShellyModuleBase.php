@@ -127,39 +127,47 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
                     $this->createariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
                     $this->registerComponentVariables();
+
+                    if (array_key_exists('result', $Payload)) {
+                        $this->parsePayloadIntoVariables($Payload['result']);
+                    }
                 }
                 if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/events/rpc', $Buffer['Topic'])) {
                     if (array_key_exists('params', $Payload)) {
-                        //Components vom Shelly Params Payload holen.
-                        $components = $this->getArrayLeafKeyPaths($Payload['params']);
-                        foreach ($components as $key => $component) {
-                            //Clean Path holen
-                            $componentsFromShellyResult = $this->cleanComponentPath($component);
-                            //Mit clean keypath Value vom self::components array holen
-                            $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
-
-                            //Value vom Params array holen mit dem originalen keypath
-                            $value = $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']);
-                            //ggf. umrechnung druchführen
-                            if ($tmpComponent != null) {
-                                if (array_key_exists('factor', $tmpComponent)) {
-                                    $this->SendDebug('Factor calculation', 'Factor: ' . $tmpComponent['factor'], 0);
-                                    $value = $value * $tmpComponent['factor'];
-                                }
-                            }
-
-                            //Ausnahme RGB
-                            if ($componentsFromShellyResult['clean'] == 'rgb.rgb.0') {
-                                $value = json_encode([
-                                    'r' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][0],
-                                    'g' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][1],
-                                    'b' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][2]
-                                ]);
-                            }
-
-                            $this->SetValue($componentsFromShellyResult['ident'], $value);
-                        }
+                        $this->parsePayloadIntoVariables($Payload['params']);
                     }
+
+                    /**
+                     * //Components vom Shelly Params Payload holen.
+                     * $components = $this->getArrayLeafKeyPaths($Payload['params']);
+                     * foreach ($components as $key => $component) {
+                     * //Clean Path holen
+                     * $componentsFromShellyResult = $this->cleanComponentPath($component);
+                     * //Mit clean keypath Value vom self::components array holen
+                     * $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
+                     *
+                     * //Value vom Params array holen mit dem originalen keypath
+                     * $value = $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']);
+                     * //ggf. umrechnung druchführen
+                     * if ($tmpComponent != null) {
+                     * if (array_key_exists('factor', $tmpComponent)) {
+                     * $this->SendDebug('Factor calculation', 'Factor: ' . $tmpComponent['factor'], 0);
+                     * $value = $value * $tmpComponent['factor'];
+                     * }
+                     * }
+                     *
+                     * //Ausnahme RGB
+                     * if ($componentsFromShellyResult['clean'] == 'rgb.rgb.0') {
+                     * $value = json_encode([
+                     * 'r' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][0],
+                     * 'g' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][1],
+                     * 'b' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][2]
+                     * ]);
+                     * }
+                     *
+                     * $this->SetValue($componentsFromShellyResult['ident'], $value);
+                     * }
+                     */
                 }
             }
         }
@@ -182,6 +190,18 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $Payload['src'] = 'user_1';
             $Payload['method'] = $method;
             $Payload['params'] = $params;
+
+            $this->sendMQTT($Topic, json_encode($Payload));
+        }
+
+        public function callRPCGetStatus()
+        {
+            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
+
+            $Payload['id'] = 1;
+            $Payload['src'] = 'user_1';
+            $Payload['method'] = 'Shelly.GetStatus';
+            $Payload['params'] = '';
 
             $this->sendMQTT($Topic, json_encode($Payload));
         }
@@ -221,6 +241,39 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             break;
                     }
                 }
+            }
+        }
+
+        private function parsePayloadIntoVariables($Payload)
+        {
+            //Components vom Shelly Params Payload holen.
+            $components = $this->getArrayLeafKeyPaths($Payload);
+            foreach ($components as $key => $component) {
+                //Clean Path holen
+                $componentsFromShellyResult = $this->cleanComponentPath($component);
+                //Mit clean keypath Value vom self::components array holen
+                $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
+
+                //Value vom Params array holen mit dem originalen keypath
+                $value = $this->getValueByKeyPathFromArray($Payload, $componentsFromShellyResult['original']);
+                //ggf. umrechnung druchführen
+                if ($tmpComponent != null) {
+                    if (array_key_exists('factor', $tmpComponent)) {
+                        $this->SendDebug('Factor calculation', 'Factor: ' . $tmpComponent['factor'], 0);
+                        $value = $value * $tmpComponent['factor'];
+                    }
+                }
+
+                //Ausnahme RGB
+                if ($componentsFromShellyResult['clean'] == 'rgb.rgb.0') {
+                    $value = json_encode([
+                        'r' => $Payload['rgb:' . $componentsFromShellyResult['number']]['rgb'][0],
+                        'g' => $Payload['rgb:' . $componentsFromShellyResult['number']]['rgb'][1],
+                        'b' => $Payload['rgb:' . $componentsFromShellyResult['number']]['rgb'][2]
+                    ]);
+                }
+
+                $this->SetValue($componentsFromShellyResult['ident'], $value);
             }
         }
 
