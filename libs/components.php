@@ -1075,6 +1075,28 @@ trait Components
                     ],
                 ],
             ],
+            'current_pos' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Current Position',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                    'ICON'         => 'Shutter',
+                    'SUFFIX'       => ' %',
+                ],
+                'actionWithExtraVariable' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'Position State',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_SHUTTER,
+                        'ICON'         => 'Shutter',
+                    ],
+                    'action'        => [
+                        'method' => 'Cover.GoToPosition',
+                        'params' => ['id' => ''
+                        ]
+                    ],
+                ],
+            ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
                 'name'         => 'Active power',
