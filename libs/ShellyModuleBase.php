@@ -216,6 +216,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 parent::SetValue($Ident, $Value);
             } else {
                 if ($this->ReadPropertyBoolean('DebugMissingIdents')) {
+                    if (is_array($Value)) {
+                        $Value = json_encode($Value);
+                    }
                     $this->SendDebug('Missing Ident :: Value', $Ident . ' :: ' . $Value, 0);
                 }
             }
