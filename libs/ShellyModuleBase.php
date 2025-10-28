@@ -227,11 +227,15 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         //Alle Werte auf 0, false oder leer setzen, wenn die Funktion zeroing bei den Variablen aktiv geschaltet wurde
         protected function zeroingValues()
         {
-            $Variables = json_decode($this->GetBuffer('variableList'), true);
+            //$Variables = json_decode($this->GetBuffer('variableList'), true);
+            $Variables = json_decode($this->ReadPropertyString('VariableList'), true);
 
             foreach ($Variables as $key => $variable) {
+                //Um Herauszufinden um welchen Variablentyp es sich hier handelt
+                $Component = $this->getValueByKeyPath($variable['CleanKeyPath']);
+                IPS_LogMessage('Component', print_r($Component, true));
                 if ($variable['Zeroing']) {
-                    switch ($variable['VarType']) {
+                    switch ($Component['type']) {
                         case VARIABLETYPE_BOOLEAN:
                             $this->SetValue($variable['Ident'], false);
                             break;
