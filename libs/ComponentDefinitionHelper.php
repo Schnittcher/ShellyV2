@@ -84,7 +84,7 @@ trait ComponentDefinitionHelper
 
         foreach ($exceptions as $exception) {
             // Prüfen, ob der String mit einer der Endungen endet
-            if (str_ends_with($input, $ending)) {
+            if (str_ends_with($input, $exception)) {
                 // Ersetze alle Unterstriche vor der Endung durch Punkte
                 $pattern = '/_(?=[^_]*' . preg_quote($exception, '/') . '$)/';
                 $input = preg_replace($pattern, '.', $input);
