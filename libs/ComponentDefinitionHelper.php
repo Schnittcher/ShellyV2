@@ -78,9 +78,20 @@ trait ComponentDefinitionHelper
 
     protected function convertIdentToKeyPath($input)
     {
-        $parts = explode('_', $input);
         $number = null;
+        //Außnahmen: Bei dem der Unterstrich nicht gegen einen Punkt ersetzt werden darf
+        $exceptions = ['current_pos'];
 
+        foreach ($endings as $ending) {
+            // Prüfen, ob der String mit einer der Endungen endet
+            if (str_ends_with($input, $ending)) {
+                // Ersetze alle Unterstriche vor der Endung durch Punkte
+                $pattern = '/_(?=[^_]*' . preg_quote($ending, '/') . '$)/';
+                $input = preg_replace($pattern, '.', $input);
+            }
+        }
+
+        $parts = explode('_', $input);
         // Prüfen, ob an zweiter Stelle eine Zahl ist
         if (isset($parts[1]) && is_numeric($parts[1])) {
             $number = $parts[1]; // Zahl merken
