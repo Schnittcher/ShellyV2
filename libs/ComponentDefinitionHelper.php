@@ -88,21 +88,27 @@ trait ComponentDefinitionHelper
                 // Splitte String an der ersten Vorkommen der Endung
                 $parts = explode($ending, $input, 2);
                 $before = $parts[0]; // Alles vor der Endung
-            $after = $ending . ($parts[1] ?? ''); // Endung + Rest
+                $after = $ending . ($parts[1] ?? ''); // Endung + Rest
 
-            // Ersetze ALLE Unterstriche im "before"-Teil durch Punkte
+                // Ersetze ALLE Unterstriche im "before"-Teil durch Punkte
                 $before = str_replace('_', '.', rtrim($before, '_'));
 
                 // Ergebnis zusammensetzen
                 $input = $before . '.' . $after;
+                $parts = explode('.', $input);
+                // Prüfen, ob an zweiter Stelle eine Zahl ist
+                if (isset($parts[1]) && is_numeric($parts[1])) {
+                    $number = $parts[1]; // Zahl merken
+                    unset($parts[1]);    // Zahl entfernen
+                }
+            } else {
+                $parts = explode('_', $input);
+                // Prüfen, ob an zweiter Stelle eine Zahl ist
+                if (isset($parts[1]) && is_numeric($parts[1])) {
+                    $number = $parts[1]; // Zahl merken
+                    unset($parts[1]);    // Zahl entfernen
+                }
             }
-        }
-
-        $parts = explode('.', $input);
-        // Prüfen, ob an zweiter Stelle eine Zahl ist
-        if (isset($parts[1]) && is_numeric($parts[1])) {
-            $number = $parts[1]; // Zahl merken
-            unset($parts[1]);    // Zahl entfernen
         }
 
         // Neu zusammensetzen mit Punkten
