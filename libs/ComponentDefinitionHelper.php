@@ -79,14 +79,14 @@ trait ComponentDefinitionHelper
     protected function convertIdentToKeyPath($input)
     {
         $number = null;
-        //Außnahmen: Bei dem der Unterstrich nicht gegen einen Punkt ersetzt werden darf
+        //Ausnahmen: Bei dem der Unterstrich nicht gegen einen Punkt ersetzt werden darf
         $exceptions = ['current_pos'];
 
-        foreach ($endings as $ending) {
+        foreach ($exceptions as $exception) {
             // Prüfen, ob der String mit einer der Endungen endet
             if (str_ends_with($input, $ending)) {
                 // Ersetze alle Unterstriche vor der Endung durch Punkte
-                $pattern = '/_(?=[^_]*' . preg_quote($ending, '/') . '$)/';
+                $pattern = '/_(?=[^_]*' . preg_quote($exception, '/') . '$)/';
                 $input = preg_replace($pattern, '.', $input);
             }
         }
