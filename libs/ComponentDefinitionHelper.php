@@ -82,16 +82,23 @@ trait ComponentDefinitionHelper
         //Ausnahmen: Bei dem der Unterstrich nicht gegen einen Punkt ersetzt werden darf
         $exceptions = ['current_pos'];
 
-        foreach ($exceptions as $exception) {
-            // Prüfen, ob der String mit einer der Endungen endet
-            if (str_ends_with($input, $exception)) {
-                // Ersetze alle Unterstriche vor der Endung durch Punkte
-                $pattern = '/_(?=[^_]*' . preg_quote($exception, '/') . '$)/';
-                $input = preg_replace($pattern, '.', $input);
+        foreach ($exceptions as $ending) {
+            // Prüfen, ob die Endung im String vorkommt
+            if (str_contains($input, $ending)) {
+                // Splitte String an der ersten Vorkommen der Endung
+                $parts = explode($ending, $input, 2);
+                $before = $parts[0]; // Alles vor der Endung
+            $after = $ending . ($parts[1] ?? ''); // Endung + Rest
+
+            // Ersetze ALLE Unterstriche im "before"-Teil durch Punkte
+                $before = str_replace('_', '.', rtrim($before, '_'));
+
+                // Ergebnis zusammensetzen
+                $input = $before . '.' . $after;
             }
         }
 
-        $parts = explode('_', $input);
+        $parts = explode('.', $input);
         // Prüfen, ob an zweiter Stelle eine Zahl ist
         if (isset($parts[1]) && is_numeric($parts[1])) {
             $number = $parts[1]; // Zahl merken
