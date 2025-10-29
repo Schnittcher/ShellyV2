@@ -1070,7 +1070,7 @@ trait Components
                     'action'        => [
                         'list'   => true,
                         'method' => 'Cover.',
-                        'params' => ['id' => ''
+                        'params' => ['id' => '','pos' => ''
                         ]
                     ],
                 ],
