@@ -74,9 +74,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $IdentKeyPath = $this->convertIdentToKeyPath($Ident);
             $tmpComponents = $this->getValueByKeyPath($IdentKeyPath[0]);
 
-            IPS_LogMessage('Ident', $Ident);
-            IPS_LogMessage('IdentKeyPath', print_r($IdentKeyPath, true));
-            IPS_LogMessage('tmpComponents', print_r($tmpComponents, true));
             if (strpos($originalIdent, 'ExtraAction') !== false) {
                 if (array_key_exists('actionWithExtraVariable', $tmpComponents)) {
                     $tmpComponents = $tmpComponents['actionWithExtraVariable'];
