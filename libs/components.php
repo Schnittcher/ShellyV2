@@ -1076,7 +1076,7 @@ trait Components
                 ],
             ],
             'current_pos' => [
-                'type'         => VARIABLETYPE_STRING,
+                'type'         => VARIABLETYPE_INTEGER,
                 'name'         => 'Current Position',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
@@ -1084,7 +1084,7 @@ trait Components
                     'SUFFIX'       => ' %',
                 ],
                 'actionWithExtraVariable' => [
-                    'type'         => VARIABLETYPE_STRING,
+                    'type'         => VARIABLETYPE_INTEGER,
                     'name'         => 'Position State',
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_SHUTTER,
