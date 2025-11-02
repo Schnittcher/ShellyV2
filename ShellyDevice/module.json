@@ -3,7 +3,10 @@
     "name": "ShellyDevice",
     "type": 3,
     "vendor": "Shelly",
-    "aliases": [],
+    "aliases": [
+        "Shelly Gerät (Gen2+)",
+        "Shelly Device (Gen2+)"
+    ],
     "parentRequirements": [
         "{043EA491-0325-4ADD-8FC2-A30C8EEB4D3F}"
     ],
