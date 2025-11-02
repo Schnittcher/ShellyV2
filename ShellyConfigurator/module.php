@@ -36,6 +36,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
         {
             //Never delete this line!
             parent::ApplyChanges();
+            $this->SetReceiveDataFilter('.*(getComponentsConfigurator/rpc|/announce).*');
         }
 
         public function GetConfigurationForm()
