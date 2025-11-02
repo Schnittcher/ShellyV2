@@ -33,14 +33,15 @@
                     "width": "250px"
                 },
                 {
-                    "caption": "IP Address",
+                    "caption": "IP-Address",
                     "name": "IPAddress",
-                    "width": "250px"
+                    "width": "250px",
+                    "visible": false
                 },
                 {
                     "caption": "App",
                     "name": "App",
-                    "width": "100px"
+                    "width": "150px"
                 },
                 {
                     "caption": "Firmware",

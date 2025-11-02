@@ -10,23 +10,22 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
             parent::Create();
             $this->RegisterPropertyString('Component', '');
             $this->RegisterPropertyInteger('Channel', 0);
-       }
+        }
 
-       public function GetConfigurationForm()
-       {
-           $reflector = new ReflectionClass($this);
-           $Form = json_decode(file_get_contents(dirname($reflector->getFileName()) . '/form.json'), true);
+        public function GetConfigurationForm()
+        {
+            $reflector = new ReflectionClass($this);
+            $Form = json_decode(file_get_contents(dirname($reflector->getFileName()) . '/form.json'), true);
 
-           $Form['elements'][4]['items'][0]['values'] = json_decode($this->GetBuffer('variableList'), true);
+            $Form['elements'][4]['values'] = json_decode($this->GetBuffer('variableList'), true);
 
-           return json_encode($Form);
-       }
+            return json_encode($Form);
+        }
 
-       public function ApplyChanges()
-       {
-           //Never delete this line!
-           parent::ApplyChanges();
-       }
-   }
-
+        public function ApplyChanges()
+        {
+            //Never delete this line!
+            parent::ApplyChanges();
+        }
+    }
 

@@ -1,61 +1,61 @@
-# ShellyDevice
-Diese Instanz legt alle passenden Variablen für das Shelly an.
+# ShellyComponent
+Mit dieser Instanz kann eine Komponente einzeln angelegt werden.
+Idealerweise wird dies über den Konfigurator getan, dann wird die gesamte Konfiguration der Instanz korrekt ausgefüllt.    
 
-### Inhaltsverzeichnis
+## Inhaltverzeichnis
+- [ShellyComponent](#shellycomponent)
+  - [Inhaltverzeichnis](#inhaltverzeichnis)
+  - [1. Konfiguration](#1-konfiguration)
+  - [2. Funktionen](#2-funktionen)
+  - [3. Spenden](#3-spenden)
+  - [4. Lizenz](#4-lizenz)
 
-- [ShellyDevice](#shellydevice)
-    - [Inhaltsverzeichnis](#inhaltsverzeichnis)
-    - [1. Funktionsumfang](#1-funktionsumfang)
-    - [2. Voraussetzungen](#2-voraussetzungen)
-    - [3. Software-Installation](#3-software-installation)
-    - [4. Einrichten der Instanzen in IP-Symcon](#4-einrichten-der-instanzen-in-ip-symcon)
-    - [5. Statusvariablen und Profile](#5-statusvariablen-und-profile)
-    - [6. Visualisierung](#6-visualisierung)
-    - [7. PHP-Befehlsreferenz](#7-php-befehlsreferenz)
+## 1. Konfiguration
 
-### 1. Funktionsumfang
+Feld | Beschreibung
+------------ | ----------------
+MQTT Topic | Hier wird das Topic des Geräte hinterlegt-
+Komponente      | Hier wird die Komponente hinterlegt, für welche diese Instanz gelten soll. zum Beispiel switch
+Kanal      | Hier wird der Kanal hinterlegt, für welchen diese Instanz gelten soll. zum Beispiel 0 wenn es sich um die Komponente switch:0 handelt.
+Debug: Fehlende Idents     | Mit diesem Schalter können im Debug mehr Daten angezeigt werden, dies kann nützlich sein, wenn Variablen fehlen und das Debug im Forum gepostet werden soll.
+Variablen | In dieser Liste kann ausgewählt werden, ob die Variablen angezeigt werden sollen, ebenfalls gibt es die Möglichkeit die Funktion "Zeroing" zu aktivieren. Durch das Aktivieren der Funktion wird die Variable zurückgesetzt, wenn das Gerät offline ist.
 
-* Erstellt alle Variablen in Symcon und bietet die Funktionalität des Shellies.
+## 2. Funktionen
 
-### 2. Voraussetzungen
+`RequestAction($VariablenID, $Value);`
+Mit dieser Funktion können alle Aktionen einer Variable ausgelöst werden.
 
-- IP-Symcon ab Version 8.1
+**Beispiel:**
 
-### 3. Software-Installation
+Variable ID Status 1 = 12345
 
-* Über den Module Store (Testing Version)
+```php
+RequestAction(12345, true);  //Status 1 Einschalten;
+RequestAction(12345, false); //Status 1 Ausschalten;
+```
 
-### 4. Einrichten der Instanzen in IP-Symcon
+`boolean SHY_callRPCFunction(integer $InstanzID, string $method, array $params);`
+Mit dieser Funktion können als RPC Funktionen von den Shellies ausgeführt werden.
+Die RPC Funktionen können in der API Beschreibung der Shellies gefunden werden: https://shelly-api-docs.shelly.cloud/gen2/
 
- Unter 'Instanz hinzufügen' kann das 'ShellyDevice'-Modul mithilfe des Schnellfilters gefunden werden.  
-	- Weitere Informationen zum Hinzufügen von Instanzen in der [Dokumentation der Instanzen](https://www.symcon.de/service/dokumentation/konzepte/instanzen/#Instanz_hinzufügen)
-
-__Konfigurationsseite__:
-
-Name     | Beschreibung
--------- | ------------------
-MQTT Topic         | Hier wird das MQTT Topic des Shellies eingetragen.
-Debug: Fehlende Idents         | Wenn diese Checkbox aktiviert ist, werden mehr Debug Informationen im Debug Fenster angezeigt.
-
-### 5. Statusvariablen und Profile
-
-Die Statusvariablen/Kategorien werden automatisch angelegt. Das Löschen einzelner kann zu Fehlfunktionen führen.
-
-### 6. Visualisierung
-
-Die Funktionalität, die das Modul in der Visualisierung bietet.
-
-### 7. PHP-Befehlsreferenz
+**Beispiel:**
+```php
+$params = ['id' => 0, 'on' => true]; //Parameter um den Kanal 0 des Gerätes einzuschalten
+SHY_callRPCFunction(integer 12345, string 'Switch.Set', $params);
+```
 
 `boolean SHY_getComponents(integer $InstanzID);`
 Ruft alle Components / Services ab und legt dazu die Variablen an, diese Funktion wird automatisch beim Speichern der Instanz aufgerufen.
+Diese Funktion kann ebenfalls dazu genutzt werden, um den Status der Variablen manuell abzufragen.
 
 Beispiel:
 `SHY_getComponents(12345);`
 
-`boolean SHY_callRPCFunction(integer $InstanzID, string $method, array $params);`
-Mit diesr Funktion können als RPC Funktionen von den Shellies ausgeführt werden.
-Die RPC Funktionen können in der API Beschreibung der Shellies gefunden werden: https://shelly-api-docs.shelly.cloud/gen2/
+## 3. Spenden
+Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:    
 
-Beispiel:
-`SHY_callRPCFunction(12345, 'Switch.Set, ['id' => 0, 'on'=> true]);`
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=EK4JRP87XLSHW" target="_blank"><img src="https://www.paypalobjects.com/de_DE/DE/i/btn/btn_donate_LG.gif" border="0" /></a> <a href="https://www.amazon.de/hz/wishlist/ls/3JVWED9SZMDPK?ref_=wl_share" target="_blank">Amazon Wunschzettel</a>
+
+## 4. Lizenz
+
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)

@@ -21,85 +21,64 @@
             "caption": "Debug: Missing Idents"
         },
         {
-            "type": "ExpansionPanel",
-            "caption": "Specific features for shelly device",
-            "items": [
+            "type": "List",
+            "name": "VariableList",
+            "caption": "Variablen",
+            "rowCount": 10,
+            "add": false,
+            "delete": false,
+            "columns": [
                 {
-                    "type": "List",
-                    "name": "VariableList",
-                    "caption": "Variablen",
-                    "rowCount": 10,
+                    "caption": "Name",
+                    "name": "Name",
+                    "width": "auto",
+                    "add": ""
+                },
+                {
+                    "caption": "Ident",
+                    "name": "Ident",
+                    "width": "350px",
+                    "add": ""
+                },
+                {
+                    "caption": "CleanKeyPath",
+                    "name": "CleanKeyPath",
+                    "add": "",
+                    "visible": false
+                },
+                {
+                    "caption": "Channel",
+                    "name": "Channel",
+                    "add": "",
+                    "visible": false
+                },
+                {
+                    "caption": "ActionWithExtraVariable",
+                    "name": "actionWithExtraVariable",
+                    "add": "",
+                    "visible": false
+                },
+                {
+                    "caption": "Auswählen",
+                    "name": "Selected",
+                    "width": "100px",
                     "add": true,
-                    "delete": false,
-                    "columns": [
-                        {
-                            "caption": "Name",
-                            "name": "Name",
-                            "width": "auto",
-                            "add": "",
-                            "edit": {
-                                "type": "ValidationTextBox"
-                            }
-                        },
-                        {
-                            "caption": "Ident",
-                            "name": "Ident",
-                            "width": "150px",
-                            "add": "",
-                            "edit": {
-                                "type": "ValidationTextBox"
-                            }
-                        },
-                        {
-                            "caption": "CleanKeyPath",
-                            "name": "CleanKeyPath",
-                            "width": "150px",
-                            "add": "",
-                            "edit": {
-                                "type": "ValidationTextBox"
-                            }
-                        },
-                        {
-                            "caption": "Channel",
-                            "name": "Channel",
-                            "width": "150px",
-                            "add": "",
-                            "edit": {
-                                "type": "ValidationTextBox"
-                            }
-                        },
-                        {
-                            "caption": "ActionWithExtraVariable",
-                            "name": "actionWithExtraVariable",
-                            "width": "150px",
-                            "add": "",
-                            "edit": {
-                                "type": "CheckBox"
-                            }
-                        },
-                        {
-                            "caption": "Auswählen",
-                            "name": "Selected",
-                            "width": "100px",
-                            "add": true,
-                            "edit": {
-                                "type": "CheckBox"
-                            }
-                        },
-                        {
-                            "caption": "Zeroing",
-                            "name": "Zeroing",
-                            "width": "100px",
-                            "add": false,
-                            "edit": {
-                                "type": "CheckBox"
-                            }
-                        }
-                    ],
-                    "values": [
-                        {}
-                    ]
+                    "edit": {
+                        "type": "CheckBox"
+                    }
+                },
+                {
+                    "caption": "Zeroing",
+                    "name": "Zeroing",
+                    "width": "100px",
+                    "add": false,
+                    "edit": {
+                        "type": "CheckBox"
+                    }
                 }
+            ],
+            "values": [
+                {}
             ]
         }
     ],

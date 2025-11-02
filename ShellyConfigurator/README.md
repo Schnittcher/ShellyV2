@@ -1,67 +1,24 @@
 # ShellyConfigurator
-Beschreibung des Moduls.
+Dieses Modul findet alles Shelly Gen2+ Geräte per MQTT und kann diese als komplettes Gerät oder einzelne Komponenten anlegen.
 
-### Inhaltsverzeichnis
+## Inhaltsverzeichnis
 
-1. [Funktionsumfang](#1-funktionsumfang)
-2. [Voraussetzungen](#2-voraussetzungen)
-3. [Software-Installation](#3-software-installation)
-4. [Einrichten der Instanzen in IP-Symcon](#4-einrichten-der-instanzen-in-ip-symcon)
-5. [Statusvariablen und Profile](#5-statusvariablen-und-profile)
-6. [WebFront](#6-webfront)
-7. [PHP-Befehlsreferenz](#7-php-befehlsreferenz)
+- [ShellyConfigurator](#shellyconfigurator)
+  - [Inhaltsverzeichnis](#inhaltsverzeichnis)
+  - [1. Funktionsumfang](#1-funktionsumfang)
+  - [2. Spenden](#2-spenden)
+  - [3. Lizenz](#3-lizenz)
 
-### 1. Funktionsumfang
+## 1. Funktionsumfang
 
-*
+Findet alle Shellies per MQTT im Netzwerk, welches auf das Topic /announce reagieren.
+Die Shellies können als komplettes Gerät angelegt werden, oder aber die einzelnen Komponenten des Shellies.
+ 
+## 2. Spenden
+Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:    
 
-### 2. Voraussetzungen
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=EK4JRP87XLSHW" target="_blank"><img src="https://www.paypalobjects.com/de_DE/DE/i/btn/btn_donate_LG.gif" border="0" /></a> <a href="https://www.amazon.de/hz/wishlist/ls/3JVWED9SZMDPK?ref_=wl_share" target="_blank">Amazon Wunschzettel</a>
 
-- IP-Symcon ab Version 7.1
+## 3. Lizenz
 
-### 3. Software-Installation
-
-* Über den Module Store das 'ShellyConfigurator'-Modul installieren.
-* Alternativ über das Module Control folgende URL hinzufügen
-
-### 4. Einrichten der Instanzen in IP-Symcon
-
- Unter 'Instanz hinzufügen' kann das 'ShellyConfigurator'-Modul mithilfe des Schnellfilters gefunden werden.  
-	- Weitere Informationen zum Hinzufügen von Instanzen in der [Dokumentation der Instanzen](https://www.symcon.de/service/dokumentation/konzepte/instanzen/#Instanz_hinzufügen)
-
-__Konfigurationsseite__:
-
-Name     | Beschreibung
--------- | ------------------
-         |
-         |
-
-### 5. Statusvariablen und Profile
-
-Die Statusvariablen/Kategorien werden automatisch angelegt. Das Löschen einzelner kann zu Fehlfunktionen führen.
-
-#### Statusvariablen
-
-Name   | Typ     | Beschreibung
------- | ------- | ------------
-       |         |
-       |         |
-
-#### Profile
-
-Name   | Typ
------- | -------
-       |
-       |
-
-### 6. Visualisierung
-
-Die Funktionalität, die das Modul in der Visualisierung bietet.
-
-### 7. PHP-Befehlsreferenz
-
-`boolean SHY_BeispielFunktion(integer $InstanzID);`
-Erklärung der Funktion.
-
-Beispiel:
-`SHY_BeispielFunktion(12345);`
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)

@@ -197,18 +197,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $this->sendMQTT($Topic, json_encode($Payload));
         }
 
-        public function callRPCGetStatus()
-        {
-            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
-
-            $Payload['id'] = 1;
-            $Payload['src'] = 'user_1';
-            $Payload['method'] = 'Shelly.GetStatus';
-            $Payload['params'] = '';
-
-            $this->sendMQTT($Topic, json_encode($Payload));
-        }
-
         protected function SetValue($Ident, $Value)
         {
             if (@$this->GetIDForIdent($Ident)) {
@@ -254,6 +242,18 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             }
         }
 
+        private function callRPCGetStatus()
+        {
+            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
+
+            $Payload['id'] = 1;
+            $Payload['src'] = 'user_1';
+            $Payload['method'] = 'Shelly.GetStatus';
+            $Payload['params'] = '';
+
+            $this->sendMQTT($Topic, json_encode($Payload));
+        }
+
         private function parsePayloadIntoVariables($Payload)
         {
             //Components vom Shelly Params Payload holen.
@@ -297,7 +297,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     if ($tmpComponent != null) {
                         $name = $this->Translate($tmpComponent['name']);
                         if ($variable['Channel'] > 0) {
-                            $name = $this->Translate($tmpComponent['name']) . ' ' . $variable['Channel'];
+                            $name = $this->Translate($tmpComponent['name'] . ' ' . $variable['Channel']); //. ' ' . $variable['Channel'];
                         }
                     }
                     //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
