@@ -233,7 +233,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             foreach ($Variables as $key => $variable) {
                 //Um Herauszufinden um welchen Variablentyp es sich hier handelt
                 $Component = $this->getValueByKeyPath($variable['CleanKeyPath']);
-                IPS_LogMessage('Component', print_r($Component, true));
+                //IPS_LogMessage('Component', print_r($Component, true));
                 if ($variable['Zeroing']) {
                     switch ($Component['type']) {
                         case VARIABLETYPE_BOOLEAN:
