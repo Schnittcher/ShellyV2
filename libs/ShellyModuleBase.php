@@ -258,6 +258,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         {
             //Components vom Shelly Params Payload holen.
             $components = $this->getArrayLeafKeyPaths($Payload);
+            //IPS_LogMessage('components',print_r($components,true));
             foreach ($components as $key => $component) {
                 //Clean Path holen
                 $componentsFromShellyResult = $this->cleanComponentPath($component);
@@ -342,6 +343,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             //Standardwert für "Zeroing"
             $zeroing = false;
 
+            //Immer die Event Komponenten hinzufügen!
+            array_push($allComponentsFromShelly, 'events:0.component', 'events:0.event');
+
             foreach ($allComponentsFromShelly as $entry) {
                 $componentsFromShellyResult = $this->cleanComponentPath($entry);
 
@@ -390,7 +394,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     }
                 }
             }
-
             $this->SendDebug('variableList', $variableList, 0);
             //Setze variableList in Buffer, für GetConfiguration Form & zum Anlegen der Variablen
             $this->SetBuffer('variableList', json_encode($variableList));

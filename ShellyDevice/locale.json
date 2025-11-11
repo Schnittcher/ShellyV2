@@ -1,11 +1,14 @@
 {
     "translations": {
         "de": {
+            "Event": "Ereignis",
+            "Event Component": "Ereigniskomponente",
             "Cloud State": "Cloud Status",
             "Input": "Eingang",
             "Input State": "Eingangsstatus",
             "Input State 1": "Eingangstatus 1",
             "Input State 2": "Eingangstatus 2",
+            "Input State 3": "Eingangstatus 3",
             "Input (Percent)": "Eingang (Porzent)",
             "Phase A current": "Phase A Stromstärke",
             "Phase A voltage": "Phase A Spannung",
@@ -42,6 +45,10 @@
             "State 4": "Status 4",
             "Action State": "Aktion Status",
             "Brightness": "Helligkeit",
+            "Brightness 1": "Helligkeit 1",
+            "Brightness 2": "Helligkeit 2",
+            "Brightness 3": "Helligkeit 3",
+            "Brightness 4": "Helligkeit 4",
             "Brightness Action": "Helligkeit Aktion",
             "Active power": "Wirkleistung",
             "Active power 1": "Wirkleistung 1",

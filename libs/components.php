@@ -4,6 +4,22 @@ declare(strict_types=1);
 trait Components
 {
     public static $components = [
+        'events' => [
+            'component' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Event Component',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'event' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Event',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
         'cloud' => [
             'connected' => [
                 'type'         => VARIABLETYPE_BOOLEAN,
