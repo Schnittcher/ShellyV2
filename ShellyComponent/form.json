@@ -38,25 +38,30 @@
                     "caption": "Ident",
                     "name": "Ident",
                     "width": "350px",
-                    "add": ""
+                    "add": "",
+                    "visible": false,
+                    "save": true
                 },
                 {
                     "caption": "CleanKeyPath",
                     "name": "CleanKeyPath",
                     "add": "",
-                    "visible": false
+                    "visible": false,
+                    "save": true
                 },
                 {
                     "caption": "Channel",
                     "name": "Channel",
                     "add": "",
-                    "visible": false
+                    "visible": false,
+                    "save": true
                 },
                 {
                     "caption": "ActionWithExtraVariable",
                     "name": "actionWithExtraVariable",
                     "add": "",
-                    "visible": false
+                    "visible": false,
+                    "save": true
                 },
                 {
                     "caption": "Auswählen",
