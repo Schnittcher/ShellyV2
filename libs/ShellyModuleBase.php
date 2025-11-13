@@ -125,7 +125,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $propertyComponent = @$this->ReadPropertyString('Component');
                     //IPS_LogMessage('test', $this->InstanceID . ' ' . $propertyComponent);
 
-                    $this->createariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
+                    $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
                     $this->registerComponentVariables();
 
                     if (array_key_exists('result', $Payload)) {
@@ -323,18 +323,20 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
         ################### Test für Liste mit Variablen um diese aktivieren / deaktivieren zu können.
 
-        private function createariableListForForm($allComponentsFromShelly, $component = '', $channel = '')
+        private function createVariableListForForm($allComponentsFromShelly, $component = '', $channel = '')
         {
             $variableList = [];
 
             //Alte Liste laden, um die aktuellen Einstellungen (Selected / Zeroing) zu übernehmen
             $oldList = json_decode($this->ReadPropertyString('VariableList'), true);
+            
             // Map zur schnellen Suche: Ident => Selected-Wert / Ident => Zeroiung
             $oldMap = [];
             foreach ($oldList as $item) {
                 if (!empty($item['Ident'])) {
                     $oldMap[$item['Ident']]['selected'] = $item['Selected'];
                     $oldMap[$item['Ident']]['zeroing'] = $item['Zeroing'];
+                    
                 }
             }
 
