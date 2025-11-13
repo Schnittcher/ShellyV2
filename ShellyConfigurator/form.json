@@ -63,7 +63,7 @@
                     },
                     {
                         "type": "Label",
-                        "caption": "Please press OK an reload the form!"
+                        "caption": "Please press OK and reload the form!"
                     }
                 ]
             }
