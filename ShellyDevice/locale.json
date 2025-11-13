@@ -124,7 +124,8 @@
             "Wifi SSID": "Wifi SSID",
             "Wifi IP-Address": "Wifi IP-Adresse",
             "Component": "Komponente",
-            "Channel": "Kanal"
+            "Channel": "Kanal",
+            "Shelly Device (Gen2+)": "Shelly Gerät (Gen2+)"
         }
     }
 }

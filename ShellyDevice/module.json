@@ -4,7 +4,6 @@
     "type": 3,
     "vendor": "Shelly",
     "aliases": [
-        "Shelly Gerät (Gen2+)",
         "Shelly Device (Gen2+)"
     ],
     "parentRequirements": [

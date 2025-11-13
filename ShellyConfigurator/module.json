@@ -4,7 +4,6 @@
     "type": 4,
     "vendor": "Shelly",
     "aliases": [
-        "Shelly Konfigurator (Gen2+)",
         "Shelly Configurator (Gen2+)"
     ],
     "parentRequirements": [

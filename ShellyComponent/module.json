@@ -4,7 +4,6 @@
     "type": 3,
     "vendor": "Shelly",
     "aliases": [
-        "Shelly Komponente (Gen2+)",
         "Shelly Component (Gen2+)"
     ],
     "parentRequirements": [

@@ -8,7 +8,8 @@
             "App": "App",
             "Firmware": "Firmware",
             "Searching...": "Suche...",
-            "Please press OK and reload the form!": "Bitte drücken Sie OK und laden Sie das Formular neu!"
+            "Please press OK and reload the form!": "Bitte drücken Sie OK und laden Sie das Formular neu!",
+            "Shelly Configurator (Gen2+)": "Shelly Konfigurator (Gen2+)"
         }
     }
 }
