@@ -105,7 +105,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                     if (array_key_exists('result', $shellyComponents)) {
                         foreach ($shellyComponents['result'] as $key => $shellyComponent) {
                             $component = $this->cleanComponentPath($key)['clean'];
-                            $componentInstanceID = $this->getShellyComopnentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
+                            $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
                             if ($this->componentDefinitionExists($component)) {
                                 $AddComponent = [
                                     'parent'                    => $idCount,
@@ -267,7 +267,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             return 0;
         }
 
-        private function getShellyComopnentInstances($ShellyID, $Comopnent, $Channel)
+        private function getShellyComponentInstances($ShellyID, $Comopnent, $Channel)
         {
             $InstanceIDs[] = IPS_GetInstanceListByModuleID(GUID_SHELLY_COMOPONENT_DEVICE);
 
