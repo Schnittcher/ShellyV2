@@ -6,7 +6,9 @@
             "Device Type": "Gerätetyp",
             "IP-Address": "IP-Adresse",
             "App": "App",
-            "Firmware": "Firmware"
+            "Firmware": "Firmware",
+            "Searching...": "Suche...",
+            "Please press OK and reload the form!": "Bitte drücken Sie OK und laden Sie das Formular neu!"
         }
     }
 }
