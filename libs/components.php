@@ -546,12 +546,12 @@ trait Components
         'rgbw' => [
             'output' => [
                 'type'         => VARIABLETYPE_BOOLEAN,
-                'name'         => 'RGB State',
+                'name'         => 'RGBW State',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
                 ],
                 'action'        => [
-                    'method' => 'RGB.Set',
+                    'method' => 'RGBW.Set',
                     'params' => ['id' => '', 'on' => ''
                     ]
                 ],
@@ -564,27 +564,27 @@ trait Components
                     'ENCODING'     => 0 //RGB
                 ],
                 'action'        => [
-                    'method' => 'RGB.Set',
+                    'method' => 'RGBW.Set',
                     'params' => ['id' => '', 'rgb' => ''
                     ]
                 ],
             ],
             'brightness' => [
                 'type'         => VARIABLETYPE_INTEGER,
-                'name'         => 'RGB Brightness',
+                'name'         => 'RGBW Brightness',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
                     'SUFFIX'       => ' %',
                     'USAGE_TYPE'   => 2
                 ],
                 'action'        => [
-                    'method' => 'RGB.Set',
+                    'method' => 'RGBW.Set',
                     'params' => ['id' => '', 'brightness' => ''
                     ]
                 ],
                 'actionWithExtraVariable' => [
                     'type'         => VARIABLETYPE_STRING,
-                    'name'         => 'RGB Brightness Action',
+                    'name'         => 'RGBW Brightness Action',
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
                         'ICON'         => 'Light',
@@ -615,7 +615,7 @@ trait Components
                     ],
                     'action'        => [
                         'list'   => true,
-                        'method' => 'RGB.',
+                        'method' => 'RGBW.',
                         'params' => ['id' => ''
                         ]
                     ],
@@ -623,7 +623,7 @@ trait Components
             ],
             'white' => [
                 'type'         => VARIABLETYPE_INTEGER,
-                'name'         => 'White',
+                'name'         => 'RGBW White',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
                     'PERCENTAGE'   => true,
@@ -633,14 +633,14 @@ trait Components
                     'MAX'          => 255
                 ],
                 'action'        => [
-                    'method' => 'RGB.Set',
+                    'method' => 'RGBW.Set',
                     'params' => ['id' => '', 'white' => ''
                     ]
                 ],
             ],
             'apower' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'RGB active power',
+                'name'         => 'RGBW active power',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' W',
@@ -648,7 +648,7 @@ trait Components
             ],
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'RGB voltage',
+                'name'         => 'RGBW voltage',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
@@ -656,7 +656,7 @@ trait Components
             ],
             'current' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'RGB current',
+                'name'         => 'RGBW current',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' A',
@@ -665,7 +665,7 @@ trait Components
             'aenergy' => [
                 'total' => [
                     'type'         => VARIABLETYPE_FLOAT,
-                    'name'         => 'RGB Total energy',
+                    'name'         => 'RGBW Total energy',
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
