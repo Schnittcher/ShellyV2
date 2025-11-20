@@ -4,6 +4,7 @@ declare(strict_types=1);
 trait Components
 {
     public static $components = [
+        //Immer die Event Komponenten hinzufügen wird (wird in der ShellyModule Base createariableListForForm gemacht)
         'events' => [
             'component' => [
                 'type'         => VARIABLETYPE_STRING,
@@ -538,6 +539,147 @@ trait Components
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                         'SUFFIX'       => ' kwh'
+                    ],
+                ],
+            ],
+        ],
+        'rgbw' => [
+            'output' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'RGB State',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'RGB.Set',
+                    'params' => ['id' => '', 'on' => ''
+                    ]
+                ],
+            ],
+            'rgb' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'RGB',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
+                    'ENCODING'     => 0 //RGB
+                ],
+                'action'        => [
+                    'method' => 'RGB.Set',
+                    'params' => ['id' => '', 'rgb' => ''
+                    ]
+                ],
+            ],
+            'brightness' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'RGB Brightness',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                    'SUFFIX'       => ' %',
+                    'USAGE_TYPE'   => 2
+                ],
+                'action'        => [
+                    'method' => 'RGB.Set',
+                    'params' => ['id' => '', 'brightness' => ''
+                    ]
+                ],
+                'actionWithExtraVariable' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'RGB Brightness Action',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                        'ICON'         => 'Light',
+                        'LAYOUT'       => 1,
+                        'OPTIONS'      => '[
+                            {
+                                "Value": "DimUp",
+                                "Caption": "Dim up",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 65280
+                            },
+                            {
+                                "Value": "DimDown",
+                                "Caption": "Dim down",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16753920
+                            },
+                            {
+                                "Value": "DimStop",
+                                "Caption": "Dim stop",
+                                "IconActive": false,
+                                "Icon": "",
+                                "Color": 16711680
+                            }
+                        ]',
+                    ],
+                    'action'        => [
+                        'list'   => true,
+                        'method' => 'RGB.',
+                        'params' => ['id' => ''
+                        ]
+                    ],
+                ],
+            ],
+            'white' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'White',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                    'PERCENTAGE'   => true,
+                    'SUFFIX'       => ' %',
+                    'USAGE_TYPE'   => 2,
+                    'MIN'          => 0,
+                    'MAX'          => 255
+                ],
+                'action'        => [
+                    'method' => 'RGB.Set',
+                    'params' => ['id' => '', 'white' => ''
+                    ]
+                ],
+            ],
+            'apower' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'RGB active power',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+            ],
+            'voltage' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'RGB voltage',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+            ],
+            'current' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'RGB current',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+            ],
+            'aenergy' => [
+                'total' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'RGB Total energy',
+                    'factor'       => 0.001,
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' kWh'
+                    ],
+                ],
+            ],
+            'temperature' => [
+                'tC' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Temperature',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' °C'
                     ],
                 ],
             ],

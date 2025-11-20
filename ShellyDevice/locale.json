@@ -125,7 +125,8 @@
             "Wifi IP-Address": "Wifi IP-Adresse",
             "Component": "Komponente",
             "Channel": "Kanal",
-            "Shelly Device (Gen2+)": "Shelly Gerät (Gen2+)"
+            "Shelly Device (Gen2+)": "Shelly Gerät (Gen2+)",
+            "White": "Weiß"
         }
     }
 }
