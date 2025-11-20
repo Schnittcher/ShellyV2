@@ -61,7 +61,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
 
             if ($MQTTTopic != '') {
-                $this->getComponents();
+                if ($this->HasActiveParent()) {
+                    $this->getComponents();
+                }
             }
         }
 
@@ -329,14 +331,13 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
             //Alte Liste laden, um die aktuellen Einstellungen (Selected / Zeroing) zu übernehmen
             $oldList = json_decode($this->ReadPropertyString('VariableList'), true);
-            
+
             // Map zur schnellen Suche: Ident => Selected-Wert / Ident => Zeroiung
             $oldMap = [];
             foreach ($oldList as $item) {
                 if (!empty($item['Ident'])) {
                     $oldMap[$item['Ident']]['selected'] = $item['Selected'];
                     $oldMap[$item['Ident']]['zeroing'] = $item['Zeroing'];
-                    
                 }
             }
 
