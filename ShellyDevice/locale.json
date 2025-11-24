@@ -156,7 +156,8 @@
             "Current Temperature 209": "Aktuelle Temperatur 209",
             "Target Temperature 209": "Zieltemperatur 209",
             "Current Temperature 210": "Aktuelle Temperatur 210",
-            "Target Temperature 210": "Zieltemperatur 210"
+            "Target Temperature 210": "Zieltemperatur 210",
+            "Errors": "Fehler"
         }
     }
 }

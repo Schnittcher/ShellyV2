@@ -120,6 +120,14 @@ trait Components
                     ]
                 ],
             ],
+             'errors' => [
+                'type'         => VARIABLETYPE_STRING,
+                'componentType' => 'Array',
+                'name'         => 'Errors',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         'emdata' => [
             'a_total_act_energy' => [

@@ -266,6 +266,10 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     ]);
                 }
 
+                if (is_array($value)) {
+                    $value = implode('', $value);
+                }
+
                 $this->SetValue($componentsFromShellyResult['ident'], $value);
             }
         }
