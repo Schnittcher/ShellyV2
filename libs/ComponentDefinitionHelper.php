@@ -80,7 +80,7 @@ trait ComponentDefinitionHelper
     {
         $number = null;
         //Ausnahmen: Bei dem der Unterstrich nicht gegen einen Punkt ersetzt werden darf
-        $exceptions = ['current_pos'];
+        $exceptions = ['current_pos', 'target_C', 'current_C'];
 
         foreach ($exceptions as $ending) {
             // Prüfen, ob die Endung im String vorkommt
@@ -119,7 +119,6 @@ trait ComponentDefinitionHelper
 
     protected function cleanComponentPath($componentPath)
     {
-
         // Prüfen auf Doppelpunkt mit Zahl
         if (preg_match('/(.*):(\d+)(.*)/', $componentPath, $matches)) {
             $base = $matches[1];      // z. B. "input"
@@ -144,5 +143,41 @@ trait ComponentDefinitionHelper
             'number'   => $tempVar,
             'ident'    => $ident
         ];
+    }
+    //Mir dieser Funktion werden wird das Payload von getComponents so aufgearbeitet, dass es aussieht, als wären die Informationen von getStatus bekommen, sodass der restliche Code vom Modul genutzt werden kann.
+    protected function getBLUTRVs($Payload)
+    {
+        $trvs = [];
+        // Prüfen ob 'components' existiert
+        if (isset($Payload['components'])) {
+            foreach ($Payload['components'] as $component) {
+                if (!isset($component['key'])) {
+                    continue;
+                }
+                // Prüft ob der Key mit "blutrv:" beginnt
+                if (strpos($component['key'], 'blutrv:') === 0) {
+
+                    // ID aus dem Key extrahieren, falls du sie brauchst
+                    preg_match('/blutrv:(\d+)/', $component['key'], $matches);
+                    $id = isset($matches[1]) ? (int) $matches[1] : null;
+
+                    $trvs[$component['key']] = array_merge(
+                            ['id' => $id],
+                            $component['status'] ?? []
+                        );
+                    /**
+                     * $trvs[$component['key']] = [
+                     * //    'key'    => $component['key'],
+                     * 'id'     => $id,
+                     * 'status' => $component['status'] ?? null,
+                     * //  'config' => $component['config'] ?? null,
+                     * ];
+                     */
+                }
+            }
+        } else {
+            IPS_LogMessage(__FUNCTION__, 'Keine Komponenten gefunden.');
+        }
+        return $trvs;
     }
 }

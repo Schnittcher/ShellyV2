@@ -59,12 +59,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             //Never delete this line!
             $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
             $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
-
-            if ($MQTTTopic != '') {
-                if ($this->HasActiveParent()) {
-                    $this->getComponents();
-                }
-            }
         }
 
         public function RequestAction($Ident, $Value)
@@ -91,14 +85,20 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $tmpComponents['action']['params'][$keys[0]] = $IdentKeyPath[1];
 
             if (count($keys) > 1) {
-                $tmpComponents['action']['params'][$keys[1]] = $Value;
-                //Ausnahme für RGB
-                if ($IdentKeyPath[0] == 'rgb.rgb.0') {
-                    $rgb = json_decode($Value, true);
-                    $tmpComponents['action']['params'][$keys[1]] = array_values($rgb);
+                //Ausnahme für BLUTRV - viel mehr Parameter beim RPC Aufruf
+                if ($IdentKeyPath[0] == 'blutrv.target_C') {
+                    $tmpComponents['action']['params']['params']['target_C'] = $Value;
+                } elseif ($IdentKeyPath[0] == 'blutrv.current_C') {
+                    $tmpComponents['action']['params']['params']['t_C'] = $Value;
+                } else {
+                    $tmpComponents['action']['params'][$keys[1]] = $Value;
+                    //Ausnahme für RGB
+                    if ($IdentKeyPath[0] == 'rgb.rgb.0') {
+                        $rgb = json_decode($Value, true);
+                        $tmpComponents['action']['params'][$keys[1]] = array_values($rgb);
+                    }
                 }
             }
-
             $this->callRPCFunction($tmpComponents['action']['method'], $tmpComponents['action']['params']);
         }
 
@@ -115,17 +115,21 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         $this->zeroingValues();
                     }
                 }
-                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic'])) {
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponentsViaStatus/rpc', $Buffer['Topic'])) {
                     $tmpComponents = $Payload['result'];
                     $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
+                }
 
+                //Ausnahme für BLU TRVs, diese müssen über Shelly.GetComponents abgerufen werden.
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic'])) {
+                    $tmpComponents = $this->getBLUTRVs($Payload['result']);
+                    $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
+                }
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponentsViaStatus/rpc', $Buffer['Topic']) || (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic']))) {
                     // Duplikate entfernen
                     $allComponentsFromShelly = array_unique($allComponentsFromShelly);
-
                     $propertyChannel = @$this->ReadPropertyInteger('Channel');
-                    //IPS_LogMessage('test', $this->InstanceID . ' ' . $propertyChannel);
                     $propertyComponent = @$this->ReadPropertyString('Component');
-                    //IPS_LogMessage('test', $this->InstanceID . ' ' . $propertyComponent);
 
                     $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
                     $this->registerComponentVariables();
@@ -137,52 +141,30 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     //Shelly muss online sein, da es sonst keine Antwort gegeben hatte, deswegen die Variable auf true setzen.
                     $this->SetValue('Reachable', true);
                 }
-                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/events/rpc', $Buffer['Topic'])) {
-                    if (array_key_exists('params', $Payload)) {
-                        $this->parsePayloadIntoVariables($Payload['params']);
-                    }
+            }
 
-                    /**
-                     * //Components vom Shelly Params Payload holen.
-                     * $components = $this->getArrayLeafKeyPaths($Payload['params']);
-                     * foreach ($components as $key => $component) {
-                     * //Clean Path holen
-                     * $componentsFromShellyResult = $this->cleanComponentPath($component);
-                     * //Mit clean keypath Value vom self::components array holen
-                     * $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
-                     *
-                     * //Value vom Params array holen mit dem originalen keypath
-                     * $value = $this->getValueByKeyPathFromArray($Payload['params'], $componentsFromShellyResult['original']);
-                     * //ggf. umrechnung druchführen
-                     * if ($tmpComponent != null) {
-                     * if (array_key_exists('factor', $tmpComponent)) {
-                     * $this->SendDebug('Factor calculation', 'Factor: ' . $tmpComponent['factor'], 0);
-                     * $value = $value * $tmpComponent['factor'];
-                     * }
-                     * }
-                     *
-                     * //Ausnahme RGB
-                     * if ($componentsFromShellyResult['clean'] == 'rgb.rgb.0') {
-                     * $value = json_encode([
-                     * 'r' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][0],
-                     * 'g' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][1],
-                     * 'b' => $Payload['params']['rgb:' . $componentsFromShellyResult['number']]['rgb'][2]
-                     * ]);
-                     * }
-                     *
-                     * $this->SetValue($componentsFromShellyResult['ident'], $value);
-                     * }
-                     */
+            if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/events/rpc', $Buffer['Topic'])) {
+                if (array_key_exists('params', $Payload)) {
+                    $this->parsePayloadIntoVariables($Payload['params']);
                 }
             }
         }
-
         public function getComponents()
         {
             $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
 
             $Payload['id'] = 1;
             $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponents';
+            $Payload['method'] = 'Shelly.GetComponents';
+            $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
+        }
+
+        public function getComponentsViaStatus()
+        {
+            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
+
+            $Payload['id'] = 1;
+            $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponentsViaStatus';
             $Payload['method'] = 'Shelly.GetStatus';
             $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
         }
@@ -223,7 +205,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             foreach ($Variables as $key => $variable) {
                 //Um Herauszufinden um welchen Variablentyp es sich hier handelt
                 $Component = $this->getValueByKeyPath($variable['CleanKeyPath']);
-                //IPS_LogMessage('Component', print_r($Component, true));
                 if ($variable['Zeroing']) {
                     switch ($Component['type']) {
                         case VARIABLETYPE_BOOLEAN:
@@ -260,7 +241,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         {
             //Components vom Shelly Params Payload holen.
             $components = $this->getArrayLeafKeyPaths($Payload);
-            //IPS_LogMessage('components',print_r($components,true));
             foreach ($components as $key => $component) {
                 //Clean Path holen
                 $componentsFromShellyResult = $this->cleanComponentPath($component);
@@ -296,11 +276,12 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
             foreach ($allVariables as $variable) {
                 $tmpComponent = $this->getValueByKeyPath($variable['CleanKeyPath']);
+                IPS_LogMessage('test', print_r($tmpComponent, true));
                 if (!$variable['actionWithExtraVariable']) {
                     if ($tmpComponent != null) {
                         $name = $this->Translate($tmpComponent['name']);
                         if ($variable['Channel'] > 0) {
-                            $name = $this->Translate($tmpComponent['name'] . ' ' . $variable['Channel']); //. ' ' . $variable['Channel'];
+                            $name = $this->Translate($tmpComponent['name'] . ' ' . $variable['Channel']);
                         }
                     }
                     //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.

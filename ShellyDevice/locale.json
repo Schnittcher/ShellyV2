@@ -134,7 +134,29 @@
             "Component": "Komponente",
             "Channel": "Kanal",
             "Shelly Device (Gen2+)": "Shelly Gerät (Gen2+)",
-            "White": "Weiß"
+            "White": "Weiß",
+            "Current Temperature 200": "Aktuelle Temperatur 200",
+            "Target Temperature 200": "Zieltemperatur 200",
+            "Current Temperature 201": "Aktuelle Temperatur 201",
+            "Target Temperature 201": "Zieltemperatur 201",
+            "Current Temperature 202": "Aktuelle Temperatur 202",
+            "Target Temperature 202": "Zieltemperatur 202",
+            "Current Temperature 203": "Aktuelle Temperatur 203",
+            "Target Temperature 203": "Zieltemperatur 203",
+            "Current Temperature 204": "Aktuelle Temperatur 204",
+            "Target Temperature 204": "Zieltemperatur 204",
+            "Current Temperature 205": "Aktuelle Temperatur 205",
+            "Target Temperature 205": "Zieltemperatur 205",
+            "Current Temperature 206": "Aktuelle Temperatur 206",
+            "Target Temperature 206": "Zieltemperatur 206",
+            "Current Temperature 207": "Aktuelle Temperatur 207",
+            "Target Temperature 207": "Zieltemperatur 207",
+            "Current Temperature 208": "Aktuelle Temperatur 208",
+            "Target Temperature 208": "Zieltemperatur 208",
+            "Current Temperature 209": "Aktuelle Temperatur 209",
+            "Target Temperature 209": "Zieltemperatur 209",
+            "Current Temperature 210": "Aktuelle Temperatur 210",
+            "Target Temperature 210": "Zieltemperatur 210"
         }
     }
 }

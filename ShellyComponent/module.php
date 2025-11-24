@@ -16,7 +16,6 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
         {
             $reflector = new ReflectionClass($this);
             $Form = json_decode(file_get_contents(dirname($reflector->getFileName()) . '/form.json'), true);
-
             $Form['elements'][4]['values'] = json_decode($this->GetBuffer('variableList'), true);
 
             return json_encode($Form);
@@ -26,6 +25,18 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
         {
             //Never delete this line!
             parent::ApplyChanges();
+            $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
+            if ($MQTTTopic != '') {
+                if ($this->HasActiveParent()) {
+                    if ($this->ReadPropertyString('Component') == 'blutrv') {
+                        
+                        $this->getComponents();
+  
+                    } else {
+                        $this->getComponentsViaStatus();
+                    }
+                }
+            }
         }
     }
 

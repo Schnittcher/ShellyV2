@@ -934,6 +934,49 @@ trait Components
                 ],
             ],
         ],
+        'blutrv' => [
+            'current_C' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Current Temperature',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' °C'
+                ],
+                'action'        => [
+                    'method' => 'BluTrv.Call',
+                    'params' => ['id' => '', 'method' => 'TRV.SetExternalTemperature', 'params'=>[
+                        'id' => 0, 't_C' => '']
+                    ]
+                ],
+            ],
+            'target_C' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Target Temperature',
+                'presentation' => [
+                    'PRESENTATION'  => VARIABLE_PRESENTATION_SLIDER,
+                    'SUFFIX'        => ' °C',
+                    'GRADIENT_TYPE' => 1,
+                    'STEP_SIZE'     => 0.1,
+                    'USAGE_TYPE'    => 0,
+                    'MIN'           => 5,
+                    'MAX'           => 30,
+                    'DIGITS'        => 2
+                ],
+                'action'        => [
+                    'method' => 'BluTrv.Call',
+                    'params' => ['id' => '', 'method' => 'TRV.SetTarget', 'params'=>[
+                        'id' => 0, 'target_C' => '']
+                    ]
+                ],
+            ],
+            'rssi' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'RSSI',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
         'switch' => [
             'output' => [
                 'type'         => VARIABLETYPE_BOOLEAN,

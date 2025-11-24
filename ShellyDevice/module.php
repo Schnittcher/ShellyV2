@@ -27,6 +27,12 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
         {
             //Never delete this line!
             parent::ApplyChanges();
+            $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
+            if ($MQTTTopic != '') {
+                if ($this->HasActiveParent()) {
+                    $this->getComponentsViaStatus();
+                }
+            }
 
             //Ausnahme für Shellys, welche nicht korrekt definiert sind, wie zum Beispiel WaterValve
             $modelID = $this->ReadPropertyString('ModelID');

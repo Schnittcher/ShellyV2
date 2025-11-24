@@ -36,7 +36,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
         {
             //Never delete this line!
             parent::ApplyChanges();
-            $this->SetReceiveDataFilter('.*(getComponentsConfigurator/rpc|/announce).*');
+            $this->SetReceiveDataFilter('.*(getComponentsConfigurator/rpc|getComponentsConfiguratorViaStatus/rpc||/announce).*');
         }
 
         public function GetConfigurationForm()
@@ -61,7 +61,6 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             if (count($Shellies) > 0) {
                 $idCount++;
                 foreach ($Shellies as $key => $Shelly) {
-                    //IPS_LogMessage('Array', print_r($Shelly, true));
                     $DeviceType = '';
                     $instanceID = $this->getShellyInstances($Shelly['ID']);
                     if ($Shelly['Model'] == '') {
@@ -69,10 +68,9 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                         continue;
                     }
 
-                    $shellyComponents = $this->getComponents($Shelly['ID']);
+                    $shellyComponents = $this->getComponentsViaStatus($Shelly['ID']);
                     if ($shellyComponents != null) {
                         $shellyComponents = json_decode($shellyComponents, true);
-                    //$shellyComponents = json_decode($this->getComponents($Shelly['ID']), true);
                     } else {
                         $shellyComponents = [];
                     }
@@ -102,32 +100,76 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                         ]
                     ];
 
-                    if (array_key_exists('result', $shellyComponents)) {
-                        foreach ($shellyComponents['result'] as $key => $shellyComponent) {
-                            $component = $this->cleanComponentPath($key)['clean'];
-                            $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
-                            if ($this->componentDefinitionExists($component)) {
-                                $AddComponent = [
-                                    'parent'                    => $idCount,
-                                    'name'                      => $key,
-                                    'MQTTTopic'                 => $key,
-                                    'InstanceName'              => $this->getInstanceName($componentInstanceID),
-                                    'DeviceType'                => '', //$DeviceType,
-                                    'IPAddress'                 => '', //$Shelly['IP'],
-                                    'App'                       => '', //$Shelly['App'],
-                                    'Firmware'                  => '', //$Shelly['Firmware'],
-                                    'instanceID'                => $componentInstanceID, //$instanceID,
-                                    'create'                    => [
-                                        'moduleID'      => GUID_SHELLY_COMOPONENT_DEVICE,
-                                        'info'          => $Shelly['ID'],
-                                        'configuration' => [
-                                            'MQTTTopic' => $Shelly['ID'],
-                                            'Component' => $this->cleanComponentPath($key)['clean'],
-                                            'Channel'   => intval($this->cleanComponentPath($key)['number']),
+                    //Ausnahme für Shelly TRV
+                    if (array_key_exists('App', $Shelly)) {
+                        if ($Shelly['App'] == 'BluGwG3') {
+                            $shellyComponentsTRV = $this->getComponents($Shelly['ID']);
+                            if ($shellyComponentsTRV != null) {
+                                $shellyComponentsTRV = json_decode($shellyComponentsTRV, true);
+                            } else {
+                                $shellyComponentsTRV = [];
+                            }
+                            $BLUTRVs = $this->getBLUTRVs($shellyComponentsTRV['result']);
+                            if (array_key_exists('result', $shellyComponentsTRV)) {
+                                foreach ($BLUTRVs as $key => $BLUTRV) {
+                                    IPS_LogMessage('key', $key);
+                                    $component = $this->cleanComponentPath($key)['clean'];
+                                    $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
+                                    if ($this->componentDefinitionExists($component)) {
+                                        $AddComponent = [
+                                            'parent'                    => $idCount,
+                                            'name'                      => $key,
+                                            'MQTTTopic'                 => $key,
+                                            'InstanceName'              => $this->getInstanceName($componentInstanceID),
+                                            'DeviceType'                => '',
+                                            'IPAddress'                 => '',
+                                            'App'                       => '',
+                                            'Firmware'                  => '',
+                                            'instanceID'                => $componentInstanceID,
+                                            'create'                    => [
+                                                'moduleID'      => GUID_SHELLY_COMOPONENT_DEVICE,
+                                                'info'          => $Shelly['ID'],
+                                                'configuration' => [
+                                                    'MQTTTopic' => $Shelly['ID'],
+                                                    'Component' => $this->cleanComponentPath($key)['clean'],
+                                                    'Channel'   => intval($this->cleanComponentPath($key)['number']),
+                                                ]
+                                            ]
+                                        ];
+                                        $Values[] = $AddComponent;
+                                    }
+                                }
+                            }
+                        }
+                        //ENDE Shelly BLUTRV Ausnahme
+
+                        if (array_key_exists('result', $shellyComponents)) {
+                            foreach ($shellyComponents['result'] as $key => $shellyComponent) {
+                                $component = $this->cleanComponentPath($key)['clean'];
+                                $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
+                                if ($this->componentDefinitionExists($component)) {
+                                    $AddComponent = [
+                                        'parent'                    => $idCount,
+                                        'name'                      => $key,
+                                        'MQTTTopic'                 => $key,
+                                        'InstanceName'              => $this->getInstanceName($componentInstanceID),
+                                        'DeviceType'                => '',
+                                        'IPAddress'                 => '',
+                                        'App'                       => '',
+                                        'Firmware'                  => '',
+                                        'instanceID'                => $componentInstanceID,
+                                        'create'                    => [
+                                            'moduleID'      => GUID_SHELLY_COMOPONENT_DEVICE,
+                                            'info'          => $Shelly['ID'],
+                                            'configuration' => [
+                                                'MQTTTopic' => $Shelly['ID'],
+                                                'Component' => $this->cleanComponentPath($key)['clean'],
+                                                'Channel'   => intval($this->cleanComponentPath($key)['number']),
+                                            ]
                                         ]
-                                    ]
-                                ];
-                                $Values[] = $AddComponent;
+                                    ];
+                                    $Values[] = $AddComponent;
+                                }
                             }
                         }
                     }
@@ -137,6 +179,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             return json_encode($Form);
         }
 
+        //Wird aktuell nur für die Shelly BLUTRV genutzt, da diese nicht über getStatus zu finden sind - in getComponents, fehlen dafür Komponenten wie RGB, daher nutze ich weiterhin Shelly.GetStatus um die Komponenten zu finden.
         public function getComponents($ShellyMQTTGTopic)
         {
             $Topic = $ShellyMQTTGTopic . '/rpc';
@@ -145,6 +188,28 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
 
             $Payload['id'] = 1;
             $Payload['src'] = 'getComponentsConfigurator';
+            $Payload['method'] = 'Shelly.GetComponents';
+            $this->sendMQTT($Topic, json_encode($Payload));
+
+            $start = microtime(true);
+            do {
+                $value = $this->GetBuffer('LastComponentResponse2');
+                if ($value != '') {
+                    $this->SetBuffer('LastComponentResponse2', ''); // Reset
+                    return $value;
+                }
+                IPS_Sleep(100); // 100ms warten
+            } while ((microtime(true) - $start) < 5);
+        }
+
+        public function getComponentsViaStatus($ShellyMQTTGTopic)
+        {
+            $Topic = $ShellyMQTTGTopic . '/rpc';
+
+            $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic, 0);
+
+            $Payload['id'] = 1;
+            $Payload['src'] = 'getComponentsConfiguratorViaStatus';
             $Payload['method'] = 'Shelly.GetStatus';
             $this->sendMQTT($Topic, json_encode($Payload));
 
@@ -187,14 +252,16 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             if (IPS_GetKernelDate() > 1670886000) {
                 $Buffer['Payload'] = utf8_decode($Buffer['Payload']);
             }
-            $Shellies = json_decode($this->ReadAttributeString('Shellies'), true); //$this->findShellysOnNetwork();
+            $Shellies = json_decode($this->ReadAttributeString('Shellies'), true);
 
             if (array_key_exists('Topic', $Buffer)) {
-                if (fnmatch('getComponentsConfigurator/rpc', $Buffer['Topic'])) {
+                if (fnmatch('getComponentsConfiguratorViaStatus/rpc', $Buffer['Topic'])) {
                     $this->SetBuffer('LastComponentResponse', $Buffer['Payload']);
                 }
+                if (fnmatch('getComponentsConfigurator/rpc', $Buffer['Topic'])) {
+                    $this->SetBuffer('LastComponentResponse2', $Buffer['Payload']);
+                }
 
-                //if ($Buffer['Topic'] == 'shellies/announce') {
                 if (strpos($Buffer['Topic'], '/announce') !== false) {
                     $Shelly = [];
 
@@ -210,7 +277,6 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                     if (array_key_exists('gen', $Payload)) {
                         if ($Payload['gen'] >= 2) {
                             $foundedKey = array_search($MQTTTopic, array_column($Shellies, 'ID'));
-                            //$foundedKey = array_search($Payload['id'], array_column($Shellies, 'ID'));
                             if ($foundedKey !== false) {
                                 $Shellies[$foundedKey]['LastActivity'] = time();
                                 $Shellies[$foundedKey]['Model'] = (array_key_exists('model', $Payload)) ? ($Payload['model']) : '';
