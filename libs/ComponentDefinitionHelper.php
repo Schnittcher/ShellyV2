@@ -3,25 +3,31 @@
 declare(strict_types=1);
 trait ComponentDefinitionHelper
 {
-    // Funktion, um alle End-Key-Pfade zu extrahieren (inkl. leerer Arrays)
     protected function getArrayLeafKeyPaths(array $array, string $prefix = '')
     {
         $keys = [];
 
         foreach ($array as $key => $value) {
-            // Bei JSON: Doppelpunkt entfernen
-            //$key = explode(':', $key)[0];
-
             $fullKey = $prefix === '' ? $key : $prefix . '.' . $key;
 
             if (is_array($value)) {
                 if (empty($value)) {
                     // Leeres Array = Endpunkt
                     $keys[] = $fullKey;
-                } else {
-                    // Rekursiv weitergehen
-                    $keys = array_merge($keys, $this->getArrayLeafKeyPaths($value, $fullKey));
+                    continue;
                 }
+
+                // Prüfen: Bestehen die Keys ausschließlich aus numerischen?
+                $allNumericKeys = array_keys($value) === range(0, count($value) - 1);
+
+                if ($allNumericKeys) {
+                    // Arrays mit rein numerischen Keys sollen als Endpunkt gezählt werden
+                    $keys[] = $fullKey;
+                    continue;
+                }
+
+                // Sonst rekursiv weiter
+                $keys = array_merge($keys, $this->getArrayLeafKeyPaths($value, $fullKey));
             } else {
                 // Kein Array = Endpunkt
                 $keys[] = $fullKey;
@@ -31,6 +37,35 @@ trait ComponentDefinitionHelper
         return $keys;
     }
 
+    /**
+     * // Funktion, um alle End-Key-Pfade zu extrahieren (inkl. leerer Arrays)
+     * protected function getArrayLeafKeyPaths(array $array, string $prefix = '')
+     * {
+     * $keys = [];
+     *
+     * foreach ($array as $key => $value) {
+     * // Bei JSON: Doppelpunkt entfernen
+     * //$key = explode(':', $key)[0];
+     *
+     * $fullKey = $prefix === '' ? $key : $prefix . '.' . $key;
+     *
+     * if (is_array($value)) {
+     * if (empty($value)) {
+     * // Leeres Array = Endpunkt
+     * $keys[] = $fullKey;
+     * } else {
+     * // Rekursiv weitergehen
+     * $keys = array_merge($keys, $this->getArrayLeafKeyPaths($value, $fullKey));
+     * }
+     * } else {
+     * // Kein Array = Endpunkt
+     * $keys[] = $fullKey;
+     * }
+     * }
+     *
+     * return $keys;
+     * }
+     */
     protected function componentDefinitionExists($component)
     {
         //IPS_LogMessage('test', $component);
