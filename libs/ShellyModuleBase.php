@@ -280,7 +280,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
             foreach ($allVariables as $variable) {
                 $tmpComponent = $this->getValueByKeyPath($variable['CleanKeyPath']);
-                IPS_LogMessage('test', print_r($tmpComponent, true));
                 if (!$variable['actionWithExtraVariable']) {
                     if ($tmpComponent != null) {
                         $name = $this->Translate($tmpComponent['name']);
