@@ -79,8 +79,6 @@ trait ComponentDefinitionHelper
     {
         $keys = explode($separator, $keyPath);
         $value = self::$components;
-        IPS_LogMessage('keyPath', $keyPath);
-        IPS_LogMessage('value', print_r($value, true));
         foreach ($keys as $key) {
             //Ausnahme für RGB
             if (is_array($value) && $keyPath == 'rgb.rgb.0' && array_key_exists($key, $value)) {

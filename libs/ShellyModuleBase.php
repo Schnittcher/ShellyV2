@@ -67,7 +67,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $originalIdent = $Ident;
             $Ident = preg_replace('/_?ExtraAction/', '', $Ident);
 
-            IPS_LogMessage('RequestAction',$Ident);
             $IdentKeyPath = $this->convertIdentToKeyPath($Ident);
             $tmpComponents = $this->getValueByKeyPath($IdentKeyPath[0]);
 
@@ -77,7 +76,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 }
             }
 
-            IPS_LogMessage('tmpComponents',print_r($IdentKeyPath,true));
             if (array_key_exists('list', $tmpComponents['action'])) {
                 $tmpComponents['action']['method'] = $tmpComponents['action']['method'] . $Value;
             }
