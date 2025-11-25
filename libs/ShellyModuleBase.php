@@ -185,6 +185,11 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         {
             if (@$this->GetIDForIdent($Ident)) {
                 $this->SendDebug('SetValue :: ' . $Ident, $Value, 0);
+
+                if (is_array($value)) {
+                    $value = implode(',', $value);
+                }
+
                 parent::SetValue($Ident, $Value);
             } else {
                 if ($this->ReadPropertyBoolean('DebugMissingIdents')) {
@@ -264,10 +269,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         'g' => $Payload['rgb:' . $componentsFromShellyResult['number']]['rgb'][1],
                         'b' => $Payload['rgb:' . $componentsFromShellyResult['number']]['rgb'][2]
                     ]);
-                }
-
-                if (is_array($value)) {
-                    $value = implode('', $value);
                 }
 
                 $this->SetValue($componentsFromShellyResult['ident'], $value);
