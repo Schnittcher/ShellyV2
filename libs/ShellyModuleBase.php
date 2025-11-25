@@ -187,7 +187,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 $this->SendDebug('SetValue :: ' . $Ident, $Value, 0);
 
                 if (is_array($value)) {
-                    $value = implode(',', $value);
+                    $value = implode(',', $Value);
                 }
 
                 parent::SetValue($Ident, $Value);
