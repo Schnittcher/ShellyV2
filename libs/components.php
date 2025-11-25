@@ -977,6 +977,21 @@ trait Components
                     ]
                 ],
             ],
+            'pos' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Position',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                    'SUFFIX'       => ' %',
+                    'USAGE_TYPE'   => 5
+                ],
+                'action'        => [
+                    'method' => 'BluTrv.Call',
+                    'params' => ['id' => '', 'method' => 'TRV.SetPosition', 'params'=>[
+                        'id' => 0, 'pos' => '']
+                    ]
+                ],
+            ],
             'rssi' => [
                 'type'         => VARIABLETYPE_INTEGER,
                 'name'         => 'RSSI',

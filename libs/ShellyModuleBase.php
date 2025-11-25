@@ -88,6 +88,8 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 //Ausnahme für BLUTRV - viel mehr Parameter beim RPC Aufruf
                 if ($IdentKeyPath[0] == 'blutrv.target_C') {
                     $tmpComponents['action']['params']['params']['target_C'] = $Value;
+                } elseif ($IdentKeyPath[0] == 'blutrv.pos') {
+                    $tmpComponents['action']['params']['params']['pos'] = $Value;
                 } elseif ($IdentKeyPath[0] == 'blutrv.current_C') {
                     $tmpComponents['action']['params']['params']['t_C'] = $Value;
                 } else {
@@ -187,7 +189,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 $this->SendDebug('SetValue :: ' . $Ident, $Value, 0);
 
                 if (is_array($Value)) {
-                    $value = implode(',', $Value);
+                    $Value = implode(',', $Value);
                 }
                 parent::SetValue($Ident, $Value);
             } else {
