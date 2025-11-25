@@ -122,7 +122,6 @@ trait ComponentDefinitionHelper
         foreach ($exceptions as $ending) {
             // Prüfen, ob die Endung im String vorkommt
             if (str_contains($input, $ending)) {
-                IPS_LogMessage('input', $input);
                 // Splitte String an der ersten Vorkommen der Endung
                 $parts = explode($ending, $input, 2);
                 $before = $parts[0]; // Alles vor der Endung
@@ -140,11 +139,9 @@ trait ComponentDefinitionHelper
                     unset($parts[1]);    // Zahl entfernen
                     // Neu zusammensetzen mit Punkten
                     $result = implode('.', array_values($parts)); // array_values zur Neuindexierung
-                    IPS_LogMessage('input 4', $result);
                     return [$result, $number];
                 }
             }
-            IPS_LogMessage('input else', $input);
             $parts = explode('_', $input);
             // Prüfen, ob an zweiter Stelle eine Zahl ist
             if (isset($parts[1]) && is_numeric($parts[1])) {
@@ -155,7 +152,6 @@ trait ComponentDefinitionHelper
 
         // Neu zusammensetzen mit Punkten
         $result = implode('.', array_values($parts)); // array_values zur Neuindexierung
-                    IPS_LogMessage('input 4', $result);
         return [$result, $number];
     }
 
