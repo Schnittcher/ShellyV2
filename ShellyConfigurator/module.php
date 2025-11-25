@@ -112,7 +112,6 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                             $BLUTRVs = $this->getBLUTRVs($shellyComponentsTRV['result']);
                             if (array_key_exists('result', $shellyComponentsTRV)) {
                                 foreach ($BLUTRVs as $key => $BLUTRV) {
-                                    IPS_LogMessage('key', $key);
                                     $component = $this->cleanComponentPath($key)['clean'];
                                     $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
                                     if ($this->componentDefinitionExists($component)) {
