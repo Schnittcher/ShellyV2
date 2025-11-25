@@ -186,10 +186,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             if (@$this->GetIDForIdent($Ident)) {
                 $this->SendDebug('SetValue :: ' . $Ident, $Value, 0);
 
-                if (is_array($value)) {
+                if (is_array($Value)) {
                     $value = implode(',', $Value);
                 }
-
                 parent::SetValue($Ident, $Value);
             } else {
                 if ($this->ReadPropertyBoolean('DebugMissingIdents')) {
