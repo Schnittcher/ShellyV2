@@ -79,6 +79,8 @@ trait ComponentDefinitionHelper
     {
         $keys = explode($separator, $keyPath);
         $value = self::$components;
+        IPS_LogMessage('keyPath', $keyPath);
+        IPS_LogMessage('value', print_r($value, true));
         foreach ($keys as $key) {
             //Ausnahme für RGB
             if (is_array($value) && $keyPath == 'rgb.rgb.0' && array_key_exists($key, $value)) {
@@ -120,6 +122,7 @@ trait ComponentDefinitionHelper
         foreach ($exceptions as $ending) {
             // Prüfen, ob die Endung im String vorkommt
             if (str_contains($input, $ending)) {
+                IPS_LogMessage('input', $input);
                 // Splitte String an der ersten Vorkommen der Endung
                 $parts = explode($ending, $input, 2);
                 $before = $parts[0]; // Alles vor der Endung
@@ -135,20 +138,24 @@ trait ComponentDefinitionHelper
                 if (isset($parts[1]) && is_numeric($parts[1])) {
                     $number = $parts[1]; // Zahl merken
                     unset($parts[1]);    // Zahl entfernen
+                    // Neu zusammensetzen mit Punkten
+                    $result = implode('.', array_values($parts)); // array_values zur Neuindexierung
+                    IPS_LogMessage('input 4', $result);
+                    return [$result, $number];
                 }
-            } else {
-                $parts = explode('_', $input);
-                // Prüfen, ob an zweiter Stelle eine Zahl ist
-                if (isset($parts[1]) && is_numeric($parts[1])) {
-                    $number = $parts[1]; // Zahl merken
-                    unset($parts[1]);    // Zahl entfernen
-                }
+            }
+            IPS_LogMessage('input else', $input);
+            $parts = explode('_', $input);
+            // Prüfen, ob an zweiter Stelle eine Zahl ist
+            if (isset($parts[1]) && is_numeric($parts[1])) {
+                $number = $parts[1]; // Zahl merken
+                unset($parts[1]);    // Zahl entfernen
             }
         }
 
         // Neu zusammensetzen mit Punkten
         $result = implode('.', array_values($parts)); // array_values zur Neuindexierung
-
+                    IPS_LogMessage('input 4', $result);
         return [$result, $number];
     }
 
