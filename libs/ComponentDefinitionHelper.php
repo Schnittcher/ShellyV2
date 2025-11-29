@@ -19,8 +19,10 @@ trait ComponentDefinitionHelper
 
                 // Prüfen: Bestehen die Keys ausschließlich aus numerischen?
                 $allNumericKeys = array_keys($value) === range(0, count($value) - 1);
+                // Prüfen: Der vollständige Key darf nicht "events" enthalten - damit events berücksichtigt wird
+                $containsNoEvents = stripos($fullKey, 'events') === false;
 
-                if ($allNumericKeys) {
+                if ($allNumericKeys && $containsNoEvents) {
                     // Arrays mit rein numerischen Keys sollen als Endpunkt gezählt werden
                     $keys[] = $fullKey;
                     continue;

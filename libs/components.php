@@ -987,7 +987,7 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'BluTrv.Call',
-                    'params' => ['id' => '', 'method' => 'TRV.SetPosition', 'params'=>[
+                    'params' => ['id' => '', 'method' => 'Trv.SetPosition', 'params'=>[
                         'id' => 0, 'pos' => '']
                     ]
                 ],
