@@ -80,6 +80,41 @@ trait Components
                     'SUFFIX'       => ' %',
                 ],
             ],
+            'counts' => [
+                'total' => [
+                    'type'         => VARIABLETYPE_INTEGER,
+                    'name'         => 'Total Counts',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    ],
+                ],
+            ],
+            'freq' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Frequency',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' Hz'
+                ],
+            ],
+        ],
+        'voltmeter' => [
+            'voltage' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Voltage',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+            ],
+            'xvoltage' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Xvoltage',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+            ],
         ],
         'flood' => [
             'alarm' => [
@@ -120,11 +155,11 @@ trait Components
                     ]
                 ],
             ],
-             'errors' => [
-                'type'         => VARIABLETYPE_STRING,
+            'errors' => [
+                'type'          => VARIABLETYPE_STRING,
                 'componentType' => 'Array',
-                'name'         => 'Errors',
-                'presentation' => [
+                'name'          => 'Errors',
+                'presentation'  => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
