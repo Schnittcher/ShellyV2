@@ -1,0 +1,28 @@
+{
+    "translations": {
+        "de": {
+            "State": "Status",
+            "Current Temperature": "Aktuelle Temperatur",
+            "Target Temperature": "Zieltemperatur",
+            "Fan Speed": "Lüftergeschwindigkeit",
+            "Auto": "Automatisch",
+            "Low": "Niedrig",
+            "Medium": "Mittel",
+            "High": "Hoch",
+            "Mode": "Modus",
+            "Cool": "Kühlen",
+            "Dry": "Entfeuchten",
+            "Floor heating": "Fußbodenheizung",
+            "Heat": "Heizen",
+            "Ventilation": "Lüften",
+            "Boost": "Boost",
+            "Anti Freeze": "Frostschutz",
+            "Humidity": "Luftfeuchtigkeit",
+            "Target Humidity": "Ziel Luftfeuchtigkeit",
+            "Child Lock": "Kindersicherung",
+            "Position": "Position",
+            "Power supply": "Stromversorgung",
+            "Reachable": "Erreichbar"
+        }
+    }
+}
