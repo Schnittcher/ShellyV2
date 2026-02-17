@@ -322,5 +322,8 @@ trait ShellyModels
         'S4PL-00116US' => [
             'Name' => 'Shelly Plug US Gen4'
         ],
+        'S3PL-30116EU' => [
+            'Name' => 'Shelly Plug PM Gen3'
+        ],
     ];
 }

@@ -367,7 +367,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
         public function setMQTTSettings($selectedValue, $broker, $port, $username, $password)
         {
             $selectedValue = json_decode($selectedValue, true);
-            IPS_LogMessage('SelectedValue', print_r($selectedValue, true));
+            //IPS_LogMessage('SelectedValue', print_r($selectedValue, true));
 
             $IPAddress = $selectedValue['IPAddress'];
             $method = 'MQTT.SetConfig';
@@ -383,12 +383,10 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             $result = $this->ShellyRPCviaHTTP($IPAddress, $method, $params, $timeout = 5);
 
             if ($result['result']['restart_required'] == true) {
-                IPS_LogMessage('Info', 'Shelly device will restart to apply MQTT settings.');
+                $this->LogMessage('Shelly device with IP: ' . $IPAddress . ' will restart to apply MQTT settings.', KL_INFO);
                 $result = $this->ShellyRPCviaHTTP($IPAddress, 'Shelly.Reboot', [], $timeout = 5);
-                IPS_LogMessage('Reboot', print_r($result, true));
                 $this->UpdateFormField('ShellyMQTTSettingsInfo', 'visible', true);
             }
-            IPS_LogMessage('Result', print_r($result, true));
         }
         private function getShellyInstances($ShellyID, $App)
         {

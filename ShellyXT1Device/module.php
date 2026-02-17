@@ -118,7 +118,7 @@ require_once __DIR__ . '/../libs/XMODServices.php';
 
                         if ($ident != null) {
                             if (array_key_exists('receivePayloadKey', $XMODService[$ident])) {
-                                IPS_LogMessage('test', print_r($Payload['params'][$key], true));
+                                //IPS_LogMessage('test', print_r($Payload['params'][$key], true));
                                 if (array_key_exists($XMODService[$ident]['receivePayloadKey'], $Payload['params'][$key])) {
                                     $this->SetValue($ident, $Payload['params'][$key][$XMODService[$ident]['receivePayloadKey']]);
                                 }
