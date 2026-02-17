@@ -9,7 +9,16 @@
             "Firmware": "Firmware",
             "Searching...": "Suche...",
             "Please press OK and reload the form!": "Bitte drücken Sie OK und laden Sie das Formular neu!",
-            "Shelly Configurator (Gen2+)": "Shelly Konfigurator (Gen2+)"
+            "Shelly Configurator (Gen2+)": "Shelly Konfigurator (Gen2+)",
+            "MQTT settings have been saved successfully. Device will now reconnect with new settings.": "MQTT-Einstellungen wurden erfolgreich gespeichert. Das Gerät wird sich nun mit den neuen Einstellungen neu verbinden.",
+            "Set MQTT settings": "MQTT-Einstellungen setzen",
+            "MQTT Broker": "Broker",
+            "Port": "Port",
+            "MQTT Username": " MQTT Benutzername",
+            "MQTT Password": "MQTT Passwort",
+            "Please press OK!": "Bitte drücken Sie OK!",
+            "Save": "Speichern",
+            "This feature is experimental and allows you to adjust the Shellie's MQTT settings.": "Diese Funktion ist experimentell und ermöglicht es Ihnen, die MQTT-Einstellungen des Shelly anzupassen."
         }
     }
 }

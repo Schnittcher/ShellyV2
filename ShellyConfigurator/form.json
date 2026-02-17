@@ -5,6 +5,7 @@
             "name": "Configurator",
             "caption": "Shelly Configurator",
             "discoveryInterval": "300",
+            "rowCount": "15",
             "delete": false,
             "sort": {
                 "column": "MQTTTopic",
@@ -52,6 +53,46 @@
             "values": []
         },
         {
+            "type": "Label",
+            "caption": "This feature is experimental and allows you to adjust the Shellie's MQTT settings."
+        },
+        {
+            "type": "List",
+            "name": "mDNSConfigurator",
+            "caption": "Set MQTT settings",
+            "delete": false,
+            "columns": [
+                {
+                    "caption": "Name",
+                    "name": "name",
+                    "width": "auto",
+                    "visible": true
+                },
+                {
+                    "caption": "IP-Address",
+                    "name": "IPAddress",
+                    "width": "250px",
+                    "visible": false
+                },
+                {
+                    "caption": "App",
+                    "name": "App",
+                    "width": "150px"
+                },
+                {
+                    "caption": "Firmware",
+                    "name": "Firmware",
+                    "width": "250px"
+                },
+                {
+                    "caption": "Generation",
+                    "name": "Generation",
+                    "width": "250px"
+                }
+            ],
+            "values": []
+        },
+        {
             "type": "PopupAlert",
             "name": "DiscoverInfo",
             "visible": false,
@@ -64,6 +105,53 @@
                     {
                         "type": "Label",
                         "caption": "Please press OK and reload the form!"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "RowLayout",
+            "items": [
+                {
+                    "type": "ValidationTextBox",
+                    "name": "Broker",
+                    "caption": "MQTT Broker"
+                },
+                {
+                    "type": "NumberSpinner",
+                    "name": "Port",
+                    "caption": "Port"
+                },
+                {
+                    "type": "ValidationTextBox",
+                    "name": "Username",
+                    "caption": "MQTT Username"
+                },
+                {
+                    "type": "PasswordTextBox",
+                    "name": "Password",
+                    "caption": "MQTT Password"
+                },
+                {
+                    "type": "Button",
+                    "caption": "Save",
+                    "onClick": "SHY_setMQTTSettings($id, json_encode($mDNSConfigurator), $Broker, $Port, $Username, $Password);"
+                }
+            ]
+        },
+        {
+            "type": "PopupAlert",
+            "name": "ShellyMQTTSettingsInfo",
+            "visible": false,
+            "popup": {
+                "items": [
+                    {
+                        "type": "Label",
+                        "caption": "MQTT settings have been saved successfully. Device will now reconnect with new settings."
+                    },
+                    {
+                        "type": "Label",
+                        "caption": "Please press OK!"
                     }
                 ]
             }

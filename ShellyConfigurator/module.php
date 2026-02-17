@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../libs/MQTTHelper.php';
+require_once __DIR__ . '/../libs/ShellyRPCHelper.php';
 require_once __DIR__ . '/../libs/ShellyModels.php';
 require_once __DIR__ . '/../libs/vendor/SymconModulHelper/DebugHelper.php';
 require_once __DIR__ . '/../libs/components.php';
@@ -18,6 +19,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
         use MQTTHelper;
         use ShellyModels;
         use DebugHelper;
+        use ShellyRPCHelper;
 
         public function Create()
         {
@@ -47,14 +49,15 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             if (floatval(IPS_GetKernelVersion()) < 5.3) {
                 return json_encode($Form);
             }
+            $Form['actions'][2]['values'] = $this->getFormForMdnsDevices();
 
             $Shellies = json_decode($this->ReadAttributeString('Shellies'), true); //$this->findShellysOnNetwork();
             $Values = [];
 
             if (count($Shellies) == 0) {
-                $Form['actions'][1]['visible'] = true;
+                $Form['actions'][3]['visible'] = true;
             } else {
-                $Form['actions'][1]['visible'] = false;
+                $Form['actions'][3]['visible'] = false;
             }
 
             $idCount = 0;
@@ -83,7 +86,6 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                     }
 
                     if ($Shelly['App'] == 'XT1') {
-                        IPS_LogMessage('test', print_r($Shelly, true));
                         $Values[] = [
                             'id'                    => $idCount,
                             'name'                  => $Shelly['ID'],
@@ -218,7 +220,6 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                     }
                 }
                 $Form['actions'][0]['values'] = $Values;
-                IPS_LogMessage('Values', print_r($Values, true));
             }
             return json_encode($Form);
         }
@@ -332,6 +333,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                                 } else {
                                     $Shellies[$foundedKey]['Firmware'] = $Payload['fw_ver'];
                                     $Shellies[$foundedKey]['IP'] = $Payload['ip'];
+                                    $Shellies[$foundedKey]['App'] = '';
                                 }
                                 $this->WriteAttributeString('Shellies', json_encode($Shellies));
                                 return;
@@ -360,6 +362,33 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                 }
                 $this->WriteAttributeString('Shellies', json_encode($Shellies));
             }
+        }
+
+        public function setMQTTSettings($selectedValue, $broker, $port, $username, $password)
+        {
+            $selectedValue = json_decode($selectedValue, true);
+            IPS_LogMessage('SelectedValue', print_r($selectedValue, true));
+
+            $IPAddress = $selectedValue['IPAddress'];
+            $method = 'MQTT.SetConfig';
+            $params = [
+                'config' => [
+                    'enable'   => true,
+                    'server'   => $broker,
+                    'port'     => $port,
+                    'user'     => $username,
+                    'pass'     => $password,
+                ]
+            ];
+            $result = $this->ShellyRPCviaHTTP($IPAddress, $method, $params, $timeout = 5);
+
+            if ($result['result']['restart_required'] == true) {
+                IPS_LogMessage('Info', 'Shelly device will restart to apply MQTT settings.');
+                $result = $this->ShellyRPCviaHTTP($IPAddress, 'Shelly.Reboot', [], $timeout = 5);
+                IPS_LogMessage('Reboot', print_r($result, true));
+                $this->UpdateFormField('ShellyMQTTSettingsInfo', 'visible', true);
+            }
+            IPS_LogMessage('Result', print_r($result, true));
         }
         private function getShellyInstances($ShellyID, $App)
         {
@@ -413,5 +442,42 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                 return IPS_GetObject($ID)['ObjectName'];
             }
             return '';
+        }
+
+        private function getFormForMdnsDevices()
+        {
+            $shellies = $this->mdnsSearch();
+            $Values = [];
+            foreach ($shellies as $key => $Shelly) {
+                $Values[] = [
+
+                    'name'                    => $Shelly['Hostname'],
+                    'IPAddress'               => $Shelly['IPv4'],
+                    'App'                     => '',
+                    'Firmware'                => '',
+                    'Generation'              => '',
+                ];
+            }
+            return $Values;
+        }
+
+        private function mdnsSearch()
+        {
+            $mDNSInstanceIDs = IPS_GetInstanceListByModuleID('{780B2D48-916C-4D59-AD35-5A429B2355A5}');
+            $resultServiceTypes = ZC_QueryServiceType($mDNSInstanceIDs[0], '_shelly._tcp', 'local');
+            $shellies = [];
+            foreach ($resultServiceTypes as $key => $device) {
+                $shelly = [];
+                $deviceInfo = ZC_QueryService($mDNSInstanceIDs[0], $device['Name'], '_shelly._tcp', 'local.');
+                //print_r($deviceInfo);
+                $shelly['Hostname'] = $device['Name'];
+                if (!empty($deviceInfo)) {
+                    $shelly['Port'] = $deviceInfo[0]['Port'] ?? null;
+                    $shelly['IPv6'] = $deviceInfo[0]['IPv6'][0] ?? null;
+                    $shelly['IPv4'] = $deviceInfo[0]['IPv4'][0] ?? null;
+                }
+                array_push($shellies, $shelly);
+            }
+            return $shellies;
         }
     }
