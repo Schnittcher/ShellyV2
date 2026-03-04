@@ -18,7 +18,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         {
             //Never delete this line!
             parent::Create();
-            $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
+            if (IPS_GetKernelVersion() < 8.2) {
+                $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
+            }
             $this->RegisterPropertyString('MQTTTopic', '');
             $this->RegisterPropertyBoolean('DebugMissingIdents', false);
             $this->RegisterPropertyString('VariableList', '{}');

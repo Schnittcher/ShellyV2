@@ -25,7 +25,9 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
         {
             //Never delete this line!
             parent::Create();
-            $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
+            if (IPS_GetKernelVersion() < 8.2) {
+                $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
+            }
             $this->RegisterAttributeString('Shellies', '{}');
         }
 

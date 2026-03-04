@@ -14,7 +14,6 @@ require_once __DIR__ . '/../libs/XMODServices.php';
         public function Create()
         {
             parent::Create();
-            $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
             $this->RegisterPropertyString('MQTTTopic', '');
             $this->RegisterPropertyString('XMODServiceType', '');
 
