@@ -70,6 +70,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                         $instanceID = $this->getShellyInstances($Shelly['ID'], $Shelly['App']);
                     } else {
                         $this->SendDebug('Shelly App Key not exists', $Shelly, 0);
+                        continue;
                     }
 
                     if ($Shelly['Model'] == '') {
