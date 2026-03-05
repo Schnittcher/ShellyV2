@@ -399,7 +399,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             $result = $this->ShellyRPCviaHTTP($IPAddress, $method, $params, $timeout = 5);
 
             if ($result['result']['restart_required'] == true) {
-                $this->LogMessage('Shelly device with IP: ' . $IPAddress . ' will restart to apply MQTT settings.', KL_INFO);
+                $this->LogMessage('Shelly device with IP: ' . $IPAddress . ' will restart to apply MQTT settings.', KL_NOTIFY);
                 $result = $this->ShellyRPCviaHTTP($IPAddress, 'Shelly.Reboot', [], $timeout = 5);
                 $this->UpdateFormField('ShellyMQTTSettingsInfo', 'visible', true);
             }
