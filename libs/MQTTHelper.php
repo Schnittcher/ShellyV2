@@ -15,7 +15,6 @@ trait MQTTHelper
         $Server['Topic'] = $Topic;
         $Server['Payload'] = $Payload;
         $ServerJSON = json_encode($Server, JSON_UNESCAPED_SLASHES);
-        $ServerJSON = json_encode($Server);
         $this->SendDebug(__FUNCTION__ . 'MQTT Server', $ServerJSON, 0);
         $resultServer = @$this->SendDataToParent($ServerJSON);
 

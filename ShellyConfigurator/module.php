@@ -41,7 +41,16 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
         {
             //Never delete this line!
             parent::ApplyChanges();
-            $this->SetReceiveDataFilter('.*(getComponentsConfigurator/rpc|getComponentsConfiguratorViaStatus/rpc||/announce).*');
+            //$this->SetReceiveDataFilter('.*(getComponentsConfigurator/rpc|getComponentsConfiguratorViaStatus/rpc||/announce).*');
+
+            $BaseTopic = 'shellies';
+
+            //Setze Filter für ReceiveData
+            $Filter1 = preg_quote('"Topic":"' . $BaseTopic . '/getComponentsConfigurator/rpc"');
+            $Filter2 = preg_quote('"Topic":"' . $BaseTopic . '/getComponentsConfiguratorViaStatus/rpc"');
+            $Filter3 = '"Topic":"[^"]*/announce"';
+            $this->SendDebug('Filter', '.*(' . $Filter1 . '|' . $Filter2 . '|' . $Filter3 . ').*', 0);
+            $this->SetReceiveDataFilter('.*(' . $Filter1 . '|' . $Filter2 . '|' . $Filter3 . ').*');
         }
 
         public function GetConfigurationForm()
@@ -240,7 +249,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic, 0);
 
             $Payload['id'] = 1;
-            $Payload['src'] = 'getComponentsConfigurator';
+            $Payload['src'] = 'shellies/getComponentsConfigurator';
             $Payload['method'] = 'Shelly.GetComponents';
             $this->sendMQTT($Topic, json_encode($Payload));
 
@@ -262,9 +271,9 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic, 0);
 
             $Payload['id'] = 1;
-            $Payload['src'] = 'getComponentsConfiguratorViaStatus';
+            $Payload['src'] = 'shellies/getComponentsConfiguratorViaStatus';
             $Payload['method'] = 'Shelly.GetStatus';
-            $this->sendMQTT($Topic, json_encode($Payload));
+            $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
 
             $start = microtime(true);
             do {
@@ -308,10 +317,10 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
             $Shellies = json_decode($this->ReadAttributeString('Shellies'), true);
 
             if (array_key_exists('Topic', $Buffer)) {
-                if (fnmatch('getComponentsConfiguratorViaStatus/rpc', $Buffer['Topic'])) {
+                if (fnmatch('shellies/getComponentsConfiguratorViaStatus/rpc', $Buffer['Topic'])) {
                     $this->SetBuffer('LastComponentResponse', $Buffer['Payload']);
                 }
-                if (fnmatch('getComponentsConfigurator/rpc', $Buffer['Topic'])) {
+                if (fnmatch('shellies/getComponentsConfigurator/rpc', $Buffer['Topic'])) {
                     $this->SetBuffer('LastComponentResponse2', $Buffer['Payload']);
                 }
 
@@ -320,7 +329,6 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
 
                     $parts = explode('/announce', $Buffer['Topic'], 2);
                     $MQTTTopic = $parts[0];
-
                     if ($MQTTTopic == 'shellies') {
                         return;
                     }
