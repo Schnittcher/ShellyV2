@@ -25,6 +25,10 @@
                 {
                     "caption": "Smart Water Valve",
                     "value": "simple-water-valve-controller"
+                },
+                {
+                    "caption": "Neo Smart Water Valve",
+                    "value": "neo-water-valve-advanced"
                 }
             ]
         }

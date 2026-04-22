@@ -22,7 +22,13 @@
             "Child Lock": "Kindersicherung",
             "Position": "Position",
             "Power supply": "Stromversorgung",
-            "Reachable": "Erreichbar"
+            "Reachable": "Erreichbar",
+            "Water consumption": "Wasserverbrauch",
+            "Water temperature": "Wassertemperatur",
+            "Water Pressure": "Wasserdruck",
+            "Flow rate": "Durchflussrate",
+            "Open": "Offen",
+            "Closed": "Geschlossen"
         }
     }
 }

@@ -279,5 +279,92 @@ trait XMODServices
 
             ],
         ],
+        'neo-water-valve-advanced' => [
+            'state' => [
+                'name'         => 'State',
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'action'       => true,
+                 'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'ICON'         => 'Valve',
+                    'OPTIONS'      => [
+                        [
+                            "Value" => true,
+                            "Caption" => "Open",
+                            "IconActive" => false,
+                            "Icon" => "",
+                            "ColorActive" => true,
+                            "ColorValue" => 65280
+                        ],
+                        [
+                            "Value" => false,
+                            "Caption" => "Closed",
+                            "IconActive" => false,
+                            "Icon" => "",
+                            "ColorActive" => true,
+                            "ColorValue" => 16711680
+                        ]
+                    ],
+                ],
+
+                'receive' => 'boolean:200'
+            ],
+            'flow_rate' => [
+                'name'         => 'Flow rate',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' m3/min',
+                    'ICON'         => 'water',
+                    'MIN'          => 0,
+                    'MAX'          => 0.075,
+                    'DIGITS'       => 2,
+                    'STEP_SIZE'    => 0.1 
+                ],
+                'receive' => 'number:200'
+            ],
+                'water_pressure' => [
+                'name'         => 'Water Pressure',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kPa',
+                    'ICON'         => 'water',
+                    'MIN'          => 0,
+                    'MAX'          => 1350,
+                    'STEP_SIZE'    => 1 
+                ],
+                'receive' => 'number:201'
+            ],
+                'water_temperature' => [
+                'name'         => 'Water temperature',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' °C',
+                    'ICON'         => 'water',
+                    'MIN'          => -25,
+                    'MAX'          => 80,
+                    'STEP_SIZE'    => 1 
+                ],
+                'receive' => 'number:202'
+            ],
+                'water_consumption' => [
+                'name'         => 'Water consumption',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' m3',
+                    'ICON'         => 'water'
+                ],
+                'receive' => 'object:200',
+                'objectValue' => 'counter:total'
+            ],
+
+        ],
     ];
 }
