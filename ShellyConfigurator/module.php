@@ -178,7 +178,7 @@ const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
                                 } else {
                                     $shellyComponentsTRV = [];
                                 }
-
+                                $this->SendDebug('Shelly TRV Components', json_encode($shellyComponentsTRV), 0);
                                 if (array_key_exists('result', $shellyComponentsTRV)) {
                                     $BLUTRVs = $this->getBLUTRVs($shellyComponentsTRV['result']);
                                     foreach ($BLUTRVs as $key => $BLUTRV) {
