@@ -987,7 +987,7 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'BluTrv.Call',
-                    'params' => ['id' => '', 'method' => 'TRV.SetExternalTemperature', 'params'=>[
+                    'params' => ['id' => '', 'method' => 'TRV.SetExternalTemperature', 'params' => [
                         'id' => 0, 't_C' => '']
                     ]
                 ],
@@ -1007,7 +1007,7 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'BluTrv.Call',
-                    'params' => ['id' => '', 'method' => 'TRV.SetTarget', 'params'=>[
+                    'params' => ['id' => '', 'method' => 'TRV.SetTarget', 'params' => [
                         'id' => 0, 'target_C' => '']
                     ]
                 ],
@@ -1022,7 +1022,7 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'BluTrv.Call',
-                    'params' => ['id' => '', 'method' => 'Trv.SetPosition', 'params'=>[
+                    'params' => ['id' => '', 'method' => 'Trv.SetPosition', 'params' => [
                         'id' => 0, 'pos' => '']
                     ]
                 ],
@@ -1032,6 +1032,14 @@ trait Components
                 'name'         => 'RSSI',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'battery' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Battery',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                    'SUFFIX'       => ' %'
                 ],
             ],
         ],
