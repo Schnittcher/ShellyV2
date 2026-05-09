@@ -258,6 +258,9 @@ trait ShellyModels
         'SPSW-104PE16EU' => [
             'Name'  => 'Shelly Pro 4PM V2',
         ],
+        'SPSW-204PE16EU' => [
+            'Name'  => 'Shelly Pro 4PM V3',
+        ],
         'SNGW-BT01' => [
             'Name'  => 'Shelly Bluetooth Gateway',
         ],
