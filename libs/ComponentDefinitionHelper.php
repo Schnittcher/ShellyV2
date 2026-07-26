@@ -29,7 +29,7 @@ trait ComponentDefinitionHelper
                 }
 
                 // Sonst rekursiv weiter
-                $keys = array_merge($keys, $this->getArrayLeafKeyPaths($value, $fullKey));
+                array_push($keys, ...$this->getArrayLeafKeyPaths($value, $fullKey));
             } else {
                 // Kein Array = Endpunkt
                 $keys[] = $fullKey;
