@@ -449,7 +449,14 @@ class ShellyConfigurator extends IPSModule
         $selectedValue = json_decode($selectedValue, true);
         //IPS_LogMessage('SelectedValue', print_r($selectedValue, true));
 
-        $IPAddress = $selectedValue['IPAddress'];
+        //IP-Adresse wird erst hier bei Bedarf per mDNS aufgelöst, statt beim Formular-Öffnen für jedes
+        //gefundene Gerät (siehe mdnsSearch()/getFormForMdnsDevices()).
+        $IPAddress = $this->resolveMdnsIPAddress($selectedValue['name']);
+        if ($IPAddress == null) {
+            $this->LogMessage('Shelly device with hostname: ' . $selectedValue['name'] . ' could not be resolved via mDNS.', KL_ERROR);
+            return;
+        }
+
         $method = 'MQTT.SetConfig';
         $params = [
             'config' => [
@@ -530,7 +537,8 @@ class ShellyConfigurator extends IPSModule
             $Values[] = [
 
                 'name'                    => $Shelly['Hostname'],
-                'IPAddress'               => $Shelly['IPv4'],
+                //IP wird erst beim Speichern (setMQTTSettings) aufgelöst, siehe resolveMdnsIPAddress().
+                'IPAddress'               => '',
                 'App'                     => '',
                 'Firmware'                => '',
                 'Generation'              => '',
@@ -539,23 +547,29 @@ class ShellyConfigurator extends IPSModule
         return $Values;
     }
 
+    //Nur der Namens-Browse (schnell, ein Aufruf für alle Geräte). Die eigentliche IP-Auflösung
+    //(ZC_QueryService) passiert bewusst nicht mehr hier für jedes gefundene Gerät, da das bei vielen
+    //Shellys das Öffnen des Konfigurators spürbar verlangsamt - siehe resolveMdnsIPAddress().
     private function mdnsSearch()
     {
         $mDNSInstanceIDs = IPS_GetInstanceListByModuleID('{780B2D48-916C-4D59-AD35-5A429B2355A5}');
         $resultServiceTypes = ZC_QueryServiceType($mDNSInstanceIDs[0], '_shelly._tcp', 'local');
         $shellies = [];
         foreach ($resultServiceTypes as $key => $device) {
-            $shelly = [];
-            $deviceInfo = ZC_QueryService($mDNSInstanceIDs[0], $device['Name'], '_shelly._tcp', 'local.');
-            //print_r($deviceInfo);
-            $shelly['Hostname'] = $device['Name'];
-            if (!empty($deviceInfo)) {
-                $shelly['Port'] = $deviceInfo[0]['Port'] ?? null;
-                $shelly['IPv6'] = $deviceInfo[0]['IPv6'][0] ?? null;
-                $shelly['IPv4'] = $deviceInfo[0]['IPv4'][0] ?? null;
-            }
-            array_push($shellies, $shelly);
+            $shellies[] = ['Hostname' => $device['Name']];
         }
         return $shellies;
+    }
+
+    //Löst die IP-Adresse für genau einen Hostnamen per mDNS auf - wird erst bei Bedarf
+    //(beim Speichern der MQTT-Einstellungen) aufgerufen, nicht mehr für jedes gefundene Gerät beim Formular-Öffnen.
+    private function resolveMdnsIPAddress($hostname)
+    {
+        $mDNSInstanceIDs = IPS_GetInstanceListByModuleID('{780B2D48-916C-4D59-AD35-5A429B2355A5}');
+        $deviceInfo = ZC_QueryService($mDNSInstanceIDs[0], $hostname, '_shelly._tcp', 'local.');
+        if (!empty($deviceInfo)) {
+            return $deviceInfo[0]['IPv4'][0] ?? null;
+        }
+        return null;
     }
 }
