@@ -275,6 +275,25 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 }
 
                 $this->SetValue($componentsFromShellyResult['ident'], $value);
+
+                // ############################################################
+                // ### TEST / EXPERIMENTELL - cover.current_pos spiegeln    ###
+                // ### Damit die Shutter-Kachel (Position State /           ###
+                // ### _ExtraAction) auch die Live-Position anzeigt, nicht  ###
+                // ### nur die reine "Current Position"-Anzeige-Variable.   ###
+                // ### Nur für cover.current_pos, da Basis- und Extra-      ###
+                // ### Variable hier gleicher Typ (INTEGER) und gleiche     ###
+                // ### Bedeutung (Position in %) haben - bei anderen        ###
+                // ### actionWithExtraVariable-Komponenten (z.B. Brightness ###
+                // ### Action, Cover Action State) wäre das NICHT korrekt!  ###
+                // ### => Bei Problemen (z.B. Widget "zuckt" beim Ziehen    ###
+                // ###    während der Rollladen fährt) diesen Block wieder  ###
+                // ###    entfernen.                                       ###
+                // ############################################################
+                if ($componentsFromShellyResult['clean'] == 'cover.current_pos') {
+                    $this->SetValue($componentsFromShellyResult['ident'] . '_ExtraAction', $value);
+                }
+                // ### ENDE TEST / EXPERIMENTELL ###############################
             }
         }
 
