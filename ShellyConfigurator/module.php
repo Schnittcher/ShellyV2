@@ -46,8 +46,10 @@ class ShellyConfigurator extends IPSModule
         $BaseTopic = 'shellies';
 
         //Setze Filter für ReceiveData
-        $Filter1 = preg_quote('"Topic":"' . $BaseTopic . '/getComponentsConfigurator/rpc"');
-        $Filter2 = preg_quote('"Topic":"' . $BaseTopic . '/getComponentsConfiguratorViaStatus/rpc"');
+        //Die Shelly-ID im "src" (und damit im Antwort-Topic) macht die Antworten pro Gerät
+        //unterscheidbar, damit mehrere getComponents-Anfragen parallel laufen können.
+        $Filter1 = preg_quote('"Topic":"' . $BaseTopic . '/getComponentsConfigurator/') . '[^"]*' . preg_quote('/rpc"');
+        $Filter2 = preg_quote('"Topic":"' . $BaseTopic . '/getComponentsConfiguratorViaStatus/') . '[^"]*' . preg_quote('/rpc"');
         $Filter3 = '"Topic":"[^"]*/announce"';
         $this->SendDebug('Filter', '.*(' . $Filter1 . '|' . $Filter2 . '|' . $Filter3 . ').*', 0);
         $this->SetReceiveDataFilter('.*(' . $Filter1 . '|' . $Filter2 . '|' . $Filter3 . ').*');
@@ -75,6 +77,26 @@ class ShellyConfigurator extends IPSModule
 
         if (count($Shellies) > 0) {
             $idCount++;
+
+            //Phase 1: Für alle Geräte mit gültigem Modell die Anfragen sofort verschicken, ohne zu warten.
+            $pendingBufferKeys = [];
+            foreach ($Shellies as $Shelly) {
+                if (!array_key_exists('App', $Shelly) || $Shelly['Model'] == '') {
+                    continue;
+                }
+                $this->requestComponentsViaStatus($Shelly['ID']);
+                $pendingBufferKeys[] = 'LastComponentResponse_' . $Shelly['ID'];
+
+                if ($Shelly['App'] == 'BluGwG3') {
+                    $this->requestComponents($Shelly['ID']);
+                    $pendingBufferKeys[] = 'LastComponentResponse2_' . $Shelly['ID'];
+                }
+            }
+
+            //Phase 2: Einmal gemeinsam auf alle Antworten warten (max. 5 Sekunden insgesamt statt pro Gerät seriell).
+            $componentResponses = $this->waitForComponentResponses($pendingBufferKeys, 5);
+
+            //Phase 3: Formular wie gewohnt aufbauen, jetzt aus den bereits eingesammelten Antworten.
             foreach ($Shellies as $key => $Shelly) {
                 $DeviceType = '';
                 if (array_key_exists('App', $Shelly)) {
@@ -89,7 +111,7 @@ class ShellyConfigurator extends IPSModule
                     continue;
                 }
 
-                $shellyComponents = $this->getComponentsViaStatus($Shelly['ID']);
+                $shellyComponents = $componentResponses['LastComponentResponse_' . $Shelly['ID']] ?? null;
                 if ($shellyComponents != null) {
                     $shellyComponents = json_decode($shellyComponents, true);
                 } else {
@@ -172,7 +194,7 @@ class ShellyConfigurator extends IPSModule
                     if (array_key_exists('App', $Shelly)) {
                         //Ausnahme für Shelly TRV
                         if ($Shelly['App'] == 'BluGwG3') {
-                            $shellyComponentsTRV = $this->getComponents($Shelly['ID']);
+                            $shellyComponentsTRV = $componentResponses['LastComponentResponse2_' . $Shelly['ID']] ?? null;
                             if ($shellyComponentsTRV != null) {
                                 $shellyComponentsTRV = json_decode($shellyComponentsTRV, true);
                             } else {
@@ -254,50 +276,76 @@ class ShellyConfigurator extends IPSModule
     }
 
     //Wird aktuell nur für die Shelly BLUTRV genutzt, da diese nicht über getStatus zu finden sind - in getComponents, fehlen dafür Komponenten wie RGB, daher nutze ich weiterhin Shelly.GetStatus um die Komponenten zu finden.
+    //Bleibt für Aufrufer, die eine einzelne synchrone Anfrage erwarten, unverändert (sendet + wartet auf genau ein Gerät).
     public function getComponents($ShellyMQTTGTopic)
     {
-        $Topic = $ShellyMQTTGTopic . '/rpc';
-
-        $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic, 0);
-
-        $Payload['id'] = 1;
-        $Payload['src'] = 'shellies/getComponentsConfigurator';
-        $Payload['method'] = 'Shelly.GetComponents';
-        $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
-
-        //$this->sendMQTT($Topic, json_encode($Payload));
-
-        $start = microtime(true);
-        do {
-            $value = $this->GetBuffer('LastComponentResponse2');
-            if ($value != '') {
-                $this->SetBuffer('LastComponentResponse2', ''); // Reset
-                return $value;
-            }
-            IPS_Sleep(100); // 100ms warten
-        } while ((microtime(true) - $start) < 5);
+        $this->requestComponents($ShellyMQTTGTopic);
+        $responses = $this->waitForComponentResponses(['LastComponentResponse2_' . $ShellyMQTTGTopic], 5);
+        return $responses['LastComponentResponse2_' . $ShellyMQTTGTopic] ?? null;
     }
 
     public function getComponentsViaStatus($ShellyMQTTGTopic)
     {
+        $this->requestComponentsViaStatus($ShellyMQTTGTopic);
+        $responses = $this->waitForComponentResponses(['LastComponentResponse_' . $ShellyMQTTGTopic], 5);
+        return $responses['LastComponentResponse_' . $ShellyMQTTGTopic] ?? null;
+    }
+
+    //Verschickt nur die Shelly.GetComponents-Anfrage, ohne auf die Antwort zu warten.
+    //Die Shelly-ID im "src" macht das Antwort-Topic pro Gerät eindeutig.
+    private function requestComponents($ShellyMQTTGTopic)
+    {
         $Topic = $ShellyMQTTGTopic . '/rpc';
 
         $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic, 0);
 
         $Payload['id'] = 1;
-        $Payload['src'] = 'shellies/getComponentsConfiguratorViaStatus';
+        $Payload['src'] = 'shellies/getComponentsConfigurator/' . $ShellyMQTTGTopic;
+        $Payload['method'] = 'Shelly.GetComponents';
+        $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
+    }
+
+    //Verschickt nur die Shelly.GetStatus-Anfrage, ohne auf die Antwort zu warten.
+    private function requestComponentsViaStatus($ShellyMQTTGTopic)
+    {
+        $Topic = $ShellyMQTTGTopic . '/rpc';
+
+        $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic, 0);
+
+        $Payload['id'] = 1;
+        $Payload['src'] = 'shellies/getComponentsConfiguratorViaStatus/' . $ShellyMQTTGTopic;
         $Payload['method'] = 'Shelly.GetStatus';
         $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
+    }
+
+    //Wartet gemeinsam auf mehrere zuvor per requestComponents()/requestComponentsViaStatus() gestellte
+    //Anfragen (max. $maxWaitSeconds insgesamt, nicht pro Gerät), statt seriell pro Gerät zu blockieren.
+    private function waitForComponentResponses(array $bufferKeys, float $maxWaitSeconds)
+    {
+        $responses = [];
+        if (empty($bufferKeys)) {
+            return $responses;
+        }
 
         $start = microtime(true);
         do {
-            $value = $this->GetBuffer('LastComponentResponse');
-            if ($value != '') {
-                $this->SetBuffer('LastComponentResponse', ''); // Reset
-                return $value;
+            foreach ($bufferKeys as $bufferKey) {
+                if (isset($responses[$bufferKey])) {
+                    continue;
+                }
+                $value = $this->GetBuffer($bufferKey);
+                if ($value != '') {
+                    $responses[$bufferKey] = $value;
+                    $this->SetBuffer($bufferKey, ''); // Reset
+                }
+            }
+            if (count($responses) >= count($bufferKeys)) {
+                break;
             }
             IPS_Sleep(100); // 100ms warten
-        } while ((microtime(true) - $start) < 5);
+        } while ((microtime(true) - $start) < $maxWaitSeconds);
+
+        return $responses;
     }
 
     public function getShellies()
@@ -331,11 +379,13 @@ class ShellyConfigurator extends IPSModule
         $Shellies = json_decode($this->ReadAttributeString('Shellies'), true);
 
         if (array_key_exists('Topic', $Buffer)) {
-            if (fnmatch('shellies/getComponentsConfiguratorViaStatus/rpc', $Buffer['Topic'])) {
-                $this->SetBuffer('LastComponentResponse', $Buffer['Payload']);
+            //Die Shelly-ID steckt als mittleres Topic-Segment drin (aus dem "src" der Anfrage),
+            //damit Antworten mehrerer parallel angefragter Geräte unterscheidbar sind.
+            if (preg_match('#^shellies/getComponentsConfiguratorViaStatus/([^/]+)/rpc$#', $Buffer['Topic'], $matches)) {
+                $this->SetBuffer('LastComponentResponse_' . $matches[1], $Buffer['Payload']);
             }
-            if (fnmatch('shellies/getComponentsConfigurator/rpc', $Buffer['Topic'])) {
-                $this->SetBuffer('LastComponentResponse2', $Buffer['Payload']);
+            if (preg_match('#^shellies/getComponentsConfigurator/([^/]+)/rpc$#', $Buffer['Topic'], $matches)) {
+                $this->SetBuffer('LastComponentResponse2_' . $matches[1], $Buffer['Payload']);
             }
 
             if (strpos($Buffer['Topic'], '/announce') !== false) {
