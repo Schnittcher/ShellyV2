@@ -182,8 +182,10 @@ class ShellyConfigurator extends IPSModule
                             if (array_key_exists('result', $shellyComponentsTRV)) {
                                 $BLUTRVs = $this->getBLUTRVs($shellyComponentsTRV['result']);
                                 foreach ($BLUTRVs as $key => $BLUTRV) {
-                                    $component = $this->cleanComponentPath($key)['clean'];
-                                    $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
+                                    $cleanedPath = $this->cleanComponentPath($key);
+                                    $component = $cleanedPath['clean'];
+                                    $componentChannel = intval($cleanedPath['number']);
+                                    $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $component, $componentChannel);
                                     if ($this->componentDefinitionExists($component)) {
                                         $AddComponent = [
                                             'parent'                    => $idCount,
@@ -200,8 +202,8 @@ class ShellyConfigurator extends IPSModule
                                                 'info'          => $Shelly['ID'],
                                                 'configuration' => [
                                                     'MQTTTopic' => $Shelly['ID'],
-                                                    'Component' => $this->cleanComponentPath($key)['clean'],
-                                                    'Channel'   => intval($this->cleanComponentPath($key)['number']),
+                                                    'Component' => $component,
+                                                    'Channel'   => $componentChannel,
                                                 ]
                                             ]
                                         ];
@@ -214,8 +216,10 @@ class ShellyConfigurator extends IPSModule
 
                         if (array_key_exists('result', $shellyComponents)) {
                             foreach ($shellyComponents['result'] as $key => $shellyComponent) {
-                                $component = $this->cleanComponentPath($key)['clean'];
-                                $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $this->cleanComponentPath($key)['clean'], intval($this->cleanComponentPath($key)['number']));
+                                $cleanedPath = $this->cleanComponentPath($key);
+                                $component = $cleanedPath['clean'];
+                                $componentChannel = intval($cleanedPath['number']);
+                                $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $component, $componentChannel);
                                 if ($this->componentDefinitionExists($component)) {
                                     $AddComponent = [
                                         'parent'                    => $idCount,
@@ -232,8 +236,8 @@ class ShellyConfigurator extends IPSModule
                                             'info'          => $Shelly['ID'],
                                             'configuration' => [
                                                 'MQTTTopic' => $Shelly['ID'],
-                                                'Component' => $this->cleanComponentPath($key)['clean'],
-                                                'Channel'   => intval($this->cleanComponentPath($key)['number']),
+                                                'Component' => $component,
+                                                'Channel'   => $componentChannel,
                                             ]
                                         ]
                                     ];
