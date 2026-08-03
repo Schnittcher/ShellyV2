@@ -157,7 +157,8 @@
             "Target Temperature 209": "Zieltemperatur 209",
             "Current Temperature 210": "Aktuelle Temperatur 210",
             "Target Temperature 210": "Zieltemperatur 210",
-            "Errors": "Fehler"
+            "Errors": "Fehler",
+            "Read Componentes (get Variables)": "Komponenten auslesen (Variablen auslesen)"
         }
     }
 }
