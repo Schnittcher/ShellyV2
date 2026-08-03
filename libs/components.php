@@ -1493,6 +1493,89 @@ trait Components
                     ],
                 ],
             ],
-        ]
+        ],
+        // ############################################################
+        // ### TEST / EXPERIMENTELL - Virtuelle Komponenten          ###
+        // ############################################################
+        // Shelly "User-defined components" (in der Shelly-Weboberfläche unter "User-defined
+        // components" anlegbar, z.B. ein Boolean-Toggle oder ein Number-Wert). Werden je nach
+        // Typ mit fortlaufender ID ab 200 erzeugt (z.B. "boolean:200", "number:201", ...).
+        //
+        // WICHTIG: Diese Komponenten tauchen NICHT in Shelly.GetStatus und NICHT in
+        // Shelly.GetConfig auf - nur in Shelly.GetComponents (mit echten Geräten verifiziert,
+        // siehe Chat-Verlauf). Deshalb reicht der normale Discovery-Weg (getComponentsViaStatus())
+        // hier nicht aus, siehe ShellyModuleBase::getVirtualComponents() (in
+        // ComponentDefinitionHelper.php) und den ReceiveData()-Merge in ShellyModuleBase.php.
+        //
+        // Beispiel für einen Eintrag aus dem "components"-Array von Shelly.GetComponents:
+        //   {
+        //     "key": "boolean:200",
+        //     "status": {"value": false, "source": "", "last_update_ts": 0},
+        //     "config": {"id": 200, "name": "Test", "meta": {...}, "persisted": false, ...}
+        //   }
+        // "status.value" landet (via getVirtualComponents()) hier unter dem Key-Pfad
+        // "boolean.value" -> passt zum 'value'-Eintrag unten. "config.name" (und bei Enum
+        // "config.options") wird NICHT hier statisch hinterlegt, weil er pro Gerät vom Nutzer
+        // frei vergeben wird - stattdessen zur Laufzeit aus Shelly.GetComponents aufgelöst,
+        // siehe ShellyModuleBase::getVirtualComponentOverride() (nutzt Buffer
+        // 'virtualComponentsConfig', befüllt in ReceiveData()).
+        //
+        // 'button' wird bewusst NICHT unterstützt: Buttons haben keinen persistenten Status
+        // (status ist bei echten Geräten immer {}), sind also ein reiner Trigger statt eines
+        // Werts - passt nicht zum bestehenden "Variable mit Wert + optionaler Aktion"-Modell.
+        'boolean' => [
+            'value' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Boolean',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'Boolean.Set',
+                    'params' => ['id' => '', 'value' => '']
+                ],
+            ],
+        ],
+        'number' => [
+            'value' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Number',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+                'action'        => [
+                    'method' => 'Number.Set',
+                    'params' => ['id' => '', 'value' => '']
+                ],
+            ],
+        ],
+        'enum' => [
+            'value' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Enum',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                    'OPTIONS'      => '[]',
+                ],
+                'action'        => [
+                    'method' => 'Enum.Set',
+                    'params' => ['id' => '', 'value' => '']
+                ],
+            ],
+        ],
+        'text' => [
+            'value' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Text',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+                'action'        => [
+                    'method' => 'Text.Set',
+                    'params' => ['id' => '', 'value' => '']
+                ],
+            ],
+        ],
+        // ### ENDE TEST / EXPERIMENTELL ###############################
     ];
 }

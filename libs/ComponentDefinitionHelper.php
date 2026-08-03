@@ -218,4 +218,45 @@ trait ComponentDefinitionHelper
         }
         return $trvs;
     }
+
+    // ### TEST / EXPERIMENTELL - Virtuelle Komponenten ###
+    // Extrahiert Boolean/Number/Enum/Text-Komponenten aus dem Shelly.GetComponents-Ergebnis.
+    // Diese tauchen (wie BLU TRVs, siehe getBLUTRVs()) weder in Shelly.GetStatus noch in
+    // Shelly.GetConfig auf, sondern nur hier. Details/Beispiel-Payload siehe components.php
+    // (Kommentar über dem 'boolean'-Eintrag).
+    //
+    // $Payload = das 'result' einer Shelly.GetComponents-Antwort, z.B.:
+    //   {"components": [
+    //     {"key": "boolean:200", "status": {"value": false, ...}, "config": {"name": "Test", ...}},
+    //     {"key": "pm1:0",       "status": {...},                 "config": {"name": "Trockner", ...}},
+    //     ...
+    //   ], "cfg_rev": 49, "offset": 0, "total": 16}
+    //
+    // Rückgabe (nur die boolean:/number:/enum:/text:-Einträge, alles andere wie "pm1:0" wird
+    // ignoriert):
+    //   [
+    //     'status' => ['boolean:200' => ['value' => false, ...]],   // -> Werte/Discovery
+    //     'config' => ['boolean:200' => ['name' => 'Test', ...]],   // -> Name-/Optionen-Override
+    //   ]
+    protected function getVirtualComponents($Payload)
+    {
+        $virtualComponentTypes = ['boolean', 'number', 'enum', 'text'];
+        $status = [];
+        $config = [];
+        if (isset($Payload['components'])) {
+            foreach ($Payload['components'] as $component) {
+                if (!isset($component['key'])) {
+                    continue;
+                }
+                $prefix = explode(':', $component['key'])[0];
+                if (!in_array($prefix, $virtualComponentTypes, true)) {
+                    continue;
+                }
+                $status[$component['key']] = $component['status'] ?? [];
+                $config[$component['key']] = $component['config'] ?? [];
+            }
+        }
+        return ['status' => $status, 'config' => $config];
+    }
+    // ### ENDE TEST / EXPERIMENTELL ###
 }

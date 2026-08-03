@@ -25,6 +25,11 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $this->RegisterPropertyBoolean('DebugMissingIdents', false);
             $this->RegisterPropertyString('VariableList', '{}');
 
+            // ### TEST / EXPERIMENTELL - Virtuelle Komponenten (Boolean/Number/Enum/Text) ###
+            // Standardmäßig AUS. Siehe ApplyChanges() / ReceiveData() / registerComponentVariables().
+            $this->RegisterPropertyBoolean('EnableVirtualComponents', false);
+            // ### ENDE TEST / EXPERIMENTELL ###
+
             $this->RegisterVariableBoolean('Reachable', $this->Translate('Reachable'), [
                 'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 'OPTIONS'         => json_encode([
@@ -61,6 +66,18 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             //Never delete this line!
             $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
             $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
+
+            // ############################################################
+            // ### TEST / EXPERIMENTELL - Virtuelle Komponenten          ###
+            // ### Boolean/Number/Enum/Text-Komponenten tauchen weder in ###
+            // ### Shelly.GetStatus noch in Shelly.GetConfig auf,        ###
+            // ### sondern nur in Shelly.GetComponents (wie BLU TRVs) -  ###
+            // ### siehe getVirtualComponents() in ComponentDefinitionHelper.
+            // ############################################################
+            if ($this->ReadPropertyBoolean('EnableVirtualComponents') && $MQTTTopic != '') {
+                $this->getComponents();
+            }
+            // ### ENDE TEST / EXPERIMENTELL ###############################
         }
 
         public function RequestAction($Ident, $Value)
@@ -119,27 +136,59 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         $this->zeroingValues();
                     }
                 }
+
+                $componentsUpdated = false;
+                $valuesToParse = null;
+
                 if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponentsViaStatus/rpc', $Buffer['Topic'])) {
-                    $tmpComponents = $Payload['result'];
-                    $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
+                    if (array_key_exists('result', $Payload)) {
+                        $this->SetBuffer('physicalComponentsList', json_encode($this->getArrayLeafKeyPaths($Payload['result'])));
+                        $valuesToParse = $Payload['result'];
+                    }
+                    $componentsUpdated = true;
                 }
 
                 //Ausnahme für BLU TRVs, diese müssen über Shelly.GetComponents abgerufen werden.
+                // ### TEST / EXPERIMENTELL - Virtuelle Komponenten ###
+                // Bei aktiviertem EnableVirtualComponents werden hier zusätzlich auch
+                // Boolean/Number/Enum/Text-Komponenten extrahiert, da diese (wie BLU TRVs)
+                // ebenfalls nur über Shelly.GetComponents auffindbar sind.
                 if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic'])) {
-                    $tmpComponents = $this->getBLUTRVs($Payload['result']);
-                    $allComponentsFromShelly = $this->getArrayLeafKeyPaths($tmpComponents);
+                    if (array_key_exists('result', $Payload)) {
+                        $blutrvs = $this->getBLUTRVs($Payload['result']);
+                        $virtualComponents = $this->getVirtualComponents($Payload['result']);
+                        $componentsFromGetComponents = array_merge($blutrvs, $virtualComponents['status']);
+
+                        $this->SetBuffer('componentsFromGetComponents', json_encode($this->getArrayLeafKeyPaths($componentsFromGetComponents)));
+                        $this->SetBuffer('virtualComponentsConfig', json_encode($virtualComponents['config']));
+                        $valuesToParse = $componentsFromGetComponents;
+                    }
+                    $componentsUpdated = true;
                 }
-                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponentsViaStatus/rpc', $Buffer['Topic']) || (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic']))) {
+                // ### ENDE TEST / EXPERIMENTELL ###
+
+                if ($componentsUpdated) {
+                    //Physische Komponenten (aus Shelly.GetStatus) und Komponenten aus Shelly.GetComponents
+                    //(BLU TRVs, ggf. virtuelle Komponenten) zusammenführen. Beide Antworten kommen
+                    //unabhängig voneinander per MQTT an (unterschiedliche RPC-Aufrufe, keine feste
+                    //Reihenfolge) - deshalb puffert jeder der beiden obigen if-Blöcke sein Ergebnis in
+                    //einem eigenen Buffer, und hier wird bei JEDER der beiden Antworten neu aus dem
+                    //jeweils letzten Stand BEIDER Buffer zusammengesetzt. So geht z.B. die Liste der
+                    //physischen Komponenten nicht verloren, wenn danach noch die GetComponents-Antwort
+                    //eintrifft (und umgekehrt).
+                    $physicalComponents = json_decode($this->GetBuffer('physicalComponentsList'), true) ?: [];
+                    $componentsFromGetComponents = json_decode($this->GetBuffer('componentsFromGetComponents'), true) ?: [];
                     // Duplikate entfernen
-                    $allComponentsFromShelly = array_unique($allComponentsFromShelly);
+                    $allComponentsFromShelly = array_unique(array_merge($physicalComponents, $componentsFromGetComponents));
+
                     $propertyChannel = @$this->ReadPropertyInteger('Channel');
                     $propertyComponent = @$this->ReadPropertyString('Component');
 
                     $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
                     $this->registerComponentVariables();
 
-                    if (array_key_exists('result', $Payload)) {
-                        $this->parsePayloadIntoVariables($Payload['result']);
+                    if ($valuesToParse != null) {
+                        $this->parsePayloadIntoVariables($valuesToParse);
                     }
 
                     //Shelly muss online sein, da es sonst keine Antwort gegeben hatte, deswegen die Variable auf true setzen.
@@ -297,6 +346,36 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             }
         }
 
+        // ############################################################
+        // ### TEST / EXPERIMENTELL - Virtuelle Komponenten          ###
+        // ### Liefert den vom Nutzer auf dem Gerät hinterlegten     ###
+        // ### Konfigurations-Eintrag (u.a. "name", bei Enum         ###
+        // ### "options") für z.B. component='boolean', channel=200 ###
+        // ### -> sucht "boolean:200" im per Shelly.GetComponents    ###
+        // ### gepufferten Ergebnis (siehe getVirtualComponents()).  ###
+        // ### Liefert null, falls (noch) keine Konfiguration        ###
+        // ### vorliegt oder der Eintrag nicht existiert.            ###
+        // ############################################################
+        // Nur diese Basis-Typen sind die generischen virtuellen Komponenten aus components.php.
+        // WICHTIG: Ohne diese Einschränkung würde z.B. bei "pm1:0" (mehrere Unterwerte wie freq,
+        // aenergy.total, ...) der vom Nutzer vergebene Kanalname fälschlich auf ALLE Unterwerte
+        // dieses Kanals übertragen, da Shelly.GetComponents für jede Komponente einen "name" liefert.
+        private static $virtualComponentTypes = ['boolean', 'number', 'enum', 'text'];
+
+        private function getVirtualComponentOverride($component, $channel)
+        {
+            if (!in_array($component, self::$virtualComponentTypes, true)) {
+                return null;
+            }
+            $config = json_decode($this->GetBuffer('virtualComponentsConfig'), true);
+            if (!is_array($config)) {
+                return null;
+            }
+            $key = $component . ':' . $channel;
+            return $config[$key] ?? null;
+        }
+        // ### ENDE TEST / EXPERIMENTELL ###############################
+
         private function registerComponentVariables()
         {
             $allVariables = json_decode($this->GetBuffer('variableList'), true);
@@ -310,8 +389,29 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             $name = $this->Translate($tmpComponent['name'] . ' ' . $variable['Channel']);
                         }
                     }
+                    $presentation = $tmpComponent['presentation'];
+
+                    // ### TEST / EXPERIMENTELL - virtuelle Komponenten: Name/Optionen vom Gerät übernehmen ###
+                    if ($this->ReadPropertyBoolean('EnableVirtualComponents')) {
+                        $base = explode('.', $variable['CleanKeyPath'])[0];
+                        $virtualOverride = $this->getVirtualComponentOverride($base, $variable['Channel']);
+                        if ($virtualOverride != null) {
+                            if (array_key_exists('name', $virtualOverride) && $virtualOverride['name'] != '') {
+                                $name = $virtualOverride['name'];
+                            }
+                            if ($base == 'enum' && array_key_exists('options', $virtualOverride)) {
+                                $options = [];
+                                foreach ($virtualOverride['options'] as $optionValue) {
+                                    $options[] = ['Value' => $optionValue, 'Caption' => $optionValue];
+                                }
+                                $presentation['OPTIONS'] = json_encode($options);
+                            }
+                        }
+                    }
+                    // ### ENDE TEST / EXPERIMENTELL ###
+
                     //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
-                    $this->MaintainVariable($variable['Ident'], $name, $tmpComponent['type'], $tmpComponent['presentation'], 0, $variable['Selected']);
+                    $this->MaintainVariable($variable['Ident'], $name, $tmpComponent['type'], $presentation, 0, $variable['Selected']);
                     //Wenn die Komponetene eine Aktion besitzt, wird EnableAction aufgerufen
                     if (array_key_exists('action', $tmpComponent)) {
                         $this->EnableAction($variable['Ident']);
@@ -372,6 +472,15 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     if ($componentsFromShellyResult['number'] > 0) {
                         $name = $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'];
                     }
+
+                    // ### TEST / EXPERIMENTELL - virtuelle Komponenten: Name vom Gerät übernehmen ###
+                    if ($this->ReadPropertyBoolean('EnableVirtualComponents')) {
+                        $virtualOverride = $this->getVirtualComponentOverride($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
+                        if ($virtualOverride != null && array_key_exists('name', $virtualOverride) && $virtualOverride['name'] != '') {
+                            $name = $virtualOverride['name'];
+                        }
+                    }
+                    // ### ENDE TEST / EXPERIMENTELL ###
 
                     if (($componentsFromShellyResult['base'] == $component && $componentsFromShellyResult['number'] == $channel) || $componentsFromShellyResult['base'] == $component && $componentsFromShellyResult['number'] == '' || $component == '' && $channel == '') {
                         $variableList[] = [
