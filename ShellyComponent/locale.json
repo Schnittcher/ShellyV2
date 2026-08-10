@@ -119,6 +119,8 @@
             "Specific features for shelly device": "Spezifische Funktionen für das Shelly-Gerät",
             "Total active energy": "Gesamtwirkenergie",
             "Total active returned energy": "Gesamtwirkenergie Einspeisung",
+            "Total active energy 1": "Gesamtwirkenergie",
+            "Total active returned energy 1": "Gesamtwirkenergie Einspeisung",
             "Phase A total active energy": "Phase A Gesamtwirkenergie",
             "Phase B total active energy": "Phase B Gesamtwirkenergie",
             "Phase C total active energy": "Phase C Gesamtwirkenergie",
