@@ -390,8 +390,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         }
                     }
                     $presentation = $tmpComponent['presentation'];
+                    $isWritable = true;
 
-                    // ### TEST / EXPERIMENTELL - virtuelle Komponenten: Name/Optionen vom Gerät übernehmen ###
+                    // ### TEST / EXPERIMENTELL - virtuelle Komponenten: Name/Optionen/Min-Max-Einheit/Schreibschutz vom Gerät übernehmen ###
                     if ($this->ReadPropertyBoolean('EnableVirtualComponents')) {
                         $base = explode('.', $variable['CleanKeyPath'])[0];
                         $virtualOverride = $this->getVirtualComponentOverride($base, $variable['Channel']);
@@ -406,6 +407,28 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                                 }
                                 $presentation['OPTIONS'] = json_encode($options);
                             }
+
+                            //Number: Min/Max/Einheit vom Gerät übernehmen, falls vorhanden (z.B. "Current limit" 6-16 A).
+                            if ($base == 'number') {
+                                if (array_key_exists('min', $virtualOverride)) {
+                                    $presentation['MIN'] = $virtualOverride['min'];
+                                }
+                                if (array_key_exists('max', $virtualOverride)) {
+                                    $presentation['MAX'] = $virtualOverride['max'];
+                                }
+                                $unit = $virtualOverride['meta']['ui']['unit'] ?? '';
+                                if ($unit != '') {
+                                    $presentation['SUFFIX'] = ' ' . $unit;
+                                }
+                            }
+
+                            //Manche virtuellen Komponenten sind schreibgeschützt (z.B. "Session energy" oder
+                            //"Charger state" bei einem Shelly EV-Charger, access "cr" statt "crw") - dort darf
+                            //keine Aktion angeboten werden, auch wenn der generische Typ (number/enum/...)
+                            //normalerweise eine action hat.
+                            if (array_key_exists('access', $virtualOverride) && strpos($virtualOverride['access'], 'w') === false) {
+                                $isWritable = false;
+                            }
                         }
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###
@@ -413,7 +436,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
                     $this->MaintainVariable($variable['Ident'], $name, $tmpComponent['type'], $presentation, 0, $variable['Selected']);
                     //Wenn die Komponetene eine Aktion besitzt, wird EnableAction aufgerufen
-                    if (array_key_exists('action', $tmpComponent)) {
+                    if (array_key_exists('action', $tmpComponent) && $isWritable) {
                         $this->EnableAction($variable['Ident']);
                     }
                 } else {

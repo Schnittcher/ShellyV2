@@ -95,7 +95,7 @@
     "actions": [
         {
             "type": "Button",
-            "caption": "Read Componentes",
+            "caption": "Read Componentes (get Variables)",
             "onClick": "SHY_getComponentsViaStatus($id);"
         },
         {
