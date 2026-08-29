@@ -338,12 +338,14 @@ class ShellyConfigurator extends IPSModule
         return $responses['LastComponentResponse2_' . $ShellyMQTTGTopic] ?? null;
     }
 
+    /**
     public function getComponentsViaStatus($ShellyMQTTGTopic)
     {
         $this->requestComponentsViaStatus($ShellyMQTTGTopic);
         $responses = $this->waitForComponentResponses(['LastComponentResponse_' . $ShellyMQTTGTopic], 5);
         return $responses['LastComponentResponse_' . $ShellyMQTTGTopic] ?? null;
     }
+    */
 
     //Verschickt nur die Shelly.GetComponents-Anfrage, ohne auf die Antwort zu warten.
     //Die Shelly-ID im "src" macht das Antwort-Topic pro Gerät eindeutig.
