@@ -125,11 +125,12 @@ class ShellyXT1Device extends IPSModule
                         }
 
                         if (array_key_exists('value', $Payload['params'][$key])) {
-                            if (is_array($Payload['params'][$key]['value'])) {
-                                $keypath = self::$services[$XMODServiceType][$ident]['objecktValue'];
+                            if (is_array($Payload['params'][$key]['value']) && array_key_exists('objectValue', $XMODService[$ident])) {
+                                $keyPath = $XMODService[$ident]['objectValue'];
                                 $this->SetValue($ident, $this->getValueToKeyPath($Payload['params'][$key]['value'], $keyPath));
+                            } else {
+                                $this->SetValue($ident, $Payload['params'][$key]['value']);
                             }
-                            $this->SetValue($ident, $Payload['params'][$key]['value']);
                         }
                     }
                 }
@@ -139,22 +140,23 @@ class ShellyXT1Device extends IPSModule
         parent::ReceiveData($JSONString);
     }
 
-    private function getValueToKeyPath($array, $keyPath)
-    {
-        $value = $array;
-        if (is_array($value) && $keyPath) {
-            $keys = explode(':', $keyPath);
-            $result = $value;
-            foreach ($keys as $k) {
-                $result = $result[$k] ?? null;
-                if ($result === null) {
-                    break;
-                }
+private function getValueToKeyPath($array, $keyPath)
+{
+    $value = $array;
+    if (is_array($value) && $keyPath) {
+        $keys = explode(':', $keyPath);
+        $result = $value;
+        foreach ($keys as $k) {
+            $result = $result[$k] ?? null;
+            if ($result === null) {
+                break;
             }
-        } else {
-            $result = $value;
         }
+    } else {
+        $result = $value;
     }
+    return $result;
+}
 
     public function callRPCFunction($method, $params)
     {
