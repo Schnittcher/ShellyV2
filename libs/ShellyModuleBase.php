@@ -25,11 +25,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $this->RegisterPropertyBoolean('DebugMissingIdents', false);
             $this->RegisterPropertyString('VariableList', '{}');
 
-            // ### TEST / EXPERIMENTELL - Virtuelle Komponenten (Boolean/Number/Enum/Text) ###
-            // Standardmäßig AUS. Siehe ApplyChanges() / ReceiveData() / registerComponentVariables().
-            $this->RegisterPropertyBoolean('EnableVirtualComponents', false);
-            // ### ENDE TEST / EXPERIMENTELL ###
-
             $this->RegisterVariableBoolean('Reachable', $this->Translate('Reachable'), [
                 'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 'OPTIONS'         => json_encode([
@@ -68,13 +63,18 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
 
             // ############################################################
-            // ### TEST / EXPERIMENTELL - Virtuelle Komponenten          ###
-            // ### Boolean/Number/Enum/Text-Komponenten tauchen weder in ###
-            // ### Shelly.GetStatus noch in Shelly.GetConfig auf,        ###
-            // ### sondern nur in Shelly.GetComponents (wie BLU TRVs) -  ###
-            // ### siehe getVirtualComponents() in ComponentDefinitionHelper.
+            // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
+            // ### Manche Komponenten sind nur über Shelly.GetComponents  ###
+            // ### auffindbar, nicht über Shelly.GetStatus/GetConfig:     ###
+            // ### Boolean/Number/Enum/Text (Shelly "User-defined         ###
+            // ### components"), BLU TRVs, und auch ganz normale          ###
+            // ### physische Sensoren wie presencezone:X (Shelly          ###
+            // ### Presence) - alle haben gemeinsam, dass sie per RPC     ###
+            // ### dynamisch hinzugefügt werden (ID-Raum ab 200), siehe   ###
+            // ### getDynamicallyAddedComponents() in                     ###
+            // ### ComponentDefinitionHelper.                             ###
             // ############################################################
-            if ($this->ReadPropertyBoolean('EnableVirtualComponents') && $MQTTTopic != '') {
+            if ($MQTTTopic != '') {
                 $this->getComponents();
             }
             // ### ENDE TEST / EXPERIMENTELL ###############################
@@ -149,18 +149,18 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 }
 
                 //Ausnahme für BLU TRVs, diese müssen über Shelly.GetComponents abgerufen werden.
-                // ### TEST / EXPERIMENTELL - Virtuelle Komponenten ###
-                // Bei aktiviertem EnableVirtualComponents werden hier zusätzlich auch
-                // Boolean/Number/Enum/Text-Komponenten extrahiert, da diese (wie BLU TRVs)
-                // ebenfalls nur über Shelly.GetComponents auffindbar sind.
+                // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
+                // Hier werden zusätzlich zu BLU TRVs auch Boolean/Number/Enum/Text-Komponenten und
+                // presencezone extrahiert, da diese ebenfalls nur über Shelly.GetComponents
+                // auffindbar sind.
                 if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic'])) {
                     if (array_key_exists('result', $Payload)) {
                         $blutrvs = $this->getBLUTRVs($Payload['result']);
-                        $virtualComponents = $this->getVirtualComponents($Payload['result']);
-                        $componentsFromGetComponents = array_merge($blutrvs, $virtualComponents['status']);
+                        $dynamicComponents = $this->getDynamicallyAddedComponents($Payload['result']);
+                        $componentsFromGetComponents = array_merge($blutrvs, $dynamicComponents['status']);
 
                         $this->SetBuffer('componentsFromGetComponents', json_encode($this->getArrayLeafKeyPaths($componentsFromGetComponents)));
-                        $this->SetBuffer('virtualComponentsConfig', json_encode($virtualComponents['config']));
+                        $this->SetBuffer('dynamicComponentsMetadata', json_encode($dynamicComponents['config']));
                         $valuesToParse = $componentsFromGetComponents;
                     }
                     $componentsUpdated = true;
@@ -193,6 +193,12 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
                     //Shelly muss online sein, da es sonst keine Antwort gegeben hatte, deswegen die Variable auf true setzen.
                     $this->SetValue('Reachable', true);
+
+                    //Falls das Konfigurationsformular gerade offen ist: neu laden, damit die
+                    //aktualisierte Variablenliste sichtbar wird, ohne dass man das Formular manuell
+                    //schließen und wieder öffnen muss (die Antwort kommt asynchron per MQTT, ggf.
+                    //erst nachdem das Formular schon geöffnet wurde).
+                    $this->ReloadForm();
                 }
             }
 
@@ -347,32 +353,36 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         }
 
         // ############################################################
-        // ### TEST / EXPERIMENTELL - Virtuelle Komponenten          ###
+        // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
         // ### Liefert den vom Nutzer auf dem Gerät hinterlegten     ###
         // ### Konfigurations-Eintrag (u.a. "name", bei Enum         ###
         // ### "options") für z.B. component='boolean', channel=200 ###
         // ### -> sucht "boolean:200" im per Shelly.GetComponents    ###
-        // ### gepufferten Ergebnis (siehe getVirtualComponents()).  ###
-        // ### Liefert null, falls (noch) keine Konfiguration        ###
-        // ### vorliegt oder der Eintrag nicht existiert.            ###
+        // ### gepufferten Ergebnis (siehe                           ###
+        // ### getDynamicallyAddedComponents()). Liefert null, falls ###
+        // ### (noch) keine Metadaten vorliegen oder der Eintrag     ###
+        // ### nicht existiert.                                      ###
         // ############################################################
-        // Nur diese Basis-Typen sind die generischen virtuellen Komponenten aus components.php.
-        // WICHTIG: Ohne diese Einschränkung würde z.B. bei "pm1:0" (mehrere Unterwerte wie freq,
-        // aenergy.total, ...) der vom Nutzer vergebene Kanalname fälschlich auf ALLE Unterwerte
-        // dieses Kanals übertragen, da Shelly.GetComponents für jede Komponente einen "name" liefert.
-        private static $virtualComponentTypes = ['boolean', 'number', 'enum', 'text'];
+        // Nur diese Basis-Typen werden per Shelly.GetComponents auf Name/Optionen/Min-Max/Access
+        // geprüft - Boolean/Number/Enum/Text (Shelly "User-defined components") und presencezone
+        // (physischer Sensor, aber ebenfalls nur über Shelly.GetComponents mit "name" pro Zone
+        // auffindbar, z.B. "Room"/"test"). WICHTIG: Ohne diese Einschränkung würde z.B. bei "pm1:0"
+        // (mehrere Unterwerte wie freq, aenergy.total, ...) der vom Nutzer vergebene Kanalname
+        // fälschlich auf ALLE Unterwerte dieses Kanals übertragen, da Shelly.GetComponents für jede
+        // Komponente einen "name" liefert.
+        private static $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone'];
 
-        private function getVirtualComponentOverride($component, $channel)
+        private function getDynamicComponentMetadata($component, $channel)
         {
-            if (!in_array($component, self::$virtualComponentTypes, true)) {
+            if (!in_array($component, self::$dynamicComponentTypes, true)) {
                 return null;
             }
-            $config = json_decode($this->GetBuffer('virtualComponentsConfig'), true);
-            if (!is_array($config)) {
+            $metadata = json_decode($this->GetBuffer('dynamicComponentsMetadata'), true);
+            if (!is_array($metadata)) {
                 return null;
             }
             $key = $component . ':' . $channel;
-            return $config[$key] ?? null;
+            return $metadata[$key] ?? null;
         }
         // ### ENDE TEST / EXPERIMENTELL ###############################
 
@@ -392,43 +402,48 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $presentation = $tmpComponent['presentation'];
                     $isWritable = true;
 
-                    // ### TEST / EXPERIMENTELL - virtuelle Komponenten: Name/Optionen/Min-Max-Einheit/Schreibschutz vom Gerät übernehmen ###
-                    if ($this->ReadPropertyBoolean('EnableVirtualComponents')) {
-                        $base = explode('.', $variable['CleanKeyPath'])[0];
-                        $virtualOverride = $this->getVirtualComponentOverride($base, $variable['Channel']);
-                        if ($virtualOverride != null) {
-                            if (array_key_exists('name', $virtualOverride) && $virtualOverride['name'] != '') {
-                                $name = $virtualOverride['name'];
+                    // ### TEST / EXPERIMENTELL - dynamisch angelegte Komponenten: Name/Optionen/Min-Max-Einheit/Schreibschutz vom Gerät übernehmen ###
+                    $base = explode('.', $variable['CleanKeyPath'])[0];
+                    $componentMetadata = $this->getDynamicComponentMetadata($base, $variable['Channel']);
+                    if ($componentMetadata != null) {
+                        if (array_key_exists('name', $componentMetadata) && $componentMetadata['name'] != '') {
+                            //presencezone hat pro Zone mehrere Felder (value/num_objects), aber nur
+                            //EINEN Zonennamen - Namen kombinieren statt ersetzen, sonst heißen
+                            //"Zone Presence" und "Objects in Zone" beide nur noch z.B. "Room".
+                            if ($base == 'presencezone') {
+                                $name = $componentMetadata['name'] . ' (' . $this->Translate($tmpComponent['name']) . ')';
+                            } else {
+                                $name = $componentMetadata['name'];
                             }
-                            if ($base == 'enum' && array_key_exists('options', $virtualOverride)) {
-                                $options = [];
-                                foreach ($virtualOverride['options'] as $optionValue) {
-                                    $options[] = ['Value' => $optionValue, 'Caption' => $optionValue];
-                                }
-                                $presentation['OPTIONS'] = json_encode($options);
+                        }
+                        if ($base == 'enum' && array_key_exists('options', $componentMetadata)) {
+                            $options = [];
+                            foreach ($componentMetadata['options'] as $optionValue) {
+                                $options[] = ['Value' => $optionValue, 'Caption' => $optionValue];
                             }
+                            $presentation['OPTIONS'] = json_encode($options);
+                        }
 
-                            //Number: Min/Max/Einheit vom Gerät übernehmen, falls vorhanden (z.B. "Current limit" 6-16 A).
-                            if ($base == 'number') {
-                                if (array_key_exists('min', $virtualOverride)) {
-                                    $presentation['MIN'] = $virtualOverride['min'];
-                                }
-                                if (array_key_exists('max', $virtualOverride)) {
-                                    $presentation['MAX'] = $virtualOverride['max'];
-                                }
-                                $unit = $virtualOverride['meta']['ui']['unit'] ?? '';
-                                if ($unit != '') {
-                                    $presentation['SUFFIX'] = ' ' . $unit;
-                                }
+                        //Number: Min/Max/Einheit vom Gerät übernehmen, falls vorhanden (z.B. "Current limit" 6-16 A).
+                        if ($base == 'number') {
+                            if (array_key_exists('min', $componentMetadata)) {
+                                $presentation['MIN'] = $componentMetadata['min'];
                             }
+                            if (array_key_exists('max', $componentMetadata)) {
+                                $presentation['MAX'] = $componentMetadata['max'];
+                            }
+                            $unit = $componentMetadata['meta']['ui']['unit'] ?? '';
+                            if ($unit != '') {
+                                $presentation['SUFFIX'] = ' ' . $unit;
+                            }
+                        }
 
-                            //Manche virtuellen Komponenten sind schreibgeschützt (z.B. "Session energy" oder
-                            //"Charger state" bei einem Shelly EV-Charger, access "cr" statt "crw") - dort darf
-                            //keine Aktion angeboten werden, auch wenn der generische Typ (number/enum/...)
-                            //normalerweise eine action hat.
-                            if (array_key_exists('access', $virtualOverride) && strpos($virtualOverride['access'], 'w') === false) {
-                                $isWritable = false;
-                            }
+                        //Manche dynamisch angelegten Komponenten sind schreibgeschützt (z.B. "Session energy" oder
+                        //"Charger state" bei einem Shelly EV-Charger, access "cr" statt "crw") - dort darf
+                        //keine Aktion angeboten werden, auch wenn der generische Typ (number/enum/...)
+                        //normalerweise eine action hat.
+                        if (array_key_exists('access', $componentMetadata) && strpos($componentMetadata['access'], 'w') === false) {
+                            $isWritable = false;
                         }
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###
@@ -496,11 +511,16 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         $name = $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'];
                     }
 
-                    // ### TEST / EXPERIMENTELL - virtuelle Komponenten: Name vom Gerät übernehmen ###
-                    if ($this->ReadPropertyBoolean('EnableVirtualComponents')) {
-                        $virtualOverride = $this->getVirtualComponentOverride($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
-                        if ($virtualOverride != null && array_key_exists('name', $virtualOverride) && $virtualOverride['name'] != '') {
-                            $name = $virtualOverride['name'];
+                    // ### TEST / EXPERIMENTELL - dynamisch angelegte Komponenten: Name vom Gerät übernehmen ###
+                    $componentMetadata = $this->getDynamicComponentMetadata($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
+                    if ($componentMetadata != null && array_key_exists('name', $componentMetadata) && $componentMetadata['name'] != '') {
+                        //presencezone hat pro Zone mehrere Felder (value/num_objects), aber nur
+                        //EINEN Zonennamen - Namen kombinieren statt ersetzen, sonst heißen
+                        //"Zone Presence" und "Objects in Zone" beide nur noch z.B. "Room".
+                        if ($componentsFromShellyResult['base'] == 'presencezone') {
+                            $name = $componentMetadata['name'] . ' (' . $this->Translate($tmpComponent['name']) . ')';
+                        } else {
+                            $name = $componentMetadata['name'];
                         }
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###

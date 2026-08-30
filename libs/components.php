@@ -1494,8 +1494,78 @@ trait Components
                 ],
             ],
         ],
+        // Shelly Presence G4 (https://shelly-api-docs.shelly.cloud/gen2/Devices/Gen4/ShellyPresenceG4).
+        // Die eigentliche Anwesenheitserkennung steckt in den einzelnen "presencezone:X"-Instanzen
+        // (bis zu 10), nicht in der übergeordneten "presence"-Komponente selbst - die liefert im
+        // normalen Status kaum eigene Werte (nur "live_track", nur während eines aktiven
+        // Presence.LiveTrack-Aufrufs), deshalb wird "presence" hier nicht extra abgebildet.
+        'illuminance' => [
+            'lux' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Illuminance',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' lx',
+                ],
+            ],
+            'illumination' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Illumination',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                    'LAYOUT'       => 1,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": "dark",
+                            "Caption": "Dark",
+                            "IconActive": false,
+                            "Icon": "",
+                            "ColorValue": 16711680
+                        },
+                        {
+                            "Value": "twilight",
+                            "Caption": "Twilight",
+                            "IconActive": false,
+                            "Icon": "",
+                            "ColorValue": 16753920
+                        },
+                        {
+                            "Value": "bright",
+                            "Caption": "Bright",
+                            "IconActive": false,
+                            "Icon": "",
+                            "ColorValue": 65280
+                        }
+                    ]',
+                ],
+            ],
+            'errors' => [
+                'type'          => VARIABLETYPE_STRING,
+                'componentType' => 'Array',
+                'name'          => 'Illuminance Errors',
+                'presentation'  => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
+        'presencezone' => [
+            'value' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Zone Presence',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+            ],
+            'num_objects' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Objects in Zone',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
         // ############################################################
-        // ### TEST / EXPERIMENTELL - Virtuelle Komponenten          ###
+        // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
         // ############################################################
         // Shelly "User-defined components" (in der Shelly-Weboberfläche unter "User-defined
         // components" anlegbar, z.B. ein Boolean-Toggle oder ein Number-Wert). Werden je nach
@@ -1504,7 +1574,7 @@ trait Components
         // WICHTIG: Diese Komponenten tauchen NICHT in Shelly.GetStatus und NICHT in
         // Shelly.GetConfig auf - nur in Shelly.GetComponents (mit echten Geräten verifiziert,
         // siehe Chat-Verlauf). Deshalb reicht der normale Discovery-Weg (getComponentsViaStatus())
-        // hier nicht aus, siehe ShellyModuleBase::getVirtualComponents() (in
+        // hier nicht aus, siehe ShellyModuleBase::getDynamicallyAddedComponents() (in
         // ComponentDefinitionHelper.php) und den ReceiveData()-Merge in ShellyModuleBase.php.
         //
         // Beispiel für einen Eintrag aus dem "components"-Array von Shelly.GetComponents:
@@ -1513,12 +1583,12 @@ trait Components
         //     "status": {"value": false, "source": "", "last_update_ts": 0},
         //     "config": {"id": 200, "name": "Test", "meta": {...}, "persisted": false, ...}
         //   }
-        // "status.value" landet (via getVirtualComponents()) hier unter dem Key-Pfad
+        // "status.value" landet (via getDynamicallyAddedComponents()) hier unter dem Key-Pfad
         // "boolean.value" -> passt zum 'value'-Eintrag unten. "config.name" (und bei Enum
         // "config.options") wird NICHT hier statisch hinterlegt, weil er pro Gerät vom Nutzer
         // frei vergeben wird - stattdessen zur Laufzeit aus Shelly.GetComponents aufgelöst,
-        // siehe ShellyModuleBase::getVirtualComponentOverride() (nutzt Buffer
-        // 'virtualComponentsConfig', befüllt in ReceiveData()).
+        // siehe ShellyModuleBase::getDynamicComponentMetadata() (nutzt Buffer
+        // 'dynamicComponentsMetadata', befüllt in ReceiveData()).
         //
         // 'button' wird bewusst NICHT unterstützt: Buttons haben keinen persistenten Status
         // (status ist bei echten Geräten immer {}), sind also ein reiner Trigger statt eines

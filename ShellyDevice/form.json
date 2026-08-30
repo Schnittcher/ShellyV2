@@ -11,11 +11,6 @@
             "caption": "Debug: Missing Idents"
         },
         {
-            "type": "CheckBox",
-            "name": "EnableVirtualComponents",
-            "caption": "TEST: Virtuelle Komponenten (Boolean/Number/Enum/Text) mit Gerätenamen laden"
-        },
-        {
             "type": "List",
             "name": "VariableList",
             "caption": "Variablen",

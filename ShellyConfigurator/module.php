@@ -29,11 +29,6 @@ class ShellyConfigurator extends IPSModule
             $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
         }
         $this->RegisterAttributeString('Shellies', '{}');
-
-        // ### TEST / EXPERIMENTELL - Virtuelle Komponenten (Boolean/Number/Enum/Text) im Configurator ###
-        // Standardmäßig AUS. Siehe GetConfigurationForm().
-        $this->RegisterPropertyBoolean('EnableVirtualComponents', false);
-        // ### ENDE TEST / EXPERIMENTELL ###
     }
 
     public function Destroy()
@@ -92,14 +87,11 @@ class ShellyConfigurator extends IPSModule
                 $this->requestComponentsViaStatus($Shelly['ID']);
                 $pendingBufferKeys[] = 'LastComponentResponse_' . $Shelly['ID'];
 
-                // ### TEST / EXPERIMENTELL - Virtuelle Komponenten ###
-                // Shelly.GetComponents wird bisher nur für BLU-TRV-Gateways abgefragt. Bei
-                // aktiviertem EnableVirtualComponents zusätzlich für jedes Gerät, da Boolean/
-                // Number/Enum/Text-Komponenten (wie BLU TRVs) nur darüber auffindbar sind.
-                if ($Shelly['App'] == 'BluGwG3' || $this->ReadPropertyBoolean('EnableVirtualComponents')) {
-                    $this->requestComponents($Shelly['ID']);
-                    $pendingBufferKeys[] = 'LastComponentResponse2_' . $Shelly['ID'];
-                }
+                // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
+                // Shelly.GetComponents wird für jedes Gerät abgefragt, da BLU TRVs, Boolean/Number/
+                // Enum/Text-Komponenten und presencezone (Shelly Presence) nur darüber auffindbar sind.
+                $this->requestComponents($Shelly['ID']);
+                $pendingBufferKeys[] = 'LastComponentResponse2_' . $Shelly['ID'];
                 // ### ENDE TEST / EXPERIMENTELL ###
             }
 
@@ -202,18 +194,15 @@ class ShellyConfigurator extends IPSModule
                     ];
 
                     if (array_key_exists('App', $Shelly)) {
-                        //Shelly.GetComponents wird für BLU TRVs und (bei aktiviertem Schalter) für
-                        //virtuelle Komponenten gebraucht - beide nutzen dieselbe Antwort, daher einmal
-                        //zentral decodieren statt für jeden Zweck erneut.
-                        $shellyComponentsFull = null;
-                        if ($Shelly['App'] == 'BluGwG3' || $this->ReadPropertyBoolean('EnableVirtualComponents')) {
-                            $shellyComponentsFullRaw = $componentResponses['LastComponentResponse2_' . $Shelly['ID']] ?? null;
-                            $shellyComponentsFull = ($shellyComponentsFullRaw != null) ? json_decode($shellyComponentsFullRaw, true) : [];
-                            $this->SendDebug('Shelly GetComponents', json_encode($shellyComponentsFull), 0);
-                        }
+                        //Shelly.GetComponents wird für BLU TRVs und dynamisch angelegte Komponenten
+                        //gebraucht - beide nutzen dieselbe Antwort, daher einmal zentral decodieren
+                        //statt für jeden Zweck erneut.
+                        $shellyComponentsFullRaw = $componentResponses['LastComponentResponse2_' . $Shelly['ID']] ?? null;
+                        $shellyComponentsFull = ($shellyComponentsFullRaw != null) ? json_decode($shellyComponentsFullRaw, true) : [];
+                        $this->SendDebug('Shelly GetComponents', json_encode($shellyComponentsFull), 0);
 
                         //Ausnahme für Shelly TRV
-                        if ($Shelly['App'] == 'BluGwG3' && array_key_exists('result', $shellyComponentsFull ?? [])) {
+                        if ($Shelly['App'] == 'BluGwG3' && array_key_exists('result', $shellyComponentsFull)) {
                             $BLUTRVs = $this->getBLUTRVs($shellyComponentsFull['result']);
                             foreach ($BLUTRVs as $key => $BLUTRV) {
                                 $cleanedPath = $this->cleanComponentPath($key);
@@ -247,10 +236,10 @@ class ShellyConfigurator extends IPSModule
                         }
                         //ENDE Shelly BLUTRV Ausnahme
 
-                        // ### TEST / EXPERIMENTELL - Virtuelle Komponenten im Configurator ###
-                        if ($this->ReadPropertyBoolean('EnableVirtualComponents') && array_key_exists('result', $shellyComponentsFull ?? [])) {
-                            $virtualComponents = $this->getVirtualComponents($shellyComponentsFull['result']);
-                            foreach (array_keys($virtualComponents['status']) as $key) {
+                        // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten im Configurator ###
+                        if (array_key_exists('result', $shellyComponentsFull)) {
+                            $dynamicComponents = $this->getDynamicallyAddedComponents($shellyComponentsFull['result']);
+                            foreach (array_keys($dynamicComponents['status']) as $key) {
                                 $cleanedPath = $this->cleanComponentPath($key);
                                 $component = $cleanedPath['clean'];
                                 $componentChannel = intval($cleanedPath['number']);
@@ -258,9 +247,9 @@ class ShellyConfigurator extends IPSModule
 
                                 //Vom Nutzer auf dem Gerät vergebenen Namen mit anzeigen, z.B. "boolean:200 (Test)".
                                 $displayName = $key;
-                                $virtualComponentName = $virtualComponents['config'][$key]['name'] ?? '';
-                                if ($virtualComponentName != '') {
-                                    $displayName = $key . ' (' . $virtualComponentName . ')';
+                                $componentName = $dynamicComponents['config'][$key]['name'] ?? '';
+                                if ($componentName != '') {
+                                    $displayName = $key . ' (' . $componentName . ')';
                                 }
 
                                 if ($this->componentDefinitionExists($component)) {

@@ -1,11 +1,4 @@
 {
-    "elements": [
-        {
-            "type": "CheckBox",
-            "name": "EnableVirtualComponents",
-            "caption": "TEST: Virtuelle Komponenten (Boolean/Number/Enum/Text) im Configurator anzeigen"
-        }
-    ],
     "actions": [
         {
             "type": "Configurator",

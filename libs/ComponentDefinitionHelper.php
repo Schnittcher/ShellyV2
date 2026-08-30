@@ -219,11 +219,13 @@ trait ComponentDefinitionHelper
         return $trvs;
     }
 
-    // ### TEST / EXPERIMENTELL - Virtuelle Komponenten ###
-    // Extrahiert Boolean/Number/Enum/Text-Komponenten aus dem Shelly.GetComponents-Ergebnis.
-    // Diese tauchen (wie BLU TRVs, siehe getBLUTRVs()) weder in Shelly.GetStatus noch in
-    // Shelly.GetConfig auf, sondern nur hier. Details/Beispiel-Payload siehe components.php
-    // (Kommentar über dem 'boolean'-Eintrag).
+    // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
+    // Extrahiert Komponenten aus dem Shelly.GetComponents-Ergebnis, die per RPC dynamisch
+    // hinzugefügt werden (ID-Raum ab 200) und deshalb (wie BLU TRVs, siehe getBLUTRVs()) weder in
+    // Shelly.GetStatus noch in Shelly.GetConfig auftauchen, sondern nur hier: Boolean/Number/Enum/
+    // Text (Shelly "User-defined components") sowie presencezone (Shelly Presence-Zonen - kein
+    // Boolean/Number/Enum/Text, aber genauso dynamisch angelegt und nur hier auffindbar). Details/
+    // Beispiel-Payload siehe components.php (Kommentar über dem 'boolean'-Eintrag).
     //
     // $Payload = das 'result' einer Shelly.GetComponents-Antwort, z.B.:
     //   {"components": [
@@ -232,15 +234,15 @@ trait ComponentDefinitionHelper
     //     ...
     //   ], "cfg_rev": 49, "offset": 0, "total": 16}
     //
-    // Rückgabe (nur die boolean:/number:/enum:/text:-Einträge, alles andere wie "pm1:0" wird
-    // ignoriert):
+    // Rückgabe (nur die boolean:/number:/enum:/text:/presencezone:-Einträge, alles andere wie
+    // "pm1:0" wird ignoriert):
     //   [
     //     'status' => ['boolean:200' => ['value' => false, ...]],   // -> Werte/Discovery
     //     'config' => ['boolean:200' => ['name' => 'Test', ...]],   // -> Name-/Optionen-Override
     //   ]
-    protected function getVirtualComponents($Payload)
+    protected function getDynamicallyAddedComponents($Payload)
     {
-        $virtualComponentTypes = ['boolean', 'number', 'enum', 'text'];
+        $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone'];
         $status = [];
         $config = [];
         if (isset($Payload['components'])) {
@@ -249,7 +251,7 @@ trait ComponentDefinitionHelper
                     continue;
                 }
                 $prefix = explode(':', $component['key'])[0];
-                if (!in_array($prefix, $virtualComponentTypes, true)) {
+                if (!in_array($prefix, $dynamicComponentTypes, true)) {
                     continue;
                 }
                 $status[$component['key']] = $component['status'] ?? [];

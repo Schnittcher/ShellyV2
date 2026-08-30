@@ -112,8 +112,19 @@ class ShellyXT1Device extends IPSModule
             if (array_key_exists('params', $Payload)) {
                 $this->SendDebug('Test', $JSONString, 0);
 
+                //Absicherung: Ohne diese Prüfung würde self::$services[''] (falls XMODServiceType
+                //leer/ungültig ist) $XMODService zu null machen, und findKeyByReceive() bekäme
+                //null statt eines Arrays übergeben - das bricht mit einem fatalen TypeError ab und
+                //verhindert jede weitere Datenverarbeitung für diese Instanz.
+                $XMODServiceType = $this->ReadPropertyString('XMODServiceType');
+                if (!array_key_exists($XMODServiceType, self::$services)) {
+                    $this->LogMessage('ReceiveData :: This service is not available.', KL_ERROR);
+                    parent::ReceiveData($JSONString);
+                    return;
+                }
+                $XMODService = self::$services[$XMODServiceType];
+
                 foreach ($Payload['params'] as $key => $value) {
-                    $XMODService = self::$services[$this->ReadPropertyString('XMODServiceType')];
                     $ident = $this->findKeyByReceive($XMODService, $key);
 
                     if ($ident != null) {

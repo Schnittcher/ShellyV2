@@ -160,7 +160,16 @@
             "Current Temperature 210": "Aktuelle Temperatur 210",
             "Target Temperature 210": "Zieltemperatur 210",
             "Errors": "Fehler",
-            "Read Componentes (get Variables)": "Komponenten auslesen (Variablen auslesen)"
+            "Read Componentes (get Variables)": "Komponenten auslesen (Variablen auslesen)",
+            "Boolean": "Boolean",
+            "Number": "Zahl",
+            "Enum": "Aufzählung",
+            "Text": "Text",
+            "Zone Presence": "Zonenanwesenheit",
+            "Objects in Zone": "Objekte in Zone",
+            "Illuminance": "Beleuchtungsstärke",
+            "Illumination": "Beleuchtungsstufe",
+            "Illuminance Errors": "Beleuchtungsstärke Fehler"
         }
     }
 }
