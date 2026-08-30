@@ -366,5 +366,258 @@ trait XMODServices
             ],
 
         ],
+        // Shelly EV-Charger (Ident-Namen für die schreibbaren Felder ('start_charging',
+        // 'current_limit') entsprechen bewusst exakt "attrs.role" aus Shelly.GetComponents, da
+        // RequestAction() beim Schreiben 'role' => $Ident sendet - ohne diese Übereinstimmung würde
+        // das Gerät den Befehl keiner Komponente zuordnen können.
+        'shelly-ev-charger' => [
+            'start_charging' => [
+                'name'         => 'Start Charging',
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'action'       => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'receive' => 'boolean:200'
+            ],
+            'work_state' => [
+                'name'         => 'Charger state',
+                'type'         => VARIABLETYPE_STRING,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION'    => VARIABLE_PRESENTATION_ENUMERATION,
+                    'ICON'            => 'info',
+                    'LAYOUT'          => 1,
+                    'DISPLAY'         => 2,
+                    'OPTIONS'         => [
+                        [
+                            'Value'                 => 'charger_free',
+                            'Caption'               => 'Free',
+                            'IconActive'            => false,
+                            'IconValue'             => 'info',
+                            'Color'                 => 65280,
+                        ],
+                        [
+                            'Value'                 => 'charger_insert',
+                            'Caption'               => 'Insert',
+                            'IconActive'            => false,
+                            'IconValue'             => 'info',
+                            'Color'                 => 16753920,
+                        ],
+                        [
+                            'Value'                 => 'charger_free_fault',
+                            'Caption'               => 'Free fault',
+                            'IconActive'            => false,
+                            'IconValue'             => 'info',
+                            'Color'                 => 16711680,
+                        ],
+                        [
+                            'Value'                 => 'charger_wait',
+                            'Caption'               => 'Wait',
+                            'IconActive'            => false,
+                            'IconValue'             => 'info',
+                            'Color'                 => 16753920,
+                        ],
+                        [
+                            'Value'                 => 'charger_charging',
+                            'Caption'               => 'Charging',
+                            'IconActive'            => false,
+                            'IconValue'             => 'info',
+                            'Color'                 => 65280,
+                        ],
+                        [
+                            'Value'                 => 'charger_pause',
+                            'Caption'               => 'Pause',
+                            'IconActive'            => false,
+                            'IconValue'             => 'info',
+                            'Color'                 => 16753920,
+                        ],
+                        [
+                            'Value'                 => 'charger_end',
+                            'Caption'               => 'End',
+                            'IconActive'            => false,
+                            'IconValue'             => 'info',
+                            'Color'                 => 65280,
+                        ],
+                        [
+                            'Value'                 => 'charger_fault',
+                            'Caption'               => 'Fault',
+                            'IconActive'            => false,
+                            'IconValue'             => 'info',
+                            'Color'                 => 16711680,
+                        ],
+                    ],
+                ],
+                'receive' => 'enum:200'
+            ],
+            'current_limit' => [
+                'name'         => 'Current limit',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                    'SUFFIX'       => ' A',
+                    'MIN'          => 6,
+                    'MAX'          => 16,
+                ],
+                'receive' => 'number:200'
+            ],
+            'energy_charge' => [
+                'name'         => 'Session energy',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'receive' => 'number:201'
+            ],
+            //Ab hier: mehrere Unterwerte aus demselben "object:200"-Event (siehe
+            //findKeysByReceive() in ShellyXT1Device/module.php, die deshalb alle passenden
+            //Idents pro Event liefert statt nur den ersten Treffer).
+            'total_consumption' => [
+                'name'         => 'Total consumption',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'counter:total'
+            ],
+            'total_current' => [
+                'name'         => 'Total current',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'total_current'
+            ],
+            'total_power' => [
+                'name'         => 'Total power',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'total_power'
+            ],
+            'total_active_energy' => [
+                'name'         => 'Total active energy',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' kWh',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'total_act_energy'
+            ],
+            'phase_a_voltage' => [
+                'name'         => 'Phase A voltage',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'phase_a:voltage'
+            ],
+            'phase_a_current' => [
+                'name'         => 'Phase A current',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'phase_a:current'
+            ],
+            'phase_a_power' => [
+                'name'         => 'Phase A power',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'phase_a:power'
+            ],
+            'phase_b_voltage' => [
+                'name'         => 'Phase B voltage',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'phase_b:voltage'
+            ],
+            'phase_b_current' => [
+                'name'         => 'Phase B current',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'phase_b:current'
+            ],
+            'phase_b_power' => [
+                'name'         => 'Phase B power',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'phase_b:power'
+            ],
+            'phase_c_voltage' => [
+                'name'         => 'Phase C voltage',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' V',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'phase_c:voltage'
+            ],
+            'phase_c_current' => [
+                'name'         => 'Phase C current',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' A',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'phase_c:current'
+            ],
+            'phase_c_power' => [
+                'name'         => 'Phase C power',
+                'type'         => VARIABLETYPE_FLOAT,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+                'receive'     => 'object:200',
+                'objectValue' => 'phase_c:power'
+            ],
+        ],
     ];
 }

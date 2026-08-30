@@ -29,6 +29,10 @@
                 {
                     "caption": "Neo Smart Water Valve",
                     "value": "neo-water-valve-advanced"
+                },
+                {
+                    "caption": "EV Charger",
+                    "value": "shelly-ev-charger"
                 }
             ]
         }

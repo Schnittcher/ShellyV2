@@ -28,7 +28,32 @@
             "Water Pressure": "Wasserdruck",
             "Flow rate": "Durchflussrate",
             "Open": "Offen",
-            "Closed": "Geschlossen"
+            "Closed": "Geschlossen",
+            "Start Charging": "Ladevorgang starten",
+            "Charger state": "Ladestatus",
+            "Free": "Frei",
+            "Insert": "Eingesteckt",
+            "Free fault": "Frei (Störung)",
+            "Wait": "Warten",
+            "Charging": "Lädt",
+            "Pause": "Pausiert",
+            "End": "Beendet",
+            "Fault": "Störung",
+            "Current limit": "Stromlimit",
+            "Session energy": "Energie (Sitzung)",
+            "Total consumption": "Gesamtverbrauch",
+            "Total current": "Gesamtstrom",
+            "Total power": "Gesamtleistung",
+            "Total active energy": "Gesamtwirkenergie",
+            "Phase A voltage": "Phase A Spannung",
+            "Phase A current": "Phase A Stromstärke",
+            "Phase A power": "Phase A Leistung",
+            "Phase B voltage": "Phase B Spannung",
+            "Phase B current": "Phase B Stromstärke",
+            "Phase B power": "Phase B Leistung",
+            "Phase C voltage": "Phase C Spannung",
+            "Phase C current": "Phase C Stromstärke",
+            "Phase C power": "Phase C Leistung"
         }
     }
 }

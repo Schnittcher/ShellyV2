@@ -169,6 +169,14 @@ class ShellyConfigurator extends IPSModule
                                     'MQTTTopic'       => $Shelly['ID'],
                                     'XMODServiceType' => 'neo-water-valve-advanced'
                                 ]
+                            ],
+                            'EV Charger' => [
+                                'moduleID'      => GUID_SHELLY_XT1DEVICE,
+                                'info'          => $Shelly['ID'],
+                                'configuration' => [
+                                    'MQTTTopic'       => $Shelly['ID'],
+                                    'XMODServiceType' => 'shelly-ev-charger'
+                                ]
                             ]
                         ]
                     ];

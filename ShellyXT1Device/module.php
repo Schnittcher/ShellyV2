@@ -113,7 +113,7 @@ class ShellyXT1Device extends IPSModule
                 $this->SendDebug('Test', $JSONString, 0);
 
                 //Absicherung: Ohne diese Prüfung würde self::$services[''] (falls XMODServiceType
-                //leer/ungültig ist) $XMODService zu null machen, und findKeyByReceive() bekäme
+                //leer/ungültig ist) $XMODService zu null machen, und findKeysByReceive() bekäme
                 //null statt eines Arrays übergeben - das bricht mit einem fatalen TypeError ab und
                 //verhindert jede weitere Datenverarbeitung für diese Instanz.
                 $XMODServiceType = $this->ReadPropertyString('XMODServiceType');
@@ -125,9 +125,12 @@ class ShellyXT1Device extends IPSModule
                 $XMODService = self::$services[$XMODServiceType];
 
                 foreach ($Payload['params'] as $key => $value) {
-                    $ident = $this->findKeyByReceive($XMODService, $key);
+                    //Mehrere Variablen können denselben "receive"-Key haben (z.B. ein "object:200"
+                    //mit mehreren Unterwerten wie counter.total, total_current, phase_a.voltage, ...)
+                    //- deshalb ALLE passenden Idents holen, nicht nur den ersten Treffer.
+                    $idents = $this->findKeysByReceive($XMODService, $key);
 
-                    if ($ident != null) {
+                    foreach ($idents as $ident) {
                         if (array_key_exists('receivePayloadKey', $XMODService[$ident])) {
                             //IPS_LogMessage('test', print_r($Payload['params'][$key], true));
                             if (array_key_exists($XMODService[$ident]['receivePayloadKey'], $Payload['params'][$key])) {
@@ -181,14 +184,18 @@ private function getValueToKeyPath($array, $keyPath)
         $this->sendMQTT($Topic, json_encode($Payload));
     }
 
-    private function findKeyByReceive(array $array, string $searchReceive)
+    //Liefert ALLE Idents, deren 'receive' zum gesuchten Event-Key passt (nicht nur den ersten
+    //Treffer) - mehrere XMODServices-Einträge können denselben 'receive'-Wert nutzen (z.B. mehrere
+    //Unterwerte, die alle aus demselben "object:200"-Event stammen).
+    private function findKeysByReceive(array $array, string $searchReceive)
     {
+        $idents = [];
         foreach ($array as $key => $config) {
             if (isset($config['receive']) && $config['receive'] === $searchReceive) {
-                return $key;
+                $idents[] = $key;
             }
         }
-        return null; // nichts gefunden
+        return $idents;
     }
 
     private function TranslatePresentation($Presentation)
