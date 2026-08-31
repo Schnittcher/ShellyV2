@@ -74,7 +74,12 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             // ### getDynamicallyAddedComponents() in                     ###
             // ### ComponentDefinitionHelper.                             ###
             // ############################################################
-            if ($MQTTTopic != '') {
+            //HasActiveParent()-Prüfung ist Pflicht: Beim Erstellen einer Instanz über den
+            //Configurator läuft ApplyChanges(), bevor eine Parent-Instanz (MQTT-Client) verbunden
+            //ist - ohne diese Prüfung schlägt SendDataToParent() (in getComponents()/sendMQTT())
+            //hart fehl und reißt die komplette Instanz-Erstellung mit ("Konnte Instanz nicht
+            //erstellen ... Keine übergeordnete Instanz ist konfiguriert").
+            if ($MQTTTopic != '' && $this->HasActiveParent()) {
                 $this->getComponents();
             }
             // ### ENDE TEST / EXPERIMENTELL ###############################
