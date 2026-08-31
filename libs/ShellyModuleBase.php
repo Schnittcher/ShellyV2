@@ -477,9 +477,14 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             foreach ($allVariables as $variable) {
                 $tmpComponent = $this->getValueByKeyPath($variable['CleanKeyPath']);
                 if (!$variable['actionWithExtraVariable']) {
+                    $base = explode('.', $variable['CleanKeyPath'])[0];
                     if ($tmpComponent != null) {
                         $name = $this->Translate($tmpComponent['name']);
-                        if ($variable['Channel'] > 0) {
+                        //Bei "object" ist die Zahl (z.B. "200") die interne Shelly-Komponenten-ID,
+                        //kein echter Kanal wie bei switch:0/switch:1 - würde nur an jedes Unterfeld
+                        //("Phase A voltage 200") angehängt und ist nicht hilfreich, deshalb hier
+                        //ausgenommen.
+                        if ($variable['Channel'] > 0 && $base != 'object') {
                             $name = $this->Translate($tmpComponent['name'] . ' ' . $variable['Channel']);
                         }
                     }
@@ -487,7 +492,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $isWritable = true;
 
                     // ### TEST / EXPERIMENTELL - dynamisch angelegte Komponenten: Name/Optionen/Min-Max-Einheit/Schreibschutz vom Gerät übernehmen ###
-                    $base = explode('.', $variable['CleanKeyPath'])[0];
                     $componentMetadata = $this->getDynamicComponentMetadata($base, $variable['Channel']);
                     if ($componentMetadata != null) {
                         if (array_key_exists('name', $componentMetadata) && $componentMetadata['name'] != '') {
@@ -501,9 +505,13 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             }
                         }
                         if ($base == 'enum' && array_key_exists('options', $componentMetadata)) {
+                            //config.meta.ui.titles liefert schönere Anzeigetexte pro Optionswert
+                            //(z.B. "charger_free" -> "Free") - falls nicht vorhanden, Rohwert als
+                            //Fallback nutzen.
+                            $titles = $componentMetadata['meta']['ui']['titles'] ?? [];
                             $options = [];
                             foreach ($componentMetadata['options'] as $optionValue) {
-                                $options[] = ['Value' => $optionValue, 'Caption' => $optionValue];
+                                $options[] = ['Value' => $optionValue, 'Caption' => $this->Translate($titles[$optionValue] ?? $optionValue)];
                             }
                             $presentation['OPTIONS'] = json_encode($options);
                         }
@@ -591,7 +599,10 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
                 if ($tmpComponent != null) {
                     $name = $tmpComponent['name'];
-                    if ($componentsFromShellyResult['number'] > 0) {
+                    //Bei "object" ist die Zahl (z.B. "200") die interne Shelly-Komponenten-ID, kein
+                    //echter Kanal wie bei switch:0/switch:1 - deshalb hier ausgenommen (sonst z.B.
+                    //"Phase A voltage 200" statt "Phase A voltage").
+                    if ($componentsFromShellyResult['number'] > 0 && $componentsFromShellyResult['base'] != 'object') {
                         $name = $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'];
                     }
 

@@ -169,7 +169,26 @@
             "Objects in Zone": "Objekte in Zone",
             "Illuminance": "Beleuchtungsstärke",
             "Illumination": "Beleuchtungsstufe",
-            "Illuminance Errors": "Beleuchtungsstärke Fehler"
+            "Illuminance Errors": "Beleuchtungsstärke Fehler",
+            "Start Charging": "Ladevorgang starten",
+            "Charger state": "Ladestatus",
+            "Current limit": "Stromlimit",
+            "Session energy": "Energie (Sitzung)",
+            "Session duration": "Dauer (Sitzung)",
+            "Total consumption": "Gesamtverbrauch",
+            "Total current": "Gesamtstrom",
+            "Total power": "Gesamtleistung",
+            "Phase A power": "Phase A Wirkleistung",
+            "Phase B power": "Phase B Wirkleistung",
+            "Phase C power": "Phase C Wirkleistung",
+            "Free": "Frei",
+            "Insert": "Eingesteckt",
+            "Free fault": "Frei (Störung)",
+            "Wait": "Warten",
+            "Charging": "Lädt",
+            "Pause": "Pausiert",
+            "End": "Beendet",
+            "Fault": "Störung"
         }
     }
 }
