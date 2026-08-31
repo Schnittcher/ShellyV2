@@ -207,6 +207,7 @@ class ShellyConfigurator extends IPSModule
                         //statt für jeden Zweck erneut.
                         $shellyComponentsFullRaw = $componentResponses['LastComponentResponse2_' . $Shelly['ID']] ?? null;
                         $shellyComponentsFull = ($shellyComponentsFullRaw != null) ? json_decode($shellyComponentsFullRaw, true) : [];
+                        $shellyComponentsFull = $this->fetchRemainingComponentsPages($Shelly['ID'], $shellyComponentsFull);
                         $this->SendDebug('Shelly GetComponents', json_encode($shellyComponentsFull), 0);
 
                         //Ausnahme für Shelly TRV
@@ -346,16 +347,61 @@ class ShellyConfigurator extends IPSModule
 
     //Verschickt nur die Shelly.GetComponents-Anfrage, ohne auf die Antwort zu warten.
     //Die Shelly-ID im "src" macht das Antwort-Topic pro Gerät eindeutig.
-    private function requestComponents($ShellyMQTTGTopic)
+    private function requestComponents($ShellyMQTTGTopic, $offset = 0)
     {
         $Topic = $ShellyMQTTGTopic . '/rpc';
 
-        $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic, 0);
+        $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic . ' Offset: ' . $offset, 0);
 
         $Payload['id'] = 1;
         $Payload['src'] = 'shellies/getComponentsConfigurator/' . $ShellyMQTTGTopic;
         $Payload['method'] = 'Shelly.GetComponents';
+        //dynamic_only: Shelly.GetComponents ist paginiert - bei vielen Komponenten (sys/wifi/cloud/...)
+        //fielen dynamisch angelegte (BLU TRVs, Boolean/Number/Enum/Text/presencezone/etc.) sonst auf
+        //eine spätere Seite und wurden nie abgerufen. Mit dynamic_only kommen von vornherein nur die
+        //relevanten Komponenten zurück (mit echten Geräten verifiziert). $offset erlaubt trotzdem das
+        //Nachladen weiterer Seiten, falls ein Gerät mehr dynamische Komponenten hat, als auf eine
+        //Seite passen - siehe fetchRemainingComponentsPages().
+        $Payload['params'] = ['dynamic_only' => true, 'offset' => $offset];
         $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
+    }
+
+    //Lädt bei Bedarf synchron weitere Seiten von Shelly.GetComponents nach (falls
+    //offset + Anzahl_erhalten < total) und führt sie mit der ersten Seite zusammen. Wird nur für das
+    //jeweils EINE Gerät aufgerufen, das mehr als eine Seite braucht - der Normalfall (eine Seite
+    //reicht) bleibt so schnell wie bisher (parallel über Phase 1/2).
+    private function fetchRemainingComponentsPages($ShellyID, $shellyComponentsFull)
+    {
+        if (!array_key_exists('result', $shellyComponentsFull) || !array_key_exists('components', $shellyComponentsFull['result'])) {
+            return $shellyComponentsFull;
+        }
+
+        $components = $shellyComponentsFull['result']['components'];
+        $offset = $shellyComponentsFull['result']['offset'] ?? 0;
+        $total = $shellyComponentsFull['result']['total'] ?? count($components);
+        $receivedSoFar = $offset + count($components);
+
+        while ($receivedSoFar < $total) {
+            $this->requestComponents($ShellyID, $receivedSoFar);
+            $responses = $this->waitForComponentResponses(['LastComponentResponse2_' . $ShellyID], 5);
+            $nextPageRaw = $responses['LastComponentResponse2_' . $ShellyID] ?? null;
+            if ($nextPageRaw == null) {
+                //Zeitüberschreitung beim Nachladen - mit dem bisher Vorhandenen weitermachen statt zu blockieren.
+                break;
+            }
+            $nextPage = json_decode($nextPageRaw, true);
+            if (!array_key_exists('result', $nextPage) || !array_key_exists('components', $nextPage['result']) || count($nextPage['result']['components']) === 0) {
+                //Leere Seite trotz offener "total" (z.B. unerwartete Geräteantwort) - abbrechen statt
+                //endlos weiterzufragen, mit dem bisher Vorhandenen weitermachen.
+                break;
+            }
+            $components = array_merge($components, $nextPage['result']['components']);
+            $offset = $nextPage['result']['offset'] ?? $receivedSoFar;
+            $receivedSoFar = $offset + count($nextPage['result']['components']);
+        }
+
+        $shellyComponentsFull['result']['components'] = $components;
+        return $shellyComponentsFull;
     }
 
     //Verschickt nur die Shelly.GetStatus-Anfrage, ohne auf die Antwort zu warten.

@@ -41,6 +41,7 @@
             "Fault": "Störung",
             "Current limit": "Stromlimit",
             "Session energy": "Energie (Sitzung)",
+            "Session duration": "Dauer (Sitzung)",
             "Total consumption": "Gesamtverbrauch",
             "Total current": "Gesamtstrom",
             "Total power": "Gesamtleistung",

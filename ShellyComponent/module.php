@@ -24,15 +24,14 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
         public function ApplyChanges()
         {
             //Never delete this line!
+            //Ruft u.a. bereits getComponents() (Shelly.GetComponents) auf, wenn MQTTTopic gesetzt ist -
+            //deshalb hier unten für 'blutrv' KEIN weiterer expliziter getComponents()-Aufruf mehr
+            //nötig (war vorher redundant, hat dieselbe Anfrage zweimal verschickt).
             parent::ApplyChanges();
             $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
             if ($MQTTTopic != '') {
                 if ($this->HasActiveParent()) {
-                    if ($this->ReadPropertyString('Component') == 'blutrv') {
-                        
-                        $this->getComponents();
-  
-                    } else {
+                    if ($this->ReadPropertyString('Component') != 'blutrv') {
                         $this->getComponentsViaStatus();
                     }
                 }

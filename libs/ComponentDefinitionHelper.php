@@ -242,7 +242,7 @@ trait ComponentDefinitionHelper
     //   ]
     protected function getDynamicallyAddedComponents($Payload)
     {
-        $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone'];
+        $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone', 'object'];
         $status = [];
         $config = [];
         if (isset($Payload['components'])) {

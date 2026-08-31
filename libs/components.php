@@ -1646,6 +1646,129 @@ trait Components
                 ],
             ],
         ],
+        // 'object' ist KEIN generischer Skalar-Typ wie boolean/number/enum/text - "value" ist ein
+        // verschachteltes Objekt, dessen Form je nach Gerät/Service völlig unterschiedlich sein kann
+        // (hier: Energiemess-Objekt eines Shelly EV-Chargers, role "phase_info", mit echtem Gerät
+        // verifiziert). Deshalb NICHT generisch, sondern als feste Unterstruktur abgebildet - passt
+        // nur für object-Komponenten mit exakt dieser Form. Rein lesend (kein 'action'), da
+        // "access": "cr" beim echten Gerät. "counter.minute_ts"/"counter.by_minute" werden bewusst
+        // nicht abgebildet (Zeitstempel/Minuten-Array, keine sinnvollen Einzelvariablen).
+        'object' => [
+            'value' => [
+                'counter' => [
+                    'total' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Total consumption',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' kWh',
+                        ],
+                    ],
+                ],
+                'total_current' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Total current',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' A',
+                    ],
+                ],
+                'total_power' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Total power',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' W',
+                    ],
+                ],
+                'total_act_energy' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Total active energy',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' kWh',
+                    ],
+                ],
+                'phase_a' => [
+                    'voltage' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Phase A voltage',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' V',
+                        ],
+                    ],
+                    'current' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Phase A current',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' A',
+                        ],
+                    ],
+                    'power' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Phase A power',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' W',
+                        ],
+                    ],
+                ],
+                'phase_b' => [
+                    'voltage' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Phase B voltage',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' V',
+                        ],
+                    ],
+                    'current' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Phase B current',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' A',
+                        ],
+                    ],
+                    'power' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Phase B power',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' W',
+                        ],
+                    ],
+                ],
+                'phase_c' => [
+                    'voltage' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Phase C voltage',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' V',
+                        ],
+                    ],
+                    'current' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Phase C current',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' A',
+                        ],
+                    ],
+                    'power' => [
+                        'type'         => VARIABLETYPE_FLOAT,
+                        'name'         => 'Phase C power',
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            'SUFFIX'       => ' W',
+                        ],
+                    ],
+                ],
+            ],
+        ],
         // ### ENDE TEST / EXPERIMENTELL ###############################
     ];
 }

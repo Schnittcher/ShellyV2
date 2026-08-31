@@ -472,6 +472,16 @@ trait XMODServices
                 ],
                 'receive' => 'number:201'
             ],
+            'time_charge' => [
+                'name'         => 'Session duration',
+                'type'         => VARIABLETYPE_INTEGER,
+                'action'       => false,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' min',
+                ],
+                'receive' => 'number:202'
+            ],
             //Ab hier: mehrere Unterwerte aus demselben "object:200"-Event (siehe
             //findKeysByReceive() in ShellyXT1Device/module.php, die deshalb alle passenden
             //Idents pro Event liefert statt nur den ersten Treffer).
