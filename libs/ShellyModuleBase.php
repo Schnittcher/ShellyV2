@@ -474,17 +474,25 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         {
             $allVariables = json_decode($this->GetBuffer('variableList'), true);
 
+            //Bei "object" ist die Zahl (z.B. "200") die interne Shelly-Komponenten-ID, kein echter
+            //Kanal wie bei switch:0/switch:1 - deshalb nur anhängen, wenn tatsächlich MEHRERE
+            //object-Komponenten auf demselben Gerät existieren (sonst z.B. "Phase A voltage 200"
+            //bei nur einer einzigen Instanz unnötig).
+            $objectChannels = [];
+            foreach ($allVariables as $variable) {
+                if (explode('.', $variable['CleanKeyPath'])[0] == 'object') {
+                    $objectChannels[$variable['Channel']] = true;
+                }
+            }
+            $multipleObjectChannels = count($objectChannels) > 1;
+
             foreach ($allVariables as $variable) {
                 $tmpComponent = $this->getValueByKeyPath($variable['CleanKeyPath']);
                 if (!$variable['actionWithExtraVariable']) {
                     $base = explode('.', $variable['CleanKeyPath'])[0];
                     if ($tmpComponent != null) {
                         $name = $this->Translate($tmpComponent['name']);
-                        //Bei "object" ist die Zahl (z.B. "200") die interne Shelly-Komponenten-ID,
-                        //kein echter Kanal wie bei switch:0/switch:1 - würde nur an jedes Unterfeld
-                        //("Phase A voltage 200") angehängt und ist nicht hilfreich, deshalb hier
-                        //ausgenommen.
-                        if ($variable['Channel'] > 0 && $base != 'object') {
+                        if ($variable['Channel'] > 0 && ($base != 'object' || $multipleObjectChannels)) {
                             $name = $this->Translate($tmpComponent['name'] . ' ' . $variable['Channel']);
                         }
                     }
@@ -586,6 +594,18 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             //Immer die Event Komponenten hinzufügen!
             array_push($allComponentsFromShelly, 'events:0.component', 'events:0.event');
 
+            //Bei "object" ist die Zahl (z.B. "200") die interne Shelly-Komponenten-ID, kein echter
+            //Kanal wie bei switch:0/switch:1 - deshalb nur anhängen, wenn tatsächlich MEHRERE
+            //object-Komponenten auf demselben Gerät existieren.
+            $objectChannels = [];
+            foreach ($allComponentsFromShelly as $entry) {
+                $entryCleaned = $this->cleanComponentPath($entry);
+                if ($entryCleaned['base'] == 'object') {
+                    $objectChannels[$entryCleaned['number']] = true;
+                }
+            }
+            $multipleObjectChannels = count($objectChannels) > 1;
+
             foreach ($allComponentsFromShelly as $entry) {
                 $componentsFromShellyResult = $this->cleanComponentPath($entry);
 
@@ -601,8 +621,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $name = $tmpComponent['name'];
                     //Bei "object" ist die Zahl (z.B. "200") die interne Shelly-Komponenten-ID, kein
                     //echter Kanal wie bei switch:0/switch:1 - deshalb hier ausgenommen (sonst z.B.
-                    //"Phase A voltage 200" statt "Phase A voltage").
-                    if ($componentsFromShellyResult['number'] > 0 && $componentsFromShellyResult['base'] != 'object') {
+                    //"Phase A voltage 200" statt "Phase A voltage"), außer es gibt tatsächlich
+                    //mehrere object-Komponenten auf diesem Gerät.
+                    if ($componentsFromShellyResult['number'] > 0 && ($componentsFromShellyResult['base'] != 'object' || $multipleObjectChannels)) {
                         $name = $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'];
                     }
 
