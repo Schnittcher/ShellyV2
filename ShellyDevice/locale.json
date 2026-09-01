@@ -118,7 +118,7 @@
             "Debug: Missing Idents": "Debug: Fehlende Idents",
             "Specific features for shelly device": "Spezifische Funktionen für das Shelly-Gerät",
             "Total active energy": "Gesamtwirkenergie",
-            "Total active returned energy1": "Gesamtwirkenergie Einspeisung",
+            "Total active returned energy": "Gesamtwirkenergie Einspeisung",
             "Total active energy 1": "Gesamtwirkenergie",
             "Total active returned energy 1": "Gesamtwirkenergie Einspeisung",
             "Phase A total active energy": "Phase A Gesamtwirkenergie",
@@ -188,7 +188,8 @@
             "Charging": "Lädt",
             "Pause": "Pausiert",
             "End": "Beendet",
-            "Fault": "Störung"
+            "Fault": "Störung",
+            "Power supply": "Stromversorgung"
         }
     }
 }

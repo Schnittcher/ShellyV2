@@ -39,38 +39,8 @@ trait ComponentDefinitionHelper
         return $keys;
     }
 
-    /**
-     * // Funktion, um alle End-Key-Pfade zu extrahieren (inkl. leerer Arrays)
-     * protected function getArrayLeafKeyPaths(array $array, string $prefix = '')
-     * {
-     * $keys = [];
-     *
-     * foreach ($array as $key => $value) {
-     * // Bei JSON: Doppelpunkt entfernen
-     * //$key = explode(':', $key)[0];
-     *
-     * $fullKey = $prefix === '' ? $key : $prefix . '.' . $key;
-     *
-     * if (is_array($value)) {
-     * if (empty($value)) {
-     * // Leeres Array = Endpunkt
-     * $keys[] = $fullKey;
-     * } else {
-     * // Rekursiv weitergehen
-     * $keys = array_merge($keys, $this->getArrayLeafKeyPaths($value, $fullKey));
-     * }
-     * } else {
-     * // Kein Array = Endpunkt
-     * $keys[] = $fullKey;
-     * }
-     * }
-     *
-     * return $keys;
-     * }
-     */
     protected function componentDefinitionExists($component)
     {
-        //IPS_LogMessage('test', $component);
         if (array_key_exists($component, self::$components)) {
             return true;
         }
@@ -203,14 +173,6 @@ trait ComponentDefinitionHelper
                             ['id' => $id],
                             $component['status'] ?? []
                         );
-                    /**
-                     * $trvs[$component['key']] = [
-                     * //    'key'    => $component['key'],
-                     * 'id'     => $id,
-                     * 'status' => $component['status'] ?? null,
-                     * //  'config' => $component['config'] ?? null,
-                     * ];
-                     */
                 }
             }
         } else {
@@ -259,6 +221,30 @@ trait ComponentDefinitionHelper
             }
         }
         return ['status' => $status, 'config' => $config];
+    }
+    // ### ENDE TEST / EXPERIMENTELL ###
+
+    // ### TEST / EXPERIMENTELL - GetStatus-Ersatz über GetComponents ###
+    // Siehe TODO/ROADMAP-Kommentar bei getComponentsViaStatus() in ShellyModuleBase.php. Baut - anders
+    // als getBLUTRVs()/getDynamicallyAddedComponents(), die nur bestimmte Präfixe rausfiltern - das
+    // GESAMTE Shelly.GetComponents-Ergebnis in dasselbe flache {"switch:0":{...},"sys":{...},...}-Dict
+    // um, das Shelly.GetStatus liefert. Der INHALT (Feldnamen pro Komponente) ist laut Punkt 7 der
+    // Roadmap bereits verifiziert identisch - hier wird nur die HÜLLE übersetzt:
+    //   {"components": [{"key":"switch:0","status":{...},"config":{...}}, ...]}
+    //   ->
+    //   {"switch:0": {...}, ...}
+    protected function getAllComponentsAsStatusDict($Payload)
+    {
+        $status = [];
+        if (isset($Payload['components'])) {
+            foreach ($Payload['components'] as $component) {
+                if (!isset($component['key'])) {
+                    continue;
+                }
+                $status[$component['key']] = $component['status'] ?? [];
+            }
+        }
+        return $status;
     }
     // ### ENDE TEST / EXPERIMENTELL ###
 }

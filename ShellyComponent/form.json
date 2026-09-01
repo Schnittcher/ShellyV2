@@ -85,13 +85,18 @@
             "values": [
                 {}
             ]
+        },
+        {
+            "type": "CheckBox",
+            "name": "UseGetComponentsForStatus",
+            "caption": "TEST: Status über Shelly.GetComponents statt Shelly.GetStatus beziehen"
         }
     ],
     "actions": [
         {
             "type": "Button",
             "caption": "Read Componentes (get Variables)",
-            "onClick": "SHY_getComponentsViaStatus($id);"
+            "onClick": "SHY_requestComponentsStatus($id);"
         },
         {
             "type": "TestCenter"

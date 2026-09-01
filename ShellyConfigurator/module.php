@@ -41,7 +41,6 @@ class ShellyConfigurator extends IPSModule
     {
         //Never delete this line!
         parent::ApplyChanges();
-        //$this->SetReceiveDataFilter('.*(getComponentsConfigurator/rpc|getComponentsConfiguratorViaStatus/rpc||/announce).*');
 
         $BaseTopic = 'shellies';
 
@@ -176,6 +175,20 @@ class ShellyConfigurator extends IPSModule
                                 'configuration' => [
                                     'MQTTTopic'       => $Shelly['ID'],
                                     'XMODServiceType' => 'shelly-ev-charger'
+                                ]
+                            ],
+                            //TEST/EXPERIMENTELL: XT1-Geräte zusätzlich auch als generisches
+                            //ShellyDevice anbieten (nicht nur mit XMODServiceType) - seit der
+                            //Migration auf Shelly.GetComponents (siehe TODO/ROADMAP in
+                            //ShellyModuleBase.php) funktioniert der generische Pfad auch für XT1-Geräte
+                            //wie z.B. die Smart WaterValve, ohne dass eine feste XMODServices-Definition
+                            //nötig wäre.
+                            'ShellyDevice (generisch)' => [
+                                'moduleID'      => GUID_SHELLY_DEVICE,
+                                'info'          => $Shelly['ID'],
+                                'configuration' => [
+                                    'MQTTTopic' => $Shelly['ID'],
+                                    'ModelID'   => $Shelly['Model'],
                                 ]
                             ]
                         ]
@@ -335,15 +348,6 @@ class ShellyConfigurator extends IPSModule
         $responses = $this->waitForComponentResponses(['LastComponentResponse2_' . $ShellyMQTTGTopic], 5);
         return $responses['LastComponentResponse2_' . $ShellyMQTTGTopic] ?? null;
     }
-
-    /**
-    public function getComponentsViaStatus($ShellyMQTTGTopic)
-    {
-        $this->requestComponentsViaStatus($ShellyMQTTGTopic);
-        $responses = $this->waitForComponentResponses(['LastComponentResponse_' . $ShellyMQTTGTopic], 5);
-        return $responses['LastComponentResponse_' . $ShellyMQTTGTopic] ?? null;
-    }
-    */
 
     //Verschickt nur die Shelly.GetComponents-Anfrage, ohne auf die Antwort zu warten.
     //Die Shelly-ID im "src" macht das Antwort-Topic pro Gerät eindeutig.

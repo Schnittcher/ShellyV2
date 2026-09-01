@@ -188,7 +188,8 @@
             "Charging": "Lädt",
             "Pause": "Pausiert",
             "End": "Beendet",
-            "Fault": "Störung"
+            "Fault": "Störung",
+            "Power supply": "Stromversorgung"
         }
     }
 }

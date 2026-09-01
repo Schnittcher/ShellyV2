@@ -32,7 +32,11 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
             if ($MQTTTopic != '') {
                 if ($this->HasActiveParent()) {
                     if ($this->ReadPropertyString('Component') != 'blutrv') {
-                        $this->getComponentsViaStatus();
+                        //TEST/EXPERIMENTELL: requestComponentsStatus() entscheidet anhand der Property
+                        //'UseGetComponentsForStatus' zwischen getComponentsViaStatus() (Standard) und
+                        //getComponentsViaGetComponents() (Opt-in, Schritt 4 der Migration) - siehe
+                        //ShellyModuleBase.php.
+                        $this->requestComponentsStatus();
                     }
                 }
             }

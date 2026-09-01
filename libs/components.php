@@ -1610,8 +1610,12 @@ trait Components
             'value' => [
                 'type'         => VARIABLETYPE_FLOAT,
                 'name'         => 'Number',
+                //VARIABLE_PRESENTATION_VALUE_PRESENTATION ist NUR für nicht-schreibbare Variablen
+                //zulässig - da diese Komponente eine "action" hat (also EnableAction() aufgerufen
+                //wird), muss eine schreibfähige Präsentation her. SLIDER passt zum bereits bestehenden
+                //Min/Max/Einheit-Override aus den Geräte-Metadaten (siehe registerComponentVariables()).
                 'presentation' => [
-                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
                 ],
                 'action'        => [
                     'method' => 'Number.Set',
@@ -1637,8 +1641,11 @@ trait Components
             'value' => [
                 'type'         => VARIABLETYPE_STRING,
                 'name'         => 'Text',
+                //VARIABLE_PRESENTATION_VALUE_PRESENTATION ist NUR für nicht-schreibbare Variablen
+                //zulässig - da diese Komponente eine "action" hat, muss eine schreibfähige Präsentation
+                //her. VALUE_INPUT ist die Symcon-Präsentation für freien Text-Input.
                 'presentation' => [
-                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_INPUT,
                 ],
                 'action'        => [
                     'method' => 'Text.Set',

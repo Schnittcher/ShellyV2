@@ -24,6 +24,13 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $this->RegisterPropertyString('MQTTTopic', '');
             $this->RegisterPropertyBoolean('DebugMissingIdents', false);
             $this->RegisterPropertyString('VariableList', '{}');
+            // ### TEST / EXPERIMENTELL - Schritt 4 der GetStatus->GetComponents-Migration (siehe
+            // ### TODO/ROADMAP bei getComponentsViaStatus()). War zunächst Opt-in (Default aus), da
+            // ### das der Kernpfad JEDER Instanz ist (Hürde 3) - nach erfolgreichen Tests an mehreren
+            // ### Gerätetypen (Presence G4, Shelly 1 Gen3, Pro RGBWW PM, Smart WaterValve) jetzt
+            // ### Default AN. getComponentsViaStatus() bleibt als Fallback/Opt-out erreichbar (Checkbox
+            // ### deaktivieren).
+            $this->RegisterPropertyBoolean('UseGetComponentsForStatus', true);
 
             $this->RegisterVariableBoolean('Reachable', $this->Translate('Reachable'), [
                 'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -61,28 +68,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             //Never delete this line!
             $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
             $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
-
-            // ############################################################
-            // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
-            // ### Manche Komponenten sind nur über Shelly.GetComponents  ###
-            // ### auffindbar, nicht über Shelly.GetStatus/GetConfig:     ###
-            // ### Boolean/Number/Enum/Text (Shelly "User-defined         ###
-            // ### components"), BLU TRVs, und auch ganz normale          ###
-            // ### physische Sensoren wie presencezone:X (Shelly          ###
-            // ### Presence) - alle haben gemeinsam, dass sie per RPC     ###
-            // ### dynamisch hinzugefügt werden (ID-Raum ab 200), siehe   ###
-            // ### getDynamicallyAddedComponents() in                     ###
-            // ### ComponentDefinitionHelper.                             ###
-            // ############################################################
-            //HasActiveParent()-Prüfung ist Pflicht: Beim Erstellen einer Instanz über den
-            //Configurator läuft ApplyChanges(), bevor eine Parent-Instanz (MQTT-Client) verbunden
-            //ist - ohne diese Prüfung schlägt SendDataToParent() (in getComponents()/sendMQTT())
-            //hart fehl und reißt die komplette Instanz-Erstellung mit ("Konnte Instanz nicht
-            //erstellen ... Keine übergeordnete Instanz ist konfiguriert").
             if ($MQTTTopic != '' && $this->HasActiveParent()) {
                 $this->getComponents();
             }
-            // ### ENDE TEST / EXPERIMENTELL ###############################
         }
 
         public function RequestAction($Ident, $Value)
@@ -153,6 +141,58 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $componentsUpdated = true;
                 }
 
+                // ############################################################
+                // ### TEST / EXPERIMENTELL - Schritt 4 der Migration:       ###
+                // ### Status über Shelly.GetComponents statt Shelly.GetStatus###
+                // ### beziehen (siehe TODO/ROADMAP + getComponentsViaGet-   ###
+                // ### Components()). Opt-in über Property                   ###
+                // ### 'UseGetComponentsForStatus'. Ersetzt für diese        ###
+                // ### Instanzen die Rolle von getComponentsViaStatus/rpc    ###
+                // ### oben - befüllt denselben Buffer                       ###
+                // ### 'physicalComponentsList' und denselben                ###
+                // ### $valuesToParse/$componentsUpdated-Mechanismus, damit  ###
+                // ### der Rest der Pipeline (createVariableListForForm(),   ###
+                // ### registerComponentVariables(), etc.) unverändert       ###
+                // ### weiterläuft. Pagination mit "include":["status"] +    ###
+                // ### RegisterOnceTimer()-Entkopplung, siehe                ###
+                // ### requestComponentsPage() für Details zum Fix.          ###
+                // ############################################################
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponentsViaGetComponents/rpc', $Buffer['Topic'])) {
+                    if (array_key_exists('result', $Payload) && array_key_exists('components', $Payload['result'])) {
+                        $statusAccumulated = json_decode($this->GetBuffer('statusViaComponentsAccumulator'), true) ?: [];
+                        $statusAccumulated = array_merge($statusAccumulated, $Payload['result']['components']);
+                        $this->SetBuffer('statusViaComponentsAccumulator', json_encode($statusAccumulated));
+
+                        $statusOffset = $Payload['result']['offset'] ?? 0;
+                        $statusTotal = $Payload['result']['total'] ?? count($statusAccumulated);
+                        $statusReceivedSoFar = $statusOffset + count($Payload['result']['components']);
+
+                        $statusPageCount = (int) ($this->GetBuffer('statusViaComponentsPageCount') ?: '0') + 1;
+                        $this->SetBuffer('statusViaComponentsPageCount', (string) $statusPageCount);
+                        $statusMaxPages = 30;
+
+                        if ($statusReceivedSoFar < $statusTotal && count($Payload['result']['components']) > 0 && $statusPageCount < $statusMaxPages) {
+                            //WICHTIG: SendDataToParent() darf nicht direkt aus ReceiveData() heraus
+                            //aufgerufen werden (siehe Kommentar bei requestComponentsPage()) - über
+                            //RegisterOnceTimer() entkoppeln.
+                            $this->SetBuffer('statusViaComponentsNextOffset', (string) $statusReceivedSoFar);
+                            $this->RegisterOnceTimer('GetComponentsViaGetComponentsNextPage', 'SHY_RunNextGetComponentsViaGetComponentsPageAsync($_IPS["TARGET"]);');
+                        } else {
+                            if ($statusPageCount >= $statusMaxPages) {
+                                $this->SendDebug('getComponentsViaGetComponents', 'Abbruch: Sicherheitslimit von ' . $statusMaxPages . ' Seiten erreicht (offset/total vom Gerät evtl. inkonsistent).', 0);
+                            }
+                            $this->SetBuffer('statusViaComponentsAccumulator', json_encode([]));
+                            $this->SetBuffer('statusViaComponentsPageCount', '0');
+
+                            $statusDict = $this->getAllComponentsAsStatusDict(['components' => $statusAccumulated]);
+                            $this->SetBuffer('physicalComponentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
+                            $valuesToParse = $statusDict;
+                            $componentsUpdated = true;
+                        }
+                    }
+                }
+                // ### ENDE TEST / EXPERIMENTELL ###
+
                 //Ausnahme für BLU TRVs, diese müssen über Shelly.GetComponents abgerufen werden.
                 // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
                 // Hier werden zusätzlich zu BLU TRVs auch Boolean/Number/Enum/Text-Komponenten und
@@ -173,12 +213,35 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         //count(...) === 0 als Bremse: Falls eine Seite trotz offener "total" leer
                         //zurückkommt (unerwartete Geräteantwort), würde $receivedSoFar sonst nie mehr
                         //steigen und wir würden endlos weitere Seiten anfragen.
-                        if ($receivedSoFar < $total && count($Payload['result']['components']) > 0) {
+                        //Zusätzlich hartes Seitenlimit: Falls ein Gerät offset/total inkonsistent
+                        //zurückliefert (z.B. immer wieder dieselbe Seite), verhindert das eine echte
+                        //Endlosschleife von RPC-Anfragen (ist mit der Diagnose-Variante ohne
+                        //dynamic_only live passiert und hat IP-Symcon lahmgelegt).
+                        $pageCount = (int) ($this->GetBuffer('componentsPageCount') ?: '0') + 1;
+                        $this->SetBuffer('componentsPageCount', (string) $pageCount);
+                        $maxPages = 30;
+
+                        if ($receivedSoFar < $total && count($Payload['result']['components']) > 0 && $pageCount < $maxPages) {
                             //Noch nicht alle Seiten da - zwischenspeichern und nächste Seite anfragen,
                             //hier absichtlich NICHT als "componentsUpdated" markieren.
                             $this->SetBuffer('componentsPageAccumulator', json_encode($accumulated));
-                            $this->requestComponentsPage($receivedSoFar);
+                            //WICHTIG: SendDataToParent() darf nicht direkt aus ReceiveData() heraus
+                            //aufgerufen werden - hat live fünf Vorfälle am Produktiv-Broker verursacht
+                            //(Folge-Request erreicht laut MQTT Explorer nicht mal mehr den Broker,
+                            //alles hängt - vermutlich Kapazität/Reentrancy in Symcons eigener
+                            //Skript-Engine unter Last, kein Bug hier, kein Shelly-Firmware-Bug).
+                            //RegisterOnceTimer() entkoppelt das zuverlässig (läuft einmalig und sofort,
+                            //aber außerhalb des ReceiveData()-Aufruf-Stacks) - so gegen den
+                            //Produktiv-Broker bestätigt. Bisher hier nie ausgelöst, weil
+                            //dynamic_only-Ergebnisse bisher immer auf eine Seite passten - trotzdem als
+                            //Vorsichtsmaßnahme mit demselben Fix.
+                            $this->SetBuffer('componentsNextPageOffset', (string) $receivedSoFar);
+                            $this->RegisterOnceTimer('GetComponentsNextPage', 'SHY_RunNextComponentsPageAsync($_IPS["TARGET"]);');
                         } else {
+                            if ($pageCount >= $maxPages) {
+                                $this->SendDebug('getComponents', 'Abbruch: Sicherheitslimit von ' . $maxPages . ' Seiten erreicht (offset/total vom Gerät evtl. inkonsistent).', 0);
+                            }
+                            $this->SetBuffer('componentsPageCount', '0');
                             //Alle Seiten vollständig - jetzt aus dem GESAMTEN Ergebnis verarbeiten.
                             $this->SetBuffer('componentsPageAccumulator', json_encode([]));
                             $fullResult = ['components' => $accumulated];
@@ -242,7 +305,17 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             //Neue Abfrage: Seiten-Akkumulator zurücksetzen und bei offset=0 starten. Die Fortsetzung
             //(weitere Seiten nachladen, falls nötig) passiert in ReceiveData().
             $this->SetBuffer('componentsPageAccumulator', json_encode([]));
+            $this->SetBuffer('componentsPageCount', '0');
             $this->requestComponentsPage(0);
+        }
+
+        //Öffentlicher Einstiegspunkt für den per RegisterOnceTimer() registrierten Timer (siehe
+        //ReceiveData()) - läuft außerhalb des ReceiveData()-Aufruf-Stacks, liest den zu ladenden
+        //Offset aus dem Buffer.
+        public function RunNextComponentsPageAsync()
+        {
+            $offset = (int) $this->GetBuffer('componentsNextPageOffset');
+            $this->requestComponentsPage($offset);
         }
 
         //Fragt eine einzelne Seite von Shelly.GetComponents ab. dynamic_only reduziert die Ergebnisse
@@ -261,47 +334,41 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         }
 
         // ############################################################
-        // ### TODO / ROADMAP - Perspektivisch getComponentsViaStatus ###
-        // ### (Shelly.GetStatus) durch Shelly.GetComponents ersetzen ###
-        // ### (ohne dynamic_only), da Letzteres eine Obermenge ist:   ###
-        // ### liefert Status UND Config für ALLE Komponenten, nicht  ###
-        // ### nur die dynamischen. Nutzen: physische Kanäle könnten  ###
-        // ### dann auch den vom Nutzer im Shelly vergebenen Namen    ###
-        // ### bekommen (z.B. "Trockner" statt "Active power") - wie  ###
-        // ### wir es bei den dynamischen Komponenten schon nutzen.   ###
-        // ###                                                        ###
-        // ### Bekannte Hürden, die das zu einem eigenen, größeren    ###
-        // ### Vorhaben machen (nicht nebenbei erledigen!):           ###
-        // ### 1. Andere Datenform: Shelly.GetComponents liefert ein  ###
-        // ###    Array {"components":[{"key","status","config"},…]} ###
-        // ###    statt des flachen {"switch:0":{...},...}-Dicts von  ###
-        // ###    Shelly.GetStatus - parsePayloadIntoVariables()/     ###
-        // ###    createVariableListForForm() sind fest auf die       ###
-        // ###    flache Form zugeschnitten (getArrayLeafKeyPaths()). ###
-        // ###    Müsste zuerst ins Dict-Format umgebaut werden (wie  ###
-        // ###    getBLUTRVs()/getDynamicallyAddedComponents() es     ###
-        // ###    bereits für BLU TRVs/dynamische Komponenten tun),   ###
-        // ###    aber dann für ALLE Präfixe, nicht nur ein paar.     ###
-        // ### 2. Pagination: Ohne dynamic_only kommen ALLE           ###
-        // ###    Komponenten zurück (sys/wifi/switch/cover/pm1/...)  ###
-        // ###    - bei Geräten mit vielen Kanälen/Sensoren potenziell###
-        // ###    deutlich mehr Seiten als bei den paar dynamischen   ###
-        // ###    Komponenten bisher.                                 ###
-        // ### 3. Das ist der Kernpfad JEDER ShellyDevice/-Component- ###
-        // ###    Instanz, nicht nur ein Sonderfall wie der EV-Charger###
-        // ###    - Fehler hier betreffen alle Geräte, nicht nur eins.###
-        // ### 4. Ident-Stabilität: Idents hängen nur vom Key-Pfad ab ###
-        // ###    (cleanComponentPath(), z.B. "switch:0.output" ->    ###
-        // ###    "switch_0_output"), nicht von der Datenquelle -     ###
-        // ###    bleiben also gleich, WENN das "status"-Unterobjekt  ###
-        // ###    pro Komponente exakt dieselben Feldnamen liefert    ###
-        // ###    wie bisher Shelly.GetStatus. Das ist bisher nur für ###
-        // ###    pm1 und die dynamischen Typen stichprobenartig      ###
-        // ###    verifiziert, NICHT für switch/cover/em/temperature/ ###
-        // ###    humidity/... - vor dem Umbau für jeden Komponenten- ###
-        // ###    Typ einzeln gegenprüfen, sonst brechen bestehende   ###
-        // ###    Skript-/Visualisierungs-Verknüpfungen.              ###
+        // ### Status-Ersatz GetStatus -> GetComponents - Migration    ###
+        // ### abgeschlossen. requestComponentsStatus() ist der         ###
+        // ### gemeinsame Einstiegspunkt: entscheidet anhand der        ###
+        // ### Property 'UseGetComponentsForStatus' zwischen            ###
+        // ### getComponentsViaStatus() (Shelly.GetStatus, Fallback/    ###
+        // ### Opt-out) und getComponentsViaGetComponents()             ###
+        // ### (Shelly.GetComponents mit "include":["status"], jetzt    ###
+        // ### Standard) - genutzt von ApplyChanges() UND dem manuellen ###
+        // ### "Read Componentes"-Button, damit beide dieselbe          ###
+        // ### Einstellung respektieren.                                ###
+        // ###                                                          ###
+        // ### Feldnamen-Konsistenz (Ident-Stabilität) verifiziert:     ###
+        // ### live für pm1, alle dynamischen Typen (boolean/number/    ###
+        // ### enum/text/presencezone), Shelly Presence G4, Shelly 1    ###
+        // ### Gen3, Shelly Pro RGBWW PM sowie eine Smart WaterValve     ###
+        // ### (XT1); per offizieller API-Doku für cover/em/temperature/###
+        // ### humidity. Bei einem bisher unbekannten Komponententyp    ###
+        // ### vor breiterem Einsatz einmal live gegenprüfen (siehe     ###
+        // ### Chat-Verlauf für die Vorgehensweise per curl).           ###
+        // ###                                                          ###
+        // ### Mehrseiten-Pagination läuft über RegisterOnceTimer()     ###
+        // ### entkoppelt (siehe requestComponentsPage() oben) - ein    ###
+        // ### direkter Folge-Request aus ReceiveData() heraus hat live ###
+        // ### mehrfach den Produktiv-Broker/Symcon lahmgelegt.         ###
         // ############################################################
+        public function requestComponentsStatus()
+        {
+            if ($this->ReadPropertyBoolean('UseGetComponentsForStatus')) {
+                $this->getComponentsViaGetComponents();
+            } else {
+                $this->getComponentsViaStatus();
+            }
+        }
+        // ### ENDE TEST / EXPERIMENTELL ###
+
         public function getComponentsViaStatus()
         {
             $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
@@ -311,6 +378,42 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $Payload['method'] = 'Shelly.GetStatus';
             $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
         }
+
+        // ############################################################
+        // ### TEST / EXPERIMENTELL - Schritt 4 der Migration          ###
+        // ### (siehe TODO/ROADMAP oben). Ersatz für                    ###
+        // ### getComponentsViaStatus(), Opt-in über die Property       ###
+        // ### 'UseGetComponentsForStatus' (siehe ApplyChanges()).      ###
+        // ### Fragt ALLE Komponenten via Shelly.GetComponents ab (mit  ###
+        // ### "include":["status"], ohne dynamic_only), Pagination     ###
+        // ### über RegisterOnceTimer() entkoppelt (siehe ReceiveData()-###
+        // ### Handler für getComponentsViaGetComponents/rpc).          ###
+        // ############################################################
+        public function getComponentsViaGetComponents()
+        {
+            $this->SetBuffer('statusViaComponentsAccumulator', json_encode([]));
+            $this->SetBuffer('statusViaComponentsPageCount', '0');
+            $this->requestGetComponentsViaGetComponentsPage(0);
+        }
+
+        //Öffentlicher Einstiegspunkt für den per RegisterOnceTimer() registrierten Timer - läuft
+        //außerhalb des ReceiveData()-Aufruf-Stacks, liest den zu ladenden Offset aus dem Buffer.
+        public function RunNextGetComponentsViaGetComponentsPageAsync()
+        {
+            $offset = (int) $this->GetBuffer('statusViaComponentsNextOffset');
+            $this->requestGetComponentsViaGetComponentsPage($offset);
+        }
+
+        private function requestGetComponentsViaGetComponentsPage($offset)
+        {
+            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
+            $Payload['id'] = 1;
+            $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponentsViaGetComponents';
+            $Payload['method'] = 'Shelly.GetComponents';
+            $Payload['params'] = ['include' => ['status'], 'offset' => $offset];
+            $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
+        }
+        // ### ENDE TEST / EXPERIMENTELL ###############################
 
         public function callRPCFunction($method, $params)
         {
@@ -372,18 +475,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             }
         }
 
-        private function callRPCGetStatus()
-        {
-            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
-
-            $Payload['id'] = 1;
-            $Payload['src'] = 'user_1';
-            $Payload['method'] = 'Shelly.GetStatus';
-            $Payload['params'] = '';
-
-            $this->sendMQTT($Topic, json_encode($Payload));
-        }
-
         private function parsePayloadIntoVariables($Payload)
         {
             //Components vom Shelly Params Payload holen.
@@ -435,6 +526,29 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 // ### ENDE TEST / EXPERIMENTELL ###############################
             }
         }
+
+        // ############################################################
+        // ### IDEE / TODO - Presets-Zuordnungstabelle für dynamische ###
+        // ### Komponenten (noch NICHT umgesetzt, kein akuter Bedarf, ###
+        // ### nur damit die Idee nicht verloren geht):               ###
+        // ### getDynamicComponentMetadata() unten liefert pro        ###
+        // ### Instanz schon Name/Optionen/Min-Max/Access direkt vom  ###
+        // ### Gerät - aber nur für Felder, die der Shelly selbst     ###
+        // ### kennt. Für rein Symcon-seitige Darstellung (z.B. ein   ###
+        // ### Icon), die der Shelly nicht mitliefert, könnte man     ###
+        // ### zusätzlich eine GLOBALE Presets-Tabelle bauen, keyed   ###
+        // ### auf ModelID + Komponenten-Typ (Bevorzugte Variante,    ###
+        // ### siehe Chat) - ähnlich wie XMODServices.php es für      ###
+        // ### LinkedGo/BLU-Geräte schon macht, nur eben als          ###
+        // ### Ergänzung zu components.php statt Ersatz. components.php###
+        // ### selbst eignet sich dafür NICHT (global, kennt keine    ###
+        // ### Geräte-/Instanz-Zugehörigkeit, würde bei              ###
+        // ### unterschiedlicher Nutzung z.B. von boolean:200 auf     ###
+        // ### verschiedenen Geräten kollidieren). Fallback für       ###
+        // ### Fälle außerhalb der Presets-Tabelle: manuelles         ###
+        // ### Override-Feld in der VariableList-Property (schon      ###
+        // ### heute pro Instanz/pro Variable, siehe Selected/Zeroing).###
+        // ############################################################
 
         // ############################################################
         // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
@@ -491,9 +605,13 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 if (!$variable['actionWithExtraVariable']) {
                     $base = explode('.', $variable['CleanKeyPath'])[0];
                     if ($tmpComponent != null) {
+                        //Erst übersetzen, DANN die Kanalnummer anhängen - Translate() macht exakte
+                        //String-Treffer, eine kombinierte Zeichenkette wie "Temperature 100" bräuchte
+                        //sonst einen eigenen Locale-Eintrag pro Kanalnummer (siehe Kommentar bei
+                        //createVariableListForForm() für ein Beispiel, wo das gefehlt hat).
                         $name = $this->Translate($tmpComponent['name']);
                         if ($variable['Channel'] > 0 && ($base != 'object' || $multipleObjectChannels)) {
-                            $name = $this->Translate($tmpComponent['name'] . ' ' . $variable['Channel']);
+                            $name = $this->Translate($tmpComponent['name']) . ' ' . $variable['Channel'];
                         }
                     }
                     $presentation = $tmpComponent['presentation'];
@@ -509,7 +627,11 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             if ($base == 'presencezone') {
                                 $name = $componentMetadata['name'] . ' (' . $this->Translate($tmpComponent['name']) . ')';
                             } else {
-                                $name = $componentMetadata['name'];
+                                //Translate() ist ein No-Op für Strings ohne passenden Locale-Eintrag
+                                //(z.B. ein vom Nutzer frei vergebener Name wie "Trockner" bleibt
+                                //unverändert) - für Shelly-Werksnamen wie "Power supply"/"Position"
+                                //greift die Übersetzung dann aber korrekt.
+                                $name = $this->Translate($componentMetadata['name']);
                             }
                         }
                         if ($base == 'enum' && array_key_exists('options', $componentMetadata)) {
@@ -545,6 +667,19 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         if (array_key_exists('access', $componentMetadata) && strpos($componentMetadata['access'], 'w') === false) {
                             $isWritable = false;
                         }
+                    }
+
+                    //Schreibfähige Präsentationen (Slider/Switch/Enumeration/Value Input) verlangen
+                    //laut Symcon zwingend eine konfigurierte Variablenaktion - ohne EnableAction()
+                    //(z.B. bei schreibgeschützten Komponenten wie "Session energy") würde
+                    //MaintainVariable() sonst eine inkompatible Darstellung anlegen ("Diese Darstellung
+                    //ist nur für Variablen [mit/ohne] eine Variablenaktion verfügbar"). Fällt in diesem
+                    //Fall auf die nicht-schreibfähige VALUE_PRESENTATION zurück, die bereits gesetzten
+                    //OPTIONS/SUFFIX/MIN/MAX bleiben dabei erhalten (VALUE_PRESENTATION unterstützt
+                    //OPTIONS genauso, siehe z.B. die "Reachable"-Variable in Create()).
+                    $writeOnlyPresentations = [VARIABLE_PRESENTATION_SLIDER, VARIABLE_PRESENTATION_SWITCH, VARIABLE_PRESENTATION_ENUMERATION, VARIABLE_PRESENTATION_VALUE_INPUT];
+                    if (!$isWritable && in_array($presentation['PRESENTATION'], $writeOnlyPresentations, true)) {
+                        $presentation['PRESENTATION'] = VARIABLE_PRESENTATION_VALUE_PRESENTATION;
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###
 
@@ -624,7 +759,12 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     //"Phase A voltage 200" statt "Phase A voltage"), außer es gibt tatsächlich
                     //mehrere object-Komponenten auf diesem Gerät.
                     if ($componentsFromShellyResult['number'] > 0 && ($componentsFromShellyResult['base'] != 'object' || $multipleObjectChannels)) {
-                        $name = $tmpComponent['name'] . ' ' . $componentsFromShellyResult['number'];
+                        //Erst übersetzen, DANN die Kanalnummer anhängen - Translate() macht exakte
+                        //String-Treffer, eine kombinierte Zeichenkette wie "Temperature 100" bräuchte
+                        //sonst einen eigenen Locale-Eintrag pro Kanalnummer (z.B. bei einer
+                        //Smart WaterValve mit temperature:100 gefehlt - "Temperature 100" blieb
+                        //unübersetzt, weil nur "Temperature" allein einen Locale-Eintrag hatte).
+                        $name = $this->Translate($tmpComponent['name']) . ' ' . $componentsFromShellyResult['number'];
                     }
 
                     // ### TEST / EXPERIMENTELL - dynamisch angelegte Komponenten: Name vom Gerät übernehmen ###
@@ -655,7 +795,8 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         if (array_key_exists('actionWithExtraVariable', $tmpComponent)) {
                             $name = $tmpComponent['actionWithExtraVariable']['name'];
                             if ($componentsFromShellyResult['number'] > 0) {
-                                $name = $tmpComponent['actionWithExtraVariable']['name'] . ' ' . $componentsFromShellyResult['number'];
+                                //Erst übersetzen, DANN die Kanalnummer anhängen - siehe Kommentar oben.
+                                $name = $this->Translate($tmpComponent['actionWithExtraVariable']['name']) . ' ' . $componentsFromShellyResult['number'];
                             }
                             $extraIdent = $componentsFromShellyResult['ident'] . '_ExtraAction';
 
