@@ -186,10 +186,10 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
                             $statusDict = $this->getAllComponentsAsStatusDict(['components' => $statusAccumulated]);
                             $this->SetBuffer('physicalComponentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
-                            //Vom Nutzer auf dem Gerät vergebene Namen (auch für physische Kanäle wie
-                            //switch/cover/em/pm1, nicht nur dynamische Komponenten) - siehe
-                            //getComponentConfigNames()/Namens-Präfix in registerComponentVariables().
-                            $this->SetBuffer('physicalComponentNames', json_encode($this->getComponentConfigNames(['components' => $statusAccumulated])));
+                            //Volle Config für ALLE Komponenten (auch physische wie switch/cover/em/pm1,
+                            //nicht nur dynamische) - siehe getComponentConfigs()/getPhysicalComponentName()/
+                            //Fallback in getDynamicComponentMetadata().
+                            $this->SetBuffer('componentConfigs', json_encode($this->getComponentConfigs(['components' => $statusAccumulated])));
                             $valuesToParse = $statusDict;
                             $componentsUpdated = true;
                         }
@@ -415,8 +415,8 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponentsViaGetComponents';
             $Payload['method'] = 'Shelly.GetComponents';
             //"config" zusätzlich zu "status": liefert u.a. den vom Nutzer auf dem Gerät vergebenen
-            //Namen pro Kanal (z.B. "Waschmaschine" bei switch:0) - siehe getComponentConfigNames()/
-            //Namens-Präfix in registerComponentVariables()/createVariableListForForm().
+            //Namen pro Kanal (z.B. "Waschmaschine" bei switch:0) - siehe getComponentConfigs()/
+            //getPhysicalComponentName()/getDynamicComponentMetadata().
             $Payload['params'] = ['include' => ['status', 'config'], 'offset' => $offset];
             $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
         }
@@ -535,26 +535,36 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         }
 
         // ############################################################
-        // ### IDEE / TODO - Presets-Zuordnungstabelle für dynamische ###
-        // ### Komponenten (noch NICHT umgesetzt, kein akuter Bedarf, ###
-        // ### nur damit die Idee nicht verloren geht):               ###
-        // ### getDynamicComponentMetadata() unten liefert pro        ###
-        // ### Instanz schon Name/Optionen/Min-Max/Access direkt vom  ###
-        // ### Gerät - aber nur für Felder, die der Shelly selbst     ###
-        // ### kennt. Für rein Symcon-seitige Darstellung (z.B. ein   ###
-        // ### Icon), die der Shelly nicht mitliefert, könnte man     ###
-        // ### zusätzlich eine GLOBALE Presets-Tabelle bauen, keyed   ###
-        // ### auf ModelID + Komponenten-Typ (Bevorzugte Variante,    ###
-        // ### siehe Chat) - ähnlich wie XMODServices.php es für      ###
-        // ### LinkedGo/BLU-Geräte schon macht, nur eben als          ###
-        // ### Ergänzung zu components.php statt Ersatz. components.php###
-        // ### selbst eignet sich dafür NICHT (global, kennt keine    ###
-        // ### Geräte-/Instanz-Zugehörigkeit, würde bei              ###
-        // ### unterschiedlicher Nutzung z.B. von boolean:200 auf     ###
-        // ### verschiedenen Geräten kollidieren). Fallback für       ###
-        // ### Fälle außerhalb der Presets-Tabelle: manuelles         ###
-        // ### Override-Feld in der VariableList-Property (schon      ###
-        // ### heute pro Instanz/pro Variable, siehe Selected/Zeroing).###
+        // ### IDEE / TODO - Presets-Zuordnungstabelle für ALLE        ###
+        // ### Komponenten (noch NICHT umgesetzt, kein akuter Bedarf,  ###
+        // ### nur damit die Idee nicht verloren geht):                ###
+        // ### getDynamicComponentMetadata() unten liefert pro         ###
+        // ### Instanz schon Name/Optionen/Min-Max/Access direkt vom   ###
+        // ### Gerät - aber nur für Felder, die der Shelly selbst      ###
+        // ### kennt UND nur für die dynamischen Typen. Für rein       ###
+        // ### Symcon-seitige Darstellung (z.B. ein Icon) oder Werte,  ###
+        // ### die der Shelly nicht/nicht konsistent mitliefert (z.B.  ###
+        // ### unterschiedliche Kelvin-Bereiche bei CCT-Lampen je nach ###
+        // ### Modell), könnte man zusätzlich eine GLOBALE             ###
+        // ### Presets-Tabelle bauen, keyed auf ModelID + Komponenten- ###
+        // ### Typ (Bevorzugte Variante, siehe Chat) - ähnlich wie     ###
+        // ### XMODServices.php es für LinkedGo/BLU-Geräte schon       ###
+        // ### macht, nur eben als Ergänzung zu components.php statt   ###
+        // ### Ersatz. components.php selbst eignet sich dafür NICHT   ###
+        // ### (global, kennt keine Geräte-/Instanz-Zugehörigkeit,     ###
+        // ### würde bei unterschiedlicher Nutzung z.B. von            ###
+        // ### boolean:200 auf verschiedenen Geräten kollidieren).     ###
+        // ### WICHTIG: Bewusst generisch für JEDEN Komponententyp     ###
+        // ### bauen (auch cover/light, nicht nur number/CCT) - auch   ###
+        // ### wenn z.B. cover.current_pos (0-100%) ein fester         ###
+        // ### Shelly-Protokollwert ist und aktuell KEIN konkreter     ###
+        // ### Bedarf für eine Override dort besteht, soll der         ###
+        // ### Mechanismus nicht künstlich auf bestimmte Typen         ###
+        // ### beschränkt sein, falls doch mal ein Sonderfall auftaucht.###
+        // ### Fallback für Fälle außerhalb der Presets-Tabelle:       ###
+        // ### manuelles Override-Feld in der VariableList-Property    ###
+        // ### (schon heute pro Instanz/pro Variable, siehe            ###
+        // ### Selected/Zeroing).                                      ###
         // ############################################################
 
         // ############################################################
@@ -582,12 +592,24 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             if (!in_array($component, self::$dynamicComponentTypes, true)) {
                 return null;
             }
-            $metadata = json_decode($this->GetBuffer('dynamicComponentsMetadata'), true);
-            if (!is_array($metadata)) {
-                return null;
-            }
             $key = $component . ':' . $channel;
-            return $metadata[$key] ?? null;
+            $metadata = json_decode($this->GetBuffer('dynamicComponentsMetadata'), true);
+            $result = is_array($metadata) ? ($metadata[$key] ?? null) : null;
+
+            //Ergänzung/Fallback: componentConfigs (aus getComponentsViaGetComponents(), Schritt 4)
+            //liefert dieselbe Config-Form auch für dynamische Komponenten, unabhängig von der
+            //separaten, dynamic_only-gefilterten getComponents()-Antwort oben. Falls die noch nicht da
+            //ist oder einzelne Felder fehlen, von dort auffüllen (array_merge: $result gewinnt bei
+            //Überschneidung, die authentische dynamic_only-Antwort bleibt also maßgeblich, sobald sie
+            //da ist). Vermeidet die Race Condition zwischen den beiden unabhängigen Anfragen (live
+            //beobachtet: "Boolean 200" statt "Power supply", weil die dynamic_only-Antwort fehlte).
+            $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+            $fallback = is_array($configs) ? ($configs[$key] ?? null) : null;
+            if (is_array($fallback)) {
+                $result = $result === null ? $fallback : array_merge($fallback, $result);
+            }
+
+            return $result;
         }
 
         // ### TEST / EXPERIMENTELL - Gerätename als Präfix für physische Komponenten ###
@@ -606,12 +628,23 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             if (in_array($component, self::$dynamicComponentTypes, true) || $component == 'object') {
                 return null;
             }
-            $names = json_decode($this->GetBuffer('physicalComponentNames'), true);
-            if (!is_array($names)) {
+            $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+            if (!is_array($configs)) {
                 return null;
             }
             $key = $component . ':' . $channel;
-            return $names[$key] ?? null;
+            $name = $configs[$key]['name'] ?? null;
+            return ($name !== null && $name !== '') ? $name : null;
+        }
+
+        //Generischer Zugriff auf ein einzelnes Feld aus der Geräte-Config einer Komponente (z.B.
+        //"ct_range" bei cct) - liefert null, falls (noch) keine Config vorliegt oder das Feld nicht
+        //existiert. Nutzt dieselbe componentConfigs-Quelle wie getPhysicalComponentName().
+        private function getComponentConfigField($component, $channel, $configKey)
+        {
+            $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+            $key = $component . ':' . $channel;
+            return $configs[$key][$configKey] ?? null;
         }
         // ### ENDE TEST / EXPERIMENTELL ###############################
 
@@ -705,6 +738,38 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $physicalName = $this->getPhysicalComponentName($base, $variable['Channel']);
                     if ($physicalName != null) {
                         $name = $physicalName . ' - ' . $this->Translate($tmpComponent['name']);
+                    }
+                    // ### ENDE TEST / EXPERIMENTELL ###
+
+                    // ### TEST / EXPERIMENTELL - CCT-Farbtemperaturbereich vom Gerät übernehmen ###
+                    // Shelly meldet den unterstützten Kelvin-Bereich direkt in der Komponenten-Config
+                    // ("ct_range": [min, max]) - anders als bei Cover/Light/RGB-Brightness (immer fest
+                    // 0-100%, laut API-Doku geprüft) ist das bei CCT tatsächlich geräteabhängig. Nur
+                    // das "ct"-Feld braucht das, nicht "output"/"brightness" desselben cct-Kanals -
+                    // deshalb exakter CleanKeyPath-Match statt nur $base == 'cct'.
+                    if ($variable['CleanKeyPath'] == 'cct.ct') {
+                        $ctRange = $this->getComponentConfigField('cct', $variable['Channel'], 'ct_range');
+                        if (is_array($ctRange) && count($ctRange) == 2) {
+                            $presentation['MIN'] = $ctRange[0];
+                            $presentation['MAX'] = $ctRange[1];
+                        }
+                    }
+                    // ### ENDE TEST / EXPERIMENTELL ###
+
+                    // ### TEST / EXPERIMENTELL - BLU TRV Zieltemperaturbereich vom Gerät übernehmen ###
+                    // Shelly meldet min/max Zieltemperatur direkt in der Komponenten-Config
+                    // ("min_target_C"/"max_target_C", Doku-Default 5-35°C) - der bisher hartkodierte
+                    // Bereich in components.php (5-30) war laut Doku ungenau (30 statt 35). Nur das
+                    // "target_C"-Feld braucht das, nicht "current_C"/"pos" desselben blutrv-Kanals.
+                    if ($variable['CleanKeyPath'] == 'blutrv.target_C') {
+                        $minTargetC = $this->getComponentConfigField('blutrv', $variable['Channel'], 'min_target_C');
+                        $maxTargetC = $this->getComponentConfigField('blutrv', $variable['Channel'], 'max_target_C');
+                        if ($minTargetC !== null) {
+                            $presentation['MIN'] = $minTargetC;
+                        }
+                        if ($maxTargetC !== null) {
+                            $presentation['MAX'] = $maxTargetC;
+                        }
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###
 

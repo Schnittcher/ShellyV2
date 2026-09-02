@@ -247,28 +247,31 @@ trait ComponentDefinitionHelper
         return $status;
     }
 
-    // ### TEST / EXPERIMENTELL - Gerätename für physische Komponenten ###
-    // Liefert {"switch:0": "Waschmaschine", ...} aus dem "config"-Teil des GESAMTEN
-    // Shelly.GetComponents-Ergebnisses (also auch für "normale" physische Kanäle wie switch/cover/em/
-    // pm1, nicht nur für die dynamischen Typen wie getDynamicallyAddedComponents() es tut). Nur
-    // Komponenten mit tatsächlich gesetztem, nicht-leerem Namen sind enthalten. Wird in
-    // registerComponentVariables()/createVariableListForForm() genutzt, um den Gerätenamen als Präfix
-    // vor den generischen Feldnamen zu setzen (z.B. "Waschmaschine - Active power").
-    protected function getComponentConfigNames($Payload)
+    // ### TEST / EXPERIMENTELL - Vereinheitlichte Config-Quelle für ALLE Komponenten ###
+    // Liefert {"switch:0": {...volle config...}, "boolean:200": {...volle config...}, ...} aus dem
+    // GESAMTEN Shelly.GetComponents-Ergebnis - für JEDEN Komponententyp, nicht nur die dynamischen
+    // (anders als getDynamicallyAddedComponents(), das nach Präfix filtert). Ersetzt die frühere
+    // Trennung in "nur Namen für physische Komponenten" vs. "volle Metadaten nur für dynamische
+    // Komponenten aus einer separaten getComponents()-Antwort" - beide Infos stecken ja im selben
+    // Shelly.GetComponents-Ergebnis, eine künstliche Aufteilung auf zwei Quellen hat nur eine Race
+    // Condition zwischen zwei unabhängigen Anfragen provoziert (live beobachtet: "Boolean 200" statt
+    // "Power supply", weil die separate dynamic_only-Antwort noch nicht da war). Wird in
+    // registerComponentVariables()/createVariableListForForm() genutzt: für physische Komponenten als
+    // Namens-Präfix (z.B. "Waschmaschine - Active power"), für dynamische Komponenten als Fallback zu
+    // getDynamicComponentMetadata() (falls dessen eigentliche, dynamic_only-gefilterte Quelle noch
+    // nicht da ist).
+    protected function getComponentConfigs($Payload)
     {
-        $names = [];
+        $configs = [];
         if (isset($Payload['components'])) {
             foreach ($Payload['components'] as $component) {
                 if (!isset($component['key'])) {
                     continue;
                 }
-                $name = $component['config']['name'] ?? null;
-                if ($name !== null && $name !== '') {
-                    $names[$component['key']] = $name;
-                }
+                $configs[$component['key']] = $component['config'] ?? [];
             }
         }
-        return $names;
+        return $configs;
     }
     // ### ENDE TEST / EXPERIMENTELL ###
 }
