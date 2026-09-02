@@ -246,5 +246,29 @@ trait ComponentDefinitionHelper
         }
         return $status;
     }
+
+    // ### TEST / EXPERIMENTELL - Gerätename für physische Komponenten ###
+    // Liefert {"switch:0": "Waschmaschine", ...} aus dem "config"-Teil des GESAMTEN
+    // Shelly.GetComponents-Ergebnisses (also auch für "normale" physische Kanäle wie switch/cover/em/
+    // pm1, nicht nur für die dynamischen Typen wie getDynamicallyAddedComponents() es tut). Nur
+    // Komponenten mit tatsächlich gesetztem, nicht-leerem Namen sind enthalten. Wird in
+    // registerComponentVariables()/createVariableListForForm() genutzt, um den Gerätenamen als Präfix
+    // vor den generischen Feldnamen zu setzen (z.B. "Waschmaschine - Active power").
+    protected function getComponentConfigNames($Payload)
+    {
+        $names = [];
+        if (isset($Payload['components'])) {
+            foreach ($Payload['components'] as $component) {
+                if (!isset($component['key'])) {
+                    continue;
+                }
+                $name = $component['config']['name'] ?? null;
+                if ($name !== null && $name !== '') {
+                    $names[$component['key']] = $name;
+                }
+            }
+        }
+        return $names;
+    }
     // ### ENDE TEST / EXPERIMENTELL ###
 }

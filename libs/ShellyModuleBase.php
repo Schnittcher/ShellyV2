@@ -186,6 +186,10 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
                             $statusDict = $this->getAllComponentsAsStatusDict(['components' => $statusAccumulated]);
                             $this->SetBuffer('physicalComponentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
+                            //Vom Nutzer auf dem Gerät vergebene Namen (auch für physische Kanäle wie
+                            //switch/cover/em/pm1, nicht nur dynamische Komponenten) - siehe
+                            //getComponentConfigNames()/Namens-Präfix in registerComponentVariables().
+                            $this->SetBuffer('physicalComponentNames', json_encode($this->getComponentConfigNames(['components' => $statusAccumulated])));
                             $valuesToParse = $statusDict;
                             $componentsUpdated = true;
                         }
@@ -410,7 +414,10 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $Payload['id'] = 1;
             $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponentsViaGetComponents';
             $Payload['method'] = 'Shelly.GetComponents';
-            $Payload['params'] = ['include' => ['status'], 'offset' => $offset];
+            //"config" zusätzlich zu "status": liefert u.a. den vom Nutzer auf dem Gerät vergebenen
+            //Namen pro Kanal (z.B. "Waschmaschine" bei switch:0) - siehe getComponentConfigNames()/
+            //Namens-Präfix in registerComponentVariables()/createVariableListForForm().
+            $Payload['params'] = ['include' => ['status', 'config'], 'offset' => $offset];
             $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
         }
         // ### ENDE TEST / EXPERIMENTELL ###############################
@@ -582,6 +589,30 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $key = $component . ':' . $channel;
             return $metadata[$key] ?? null;
         }
+
+        // ### TEST / EXPERIMENTELL - Gerätename als Präfix für physische Komponenten ###
+        // Anders als getDynamicComponentMetadata() (Name ERSETZT den generischen Namen komplett, nur
+        // für boolean/number/enum/text/presencezone) wird der Gerätename hier nur als PRÄFIX vor den
+        // generischen Feldnamen gesetzt (z.B. "Waschmaschine - Active power" statt nur "Active power")
+        // - für "normale" physische Komponenten wie switch/cover/em/pm1/light/rgb, die MEHRERE
+        // Unterfelder pro Kanal haben. Ein kompletter Ersatz würde dort wie bei den dynamischen
+        // Komponenten alle Unterfelder gleich benennen (der pm1-Namenskollisions-Bug von früher in der
+        // Session) - das Präfix behält die Unterscheidung (Active power/Voltage/...) bei gleichzeitiger
+        // Zuordnung zum richtigen Gerät/Kanal. 'object' und die dynamischen Typen sind ausgenommen (die
+        // haben ihre eigene, passendere Namenslogik). Nur mit dem GetComponents-Status-Pfad verfügbar -
+        // Shelly.GetStatus liefert kein "config"/keine Namen.
+        private function getPhysicalComponentName($component, $channel)
+        {
+            if (in_array($component, self::$dynamicComponentTypes, true) || $component == 'object') {
+                return null;
+            }
+            $names = json_decode($this->GetBuffer('physicalComponentNames'), true);
+            if (!is_array($names)) {
+                return null;
+            }
+            $key = $component . ':' . $channel;
+            return $names[$key] ?? null;
+        }
         // ### ENDE TEST / EXPERIMENTELL ###############################
 
         private function registerComponentVariables()
@@ -668,6 +699,14 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             $isWritable = false;
                         }
                     }
+                    // ### ENDE TEST / EXPERIMENTELL ###
+
+                    // ### TEST / EXPERIMENTELL - Gerätename als Präfix für physische Komponenten ###
+                    $physicalName = $this->getPhysicalComponentName($base, $variable['Channel']);
+                    if ($physicalName != null) {
+                        $name = $physicalName . ' - ' . $this->Translate($tmpComponent['name']);
+                    }
+                    // ### ENDE TEST / EXPERIMENTELL ###
 
                     //Schreibfähige Präsentationen (Slider/Switch/Enumeration/Value Input) verlangen
                     //laut Symcon zwingend eine konfigurierte Variablenaktion - ohne EnableAction()
@@ -778,6 +817,13 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         } else {
                             $name = $componentMetadata['name'];
                         }
+                    }
+                    // ### ENDE TEST / EXPERIMENTELL ###
+
+                    // ### TEST / EXPERIMENTELL - Gerätename als Präfix für physische Komponenten ###
+                    $physicalName = $this->getPhysicalComponentName($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
+                    if ($physicalName != null) {
+                        $name = $physicalName . ' - ' . $this->Translate($tmpComponent['name']);
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###
 
