@@ -723,7 +723,10 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             $presentation['OPTIONS'] = json_encode($options);
                         }
 
-                        //Number: Min/Max/Einheit vom Gerät übernehmen, falls vorhanden (z.B. "Current limit" 6-16 A).
+                        //Number: Min/Max/Einheit/Step vom Gerät übernehmen, falls vorhanden (z.B.
+                        //"Current limit" 6-16 A). Step liefert nicht jedes Gerät (z.B. WaterValve
+                        //schon, EV-Charger nicht) - Fallback auf 1, wenn nicht vorhanden, statt
+                        //Symcons eigenen (unbekannten) Default zu nutzen.
                         if ($base == 'number') {
                             if (array_key_exists('min', $componentMetadata)) {
                                 $presentation['MIN'] = $componentMetadata['min'];
@@ -735,6 +738,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             if ($unit != '') {
                                 $presentation['SUFFIX'] = ' ' . $unit;
                             }
+                            $presentation['STEP_SIZE'] = $componentMetadata['meta']['ui']['step'] ?? 1;
                         }
 
                         //Manche dynamisch angelegten Komponenten sind schreibgeschützt (z.B. "Session energy" oder
