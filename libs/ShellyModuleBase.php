@@ -705,7 +705,20 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             $titles = $componentMetadata['meta']['ui']['titles'] ?? [];
                             $options = [];
                             foreach ($componentMetadata['options'] as $optionValue) {
-                                $options[] = ['Value' => $optionValue, 'Caption' => $this->Translate($titles[$optionValue] ?? $optionValue)];
+                                //Symcons Formular für die Darstellung erwartet bei JEDEM OPTIONS-Eintrag
+                                //auch IconActive/IconValue/ColorActive/ColorValue/ContentColorActive/
+                                //ContentColorValue - fehlen die, gibt's "Undefined array key"-Warnungen
+                                //und ein ungültiges Formular (live beobachtet bei der EV-Charger-Wallbox).
+                                $options[] = [
+                                    'Value'               => $optionValue,
+                                    'Caption'             => $this->Translate($titles[$optionValue] ?? $optionValue),
+                                    'IconActive'          => false,
+                                    'IconValue'           => '',
+                                    'ColorActive'         => false,
+                                    'ColorValue'          => -1,
+                                    'ContentColorActive'  => false,
+                                    'ContentColorValue'   => -1,
+                                ];
                             }
                             $presentation['OPTIONS'] = json_encode($options);
                         }
