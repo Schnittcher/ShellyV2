@@ -121,7 +121,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $Buffer = json_decode($JSONString, true);
             $this->SendDebug('JSON', $Buffer, 0);
 
-            $Payload = json_decode($Buffer['Payload'], true);
+            $Payload = json_decode(utf8_decode($Buffer['Payload']), true);
             if (array_key_exists('Topic', $Buffer)) {
                 if (fnmatch('*/online', $Buffer['Topic'])) {
                     $this->SetValue('Reachable', $Payload);
