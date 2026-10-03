@@ -10,6 +10,8 @@ Fix: Warnung "Entry in parameter OPTIONS includes unknown sub-parameters" und un
 Fix: Sonderzeichen wie "°C" werden korrekt dargestellt.
 Fix: Namen von Variablen bei Geräten mit mehreren Kanälen und virtuellen Komponenten (z. B. "Boolean 200" statt dem vom Gerät gelieferten Namen).
 Fix: Der Configurator findet alle Komponenten eines Geräts (paginierte Abfrage) und lädt dabei alle Geräte gleichzeitig.
+Fix: Im Configurator werden die Komponenten jetzt immer dem richtigen Gerät zugeordnet (vorher hatten alle Geräte dieselbe ID).
+Fix: Darstellungen entsprechen jetzt der Symcon-Dokumentation (Reachable-Variable des XT1 Device, Rollladen-Position, Wertanzeigen von Alarm, Rauchmelder und Water Valve), dadurch entfallen Warnungen in der Konsole.
 
 30.08.2026 - Version 1.0.13 (Beta Version)
 Neu: Shelly Presence
