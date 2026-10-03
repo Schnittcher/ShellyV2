@@ -1,4 +1,4 @@
-03.10.2026 - Version 1.0.14 (Beta Version)
+04.10.2026 - Version 1.1 (Beta Version)
 Neu: The Pill by Shelly wird im Configurator erkannt und kann angelegt werden, inklusive der angeschlossenen Add-on-Sensoren (z. B. Temperatur).
 Neu: Alle Komponenten und Variablen werden jetzt ausschließlich über Shelly.GetComponents ermittelt. Dadurch werden auch Add-on-Sensoren, BLU TRVs und virtuelle Komponenten zuverlässig gefunden. Die Checkbox "Status über Shelly.GetComponents beziehen" entfällt.
 Neu: Das generische Shelly Device kann auch Powered by Shelly Geräte (XT1) anlegen, der Configurator bietet diese zusätzlich als "ShellyDevice (generisch)" an.
@@ -10,6 +10,7 @@ Neu: CB-Komponente (Shelly Pro 3CB, Leitungsschutzschalter): Schutzschalter-Stat
 Neu: Cury-Komponente (Shelly Cury, Duftspender): Raummodus, Abwesenheitsmodus sowie je Fach Status, Boost, Intensität, Füllstand, Name und Seriennummer des Fläschchens und Fehler. Die Variablen der Fächer werden auch bei leerem Fach angelegt.
 Neu: Shelly Camera (S1CM-0DXW00): scharf, Privatsphäre-Modus, Bewegung, Bewegungszonen (mit Zonennamen), Aktionen (Schnappschuss, Aufnahme starten/stoppen, Ton abspielen) und Geräteeinstellungen (RTSP, LED, Töne, Aufnahme bei Bewegung, Bewegungsempfindlichkeit, Nachtsicht).
 Neu: Bei einer Kamera legt die Geräte- bzw. Komponenten-Instanz die Stream-Objekte für den RTSP-Stream (Hauptstream und zweiter Stream) automatisch an, sobald die IP-Adresse des Geräts bekannt ist (abschaltbar, Button "Stream-Objekte aktualisieren", optional Benutzer und Passwort, falls am Gerät die Authentifizierung aktiv ist).
+Neu: Das Modul nutzt jetzt die Basisklasse IPSModuleStrict (Symcon 8.1 oder neuer). Der Datenfluss zum MQTT-Server/-Client ist damit HEX-kodiert, Sonderzeichen kommen ohne Umwege korrekt an. Der MQTT-Server/-Client wird bei neuen Instanzen automatisch von der Verwaltungskonsole verbunden.
 Fix: Variablen werden beim Anlegen einer Instanz automatisch erzeugt. Bisher existierte nur "Erreichbar", bis "Komponenten auslesen" gedrückt wurde.
 Fix: Warnung "Entry in parameter OPTIONS includes unknown sub-parameters" und ungültiges Formular bei Variablen mit Aufzählung (z. B. Wallbox, Helligkeit Dim up/down/stop).
 Fix: Sonderzeichen wie "°C" werden korrekt dargestellt.
@@ -19,7 +20,7 @@ Fix: Im Configurator werden die Komponenten jetzt immer dem richtigen Gerät zug
 Fix: Darstellungen entsprechen jetzt der Symcon-Dokumentation (Reachable-Variable des XT1 Device, Rollladen-Position, Wertanzeigen von Alarm, Rauchmelder und Water Valve), dadurch entfallen Warnungen in der Konsole.
 Fix: Die Farbe bei RGB-, RGBW- und RGBCCT-Komponenten wird korrekt angezeigt und gesetzt (vorher blieb die Farb-Variable leer, beim Setzen konnten Rot und Blau vertauscht werden).
 Fix: Meldet ein Gerät für einen Wert "kein Wert" (null, z. B. Temperatur ohne Messwert), behält die Variable ihren letzten Wert statt auf 0 zu springen.
-Fix: Warnungen "has no type hint or an unsupported type hint" beim Laden des Moduls für SHY_setMQTTSettings und den Parameter method von SHY_callRPCFunction. Für den Parameter params (Array) bleibt die Warnung bestehen, Symcon erlaubt dafür keinen Typ.
+Fix: Keine Warnungen mehr zu fehlenden Typangaben beim Laden des Moduls (alle öffentlichen Funktionen sind jetzt typisiert).
 
 30.08.2026 - Version 1.0.13 (Beta Version)
 Neu: Shelly Presence
