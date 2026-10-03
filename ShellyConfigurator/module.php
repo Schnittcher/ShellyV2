@@ -46,12 +46,13 @@ class ShellyConfigurator extends IPSModule
 
         //Setze Filter für ReceiveData
         //Die Shelly-ID im "src" (und damit im Antwort-Topic) macht die Antworten pro Gerät
-        //unterscheidbar, damit mehrere getComponents-Anfragen parallel laufen können.
+        //unterscheidbar, damit mehrere GetComponents-Anfragen parallel laufen können. Ein zusätzliches
+        //"dyn/" im Topic trennt die Abfrage der dynamischen Komponenten von der der Schlüsselliste (der
+        //Filter bleibt dafür unverändert, da er nur in ApplyChanges() gesetzt wird).
         $Filter1 = preg_quote('"Topic":"' . $BaseTopic . '/getComponentsConfigurator/') . '[^"]*' . preg_quote('/rpc"');
-        $Filter2 = preg_quote('"Topic":"' . $BaseTopic . '/getComponentsConfiguratorViaStatus/') . '[^"]*' . preg_quote('/rpc"');
-        $Filter3 = '"Topic":"[^"]*/announce"';
-        $this->SendDebug('Filter', '.*(' . $Filter1 . '|' . $Filter2 . '|' . $Filter3 . ').*', 0);
-        $this->SetReceiveDataFilter('.*(' . $Filter1 . '|' . $Filter2 . '|' . $Filter3 . ').*');
+        $Filter2 = '"Topic":"[^"]*/announce"';
+        $this->SendDebug('Filter', '.*(' . $Filter1 . '|' . $Filter2 . ').*', 0);
+        $this->SetReceiveDataFilter('.*(' . $Filter1 . '|' . $Filter2 . ').*');
     }
 
     public function GetConfigurationForm()
@@ -77,25 +78,20 @@ class ShellyConfigurator extends IPSModule
         if (count($Shellies) > 0) {
             $idCount++;
 
-            //Phase 1: Für alle Geräte mit gültigem Modell die Anfragen sofort verschicken, ohne zu warten.
-            $pendingBufferKeys = [];
+            //Phase 1: Komponentenlisten aller Geräte mit gültigem Modell einsammeln. Shelly.GetComponents ist die
+            //einzige Quelle (inkl. BLU TRVs, dynamischer Komponenten und Add-on-Sensoren wie bei The Pill, die in
+            //Shelly.GetStatus fehlen). Die Antworten sind paginiert - siehe collectComponents().
+            $deviceIDs = [];
             foreach ($Shellies as $Shelly) {
                 if (!array_key_exists('App', $Shelly) || $Shelly['Model'] == '') {
                     continue;
                 }
-                $this->requestComponentsViaStatus($Shelly['ID']);
-                $pendingBufferKeys[] = 'LastComponentResponse_' . $Shelly['ID'];
-
-                // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
-                // Shelly.GetComponents wird für jedes Gerät abgefragt, da BLU TRVs, Boolean/Number/
-                // Enum/Text-Komponenten und presencezone (Shelly Presence) nur darüber auffindbar sind.
-                $this->requestComponents($Shelly['ID']);
-                $pendingBufferKeys[] = 'LastComponentResponse2_' . $Shelly['ID'];
-                // ### ENDE TEST / EXPERIMENTELL ###
+                $deviceIDs[] = $Shelly['ID'];
             }
-
-            //Phase 2: Einmal gemeinsam auf alle Antworten warten (max. 5 Sekunden insgesamt statt pro Gerät seriell).
-            $componentResponses = $this->waitForComponentResponses($pendingBufferKeys, 5);
+            //Zusätzlich (parallel) für die Namen der dynamischen Komponenten, z.B. "boolean:200 (Test)": dynamic_only inkl. Config.
+            $collected = $this->collectComponents($deviceIDs);
+            $componentLists = $collected['keys'];
+            $dynamicComponentLists = $collected['dynamic'];
 
             //Phase 3: Formular wie gewohnt aufbauen, jetzt aus den bereits eingesammelten Antworten.
             foreach ($Shellies as $key => $Shelly) {
@@ -110,13 +106,6 @@ class ShellyConfigurator extends IPSModule
                 if ($Shelly['Model'] == '') {
                     $this->LogMessage('Shelly with IP: ' . $Shelly['IP'] . ' has no model! Check firmware updates.', KL_ERROR);
                     continue;
-                }
-
-                $shellyComponents = $componentResponses['LastComponentResponse_' . $Shelly['ID']] ?? null;
-                if ($shellyComponents != null) {
-                    $shellyComponents = json_decode($shellyComponents, true);
-                } else {
-                    $shellyComponents = [];
                 }
 
                 if (array_key_exists($Shelly['Model'], self::$shellyModels)) {
@@ -215,122 +204,49 @@ class ShellyConfigurator extends IPSModule
                     ];
 
                     if (array_key_exists('App', $Shelly)) {
-                        //Shelly.GetComponents wird für BLU TRVs und dynamisch angelegte Komponenten
-                        //gebraucht - beide nutzen dieselbe Antwort, daher einmal zentral decodieren
-                        //statt für jeden Zweck erneut.
-                        $shellyComponentsFullRaw = $componentResponses['LastComponentResponse2_' . $Shelly['ID']] ?? null;
-                        $shellyComponentsFull = ($shellyComponentsFullRaw != null) ? json_decode($shellyComponentsFullRaw, true) : [];
-                        $shellyComponentsFull = $this->fetchRemainingComponentsPages($Shelly['ID'], $shellyComponentsFull);
-                        $this->SendDebug('Shelly GetComponents', json_encode($shellyComponentsFull), 0);
+                        //Vom Nutzer auf dem Gerät vergebene Namen der dynamischen Komponenten (Boolean/Number/
+                        //Enum/Text/...) mit anzeigen, z.B. "boolean:200 (Test)".
+                        $dynamicComponentNames = $this->getDynamicallyAddedComponents(['components' => $dynamicComponentLists[$Shelly['ID']] ?? []])['config'];
 
-                        //Ausnahme für Shelly TRV
-                        if ($Shelly['App'] == 'BluGwG3' && array_key_exists('result', $shellyComponentsFull)) {
-                            $BLUTRVs = $this->getBLUTRVs($shellyComponentsFull['result']);
-                            foreach ($BLUTRVs as $key => $BLUTRV) {
-                                $cleanedPath = $this->cleanComponentPath($key);
-                                $component = $cleanedPath['clean'];
-                                $componentChannel = intval($cleanedPath['number']);
-                                $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $component, $componentChannel);
-                                if ($this->componentDefinitionExists($component)) {
-                                    $AddComponent = [
-                                        'parent'                    => $idCount,
-                                        'name'                      => $key,
-                                        'MQTTTopic'                 => $key,
-                                        'InstanceName'              => $this->getInstanceName($componentInstanceID),
-                                        'DeviceType'                => '',
-                                        'IPAddress'                 => '',
-                                        'App'                       => '',
-                                        'Firmware'                  => '',
-                                        'instanceID'                => $componentInstanceID,
-                                        'create'                    => [
-                                            'moduleID'      => GUID_SHELLY_COMOPONENT_DEVICE,
-                                            'info'          => $Shelly['ID'],
-                                            'configuration' => [
-                                                'MQTTTopic' => $Shelly['ID'],
-                                                'Component' => $component,
-                                                'Channel'   => $componentChannel,
-                                            ]
-                                        ]
-                                    ];
-                                    $Values[] = $AddComponent;
-                                }
+                        foreach ($componentLists[$Shelly['ID']] ?? [] as $shellyComponent) {
+                            if (!isset($shellyComponent['key'])) {
+                                continue;
                             }
-                        }
-                        //ENDE Shelly BLUTRV Ausnahme
-
-                        // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten im Configurator ###
-                        if (array_key_exists('result', $shellyComponentsFull)) {
-                            $dynamicComponents = $this->getDynamicallyAddedComponents($shellyComponentsFull['result']);
-                            foreach (array_keys($dynamicComponents['status']) as $key) {
-                                $cleanedPath = $this->cleanComponentPath($key);
-                                $component = $cleanedPath['clean'];
-                                $componentChannel = intval($cleanedPath['number']);
-                                $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $component, $componentChannel);
-
-                                //Vom Nutzer auf dem Gerät vergebenen Namen mit anzeigen, z.B. "boolean:200 (Test)".
-                                $displayName = $key;
-                                $componentName = $dynamicComponents['config'][$key]['name'] ?? '';
-                                if ($componentName != '') {
-                                    $displayName = $key . ' (' . $componentName . ')';
-                                }
-
-                                if ($this->componentDefinitionExists($component)) {
-                                    $AddComponent = [
-                                        'parent'                    => $idCount,
-                                        'name'                      => $displayName,
-                                        'MQTTTopic'                 => $displayName,
-                                        'InstanceName'              => $this->getInstanceName($componentInstanceID),
-                                        'DeviceType'                => '',
-                                        'IPAddress'                 => '',
-                                        'App'                       => '',
-                                        'Firmware'                  => '',
-                                        'instanceID'                => $componentInstanceID,
-                                        'create'                    => [
-                                            'moduleID'      => GUID_SHELLY_COMOPONENT_DEVICE,
-                                            'info'          => $Shelly['ID'],
-                                            'configuration' => [
-                                                'MQTTTopic' => $Shelly['ID'],
-                                                'Component' => $component,
-                                                'Channel'   => $componentChannel,
-                                            ]
-                                        ]
-                                    ];
-                                    $Values[] = $AddComponent;
-                                }
+                            $key = $shellyComponent['key'];
+                            $cleanedPath = $this->cleanComponentPath($key);
+                            $component = $cleanedPath['clean'];
+                            if (!$this->componentDefinitionExists($component)) {
+                                continue;
                             }
-                        }
-                        // ### ENDE TEST / EXPERIMENTELL ###
+                            $componentChannel = intval($cleanedPath['number']);
+                            $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $component, $componentChannel);
 
-                        if (array_key_exists('result', $shellyComponents)) {
-                            foreach ($shellyComponents['result'] as $key => $shellyComponent) {
-                                $cleanedPath = $this->cleanComponentPath($key);
-                                $component = $cleanedPath['clean'];
-                                $componentChannel = intval($cleanedPath['number']);
-                                $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $component, $componentChannel);
-                                if ($this->componentDefinitionExists($component)) {
-                                    $AddComponent = [
-                                        'parent'                    => $idCount,
-                                        'name'                      => $key,
-                                        'MQTTTopic'                 => $key,
-                                        'InstanceName'              => $this->getInstanceName($componentInstanceID),
-                                        'DeviceType'                => '',
-                                        'IPAddress'                 => '',
-                                        'App'                       => '',
-                                        'Firmware'                  => '',
-                                        'instanceID'                => $componentInstanceID,
-                                        'create'                    => [
-                                            'moduleID'      => GUID_SHELLY_COMOPONENT_DEVICE,
-                                            'info'          => $Shelly['ID'],
-                                            'configuration' => [
-                                                'MQTTTopic' => $Shelly['ID'],
-                                                'Component' => $component,
-                                                'Channel'   => $componentChannel,
-                                            ]
-                                        ]
-                                    ];
-                                    $Values[] = $AddComponent;
-                                }
+                            $displayName = $key;
+                            $componentName = $dynamicComponentNames[$key]['name'] ?? '';
+                            if ($componentName != '') {
+                                $displayName = $key . ' (' . $componentName . ')';
                             }
+
+                            $Values[] = [
+                                'parent'                    => $idCount,
+                                'name'                      => $displayName,
+                                'MQTTTopic'                 => $displayName,
+                                'InstanceName'              => $this->getInstanceName($componentInstanceID),
+                                'DeviceType'                => '',
+                                'IPAddress'                 => '',
+                                'App'                       => '',
+                                'Firmware'                  => '',
+                                'instanceID'                => $componentInstanceID,
+                                'create'                    => [
+                                    'moduleID'      => GUID_SHELLY_COMOPONENT_DEVICE,
+                                    'info'          => $Shelly['ID'],
+                                    'configuration' => [
+                                        'MQTTTopic' => $Shelly['ID'],
+                                        'Component' => $component,
+                                        'Channel'   => $componentChannel,
+                                    ]
+                                ]
+                            ];
                         }
                     }
                 }
@@ -340,89 +256,92 @@ class ShellyConfigurator extends IPSModule
         return json_encode($Form);
     }
 
-    //Wird aktuell nur für die Shelly BLUTRV genutzt, da diese nicht über getStatus zu finden sind - in getComponents, fehlen dafür Komponenten wie RGB, daher nutze ich weiterhin Shelly.GetStatus um die Komponenten zu finden.
-    //Bleibt für Aufrufer, die eine einzelne synchrone Anfrage erwarten, unverändert (sendet + wartet auf genau ein Gerät).
-    public function getComponents($ShellyMQTTGTopic)
+    //Sammelt für alle übergebenen Geräte die Komponenten per Shelly.GetComponents - und zwar zwei Listen
+    //gleichzeitig: 'keys' (Schlüssel ALLER Komponenten) und 'dynamic' (nur die dynamischen inkl. Config, für
+    //deren Namen). Die Antworten sind paginiert (die Seitengröße bestimmt das Gerät), deshalb wird
+    //rundenweise jeweils die nächste Seite für ALLE noch unvollständigen Abfragen gleichzeitig verschickt und
+    //gemeinsam abgewartet, statt Gerät für Gerät oder Liste für Liste seriell.
+    //Rückgabe: ['keys' => [Shelly-ID => [Komponenteneinträge, ...]], 'dynamic' => [...]]
+    private function collectComponents(array $shellyIDs)
     {
-        $this->requestComponents($ShellyMQTTGTopic);
-        $responses = $this->waitForComponentResponses(['LastComponentResponse2_' . $ShellyMQTTGTopic], 5);
-        return $responses['LastComponentResponse2_' . $ShellyMQTTGTopic] ?? null;
+        $components = ['' => [], 'Dynamic' => []];
+        $nextOffset = [];
+        $pending = [];
+        foreach (['', 'Dynamic'] as $kind) {
+            foreach ($shellyIDs as $id) {
+                $pending[] = [$kind, $id];
+                $nextOffset[$kind . '_' . $id] = 0;
+            }
+        }
+
+        //Obergrenze der Runden als Schutz vor Endlosschleifen bei unerwarteten Geräteantworten.
+        for ($round = 0; $round < 20 && count($pending) > 0; $round++) {
+            $bufferKeys = [];
+            foreach ($pending as [$kind, $id]) {
+                $job = $kind . '_' . $id;
+                $bufferKeys[$job] = 'LastComponentResponse' . $job;
+                //Verspätete Antworten früherer Aufrufe verwerfen, bevor neu angefragt wird.
+                $this->SetBuffer($bufferKeys[$job], '');
+                $this->requestComponents($id, $nextOffset[$job], $kind == 'Dynamic');
+            }
+            $responses = $this->waitForComponentResponses(array_values($bufferKeys), 5);
+
+            $stillPending = [];
+            foreach ($pending as [$kind, $id]) {
+                $job = $kind . '_' . $id;
+                $raw = $responses[$bufferKeys[$job]] ?? null;
+                if ($raw == null) {
+                    //Zeitüberschreitung - mit dem bisher Vorhandenen weitermachen statt zu blockieren.
+                    continue;
+                }
+                $decoded = json_decode($raw, true);
+                $result = is_array($decoded) ? ($decoded['result'] ?? null) : null;
+                $page = is_array($result) ? ($result['components'] ?? []) : [];
+                if (count($page) === 0) {
+                    //Fehler oder leere Seite - abbrechen statt endlos weiterzufragen.
+                    continue;
+                }
+                $offset = $result['offset'] ?? $nextOffset[$job];
+                if ($offset != $nextOffset[$job]) {
+                    //Seite gehört nicht zur aktuellen Anfrage (doppelt/verspätet) - dieselbe Seite erneut anfragen.
+                    $stillPending[] = [$kind, $id];
+                    continue;
+                }
+                $components[$kind][$id] = array_merge($components[$kind][$id] ?? [], $page);
+                $nextOffset[$job] = $offset + count($page);
+                if ($nextOffset[$job] < ($result['total'] ?? 0)) {
+                    $stillPending[] = [$kind, $id];
+                }
+            }
+            $pending = $stillPending;
+        }
+
+        $this->SendDebug(__FUNCTION__, json_encode($components), 0);
+        return ['keys' => $components[''], 'dynamic' => $components['Dynamic']];
     }
 
-    //Verschickt nur die Shelly.GetComponents-Anfrage, ohne auf die Antwort zu warten.
+    //Verschickt nur eine Seite der Shelly.GetComponents-Anfrage, ohne auf die Antwort zu warten.
     //Die Shelly-ID im "src" macht das Antwort-Topic pro Gerät eindeutig.
-    private function requestComponents($ShellyMQTTGTopic, $offset = 0)
+    private function requestComponents($ShellyMQTTGTopic, $offset, bool $dynamicOnly)
     {
         $Topic = $ShellyMQTTGTopic . '/rpc';
 
-        $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic . ' Offset: ' . $offset, 0);
+        $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic . ' Offset: ' . $offset . ($dynamicOnly ? ' (dynamic_only)' : ''), 0);
 
         $Payload['id'] = 1;
-        $Payload['src'] = 'shellies/getComponentsConfigurator/' . $ShellyMQTTGTopic;
+        $Payload['src'] = 'shellies/getComponentsConfigurator/' . ($dynamicOnly ? 'dyn/' : '') . $ShellyMQTTGTopic;
         $Payload['method'] = 'Shelly.GetComponents';
-        //dynamic_only: Shelly.GetComponents ist paginiert - bei vielen Komponenten (sys/wifi/cloud/...)
-        //fielen dynamisch angelegte (BLU TRVs, Boolean/Number/Enum/Text/presencezone/etc.) sonst auf
-        //eine spätere Seite und wurden nie abgerufen. Mit dynamic_only kommen von vornherein nur die
-        //relevanten Komponenten zurück (mit echten Geräten verifiziert). $offset erlaubt trotzdem das
-        //Nachladen weiterer Seiten, falls ein Gerät mehr dynamische Komponenten hat, als auf eine
-        //Seite passen - siehe fetchRemainingComponentsPages().
-        $Payload['params'] = ['dynamic_only' => true, 'offset' => $offset];
+        //Ohne "include" liefert das Gerät Status UND Config je Komponente mit (und damit nur wenige
+        //Komponenten pro Seite, bei älteren Firmwares 4) - mit "include": [] kommen nur die Schlüssel,
+        //typischerweise alle Komponenten auf einer Seite.
+        $Payload['params'] = $dynamicOnly
+            ? ['dynamic_only' => true, 'include' => ['config'], 'offset' => $offset]
+            : ['include' => [], 'offset' => $offset];
         $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
     }
 
-    //Lädt bei Bedarf synchron weitere Seiten von Shelly.GetComponents nach (falls
-    //offset + Anzahl_erhalten < total) und führt sie mit der ersten Seite zusammen. Wird nur für das
-    //jeweils EINE Gerät aufgerufen, das mehr als eine Seite braucht - der Normalfall (eine Seite
-    //reicht) bleibt so schnell wie bisher (parallel über Phase 1/2).
-    private function fetchRemainingComponentsPages($ShellyID, $shellyComponentsFull)
-    {
-        if (!array_key_exists('result', $shellyComponentsFull) || !array_key_exists('components', $shellyComponentsFull['result'])) {
-            return $shellyComponentsFull;
-        }
-
-        $components = $shellyComponentsFull['result']['components'];
-        $offset = $shellyComponentsFull['result']['offset'] ?? 0;
-        $total = $shellyComponentsFull['result']['total'] ?? count($components);
-        $receivedSoFar = $offset + count($components);
-
-        while ($receivedSoFar < $total) {
-            $this->requestComponents($ShellyID, $receivedSoFar);
-            $responses = $this->waitForComponentResponses(['LastComponentResponse2_' . $ShellyID], 5);
-            $nextPageRaw = $responses['LastComponentResponse2_' . $ShellyID] ?? null;
-            if ($nextPageRaw == null) {
-                //Zeitüberschreitung beim Nachladen - mit dem bisher Vorhandenen weitermachen statt zu blockieren.
-                break;
-            }
-            $nextPage = json_decode($nextPageRaw, true);
-            if (!array_key_exists('result', $nextPage) || !array_key_exists('components', $nextPage['result']) || count($nextPage['result']['components']) === 0) {
-                //Leere Seite trotz offener "total" (z.B. unerwartete Geräteantwort) - abbrechen statt
-                //endlos weiterzufragen, mit dem bisher Vorhandenen weitermachen.
-                break;
-            }
-            $components = array_merge($components, $nextPage['result']['components']);
-            $offset = $nextPage['result']['offset'] ?? $receivedSoFar;
-            $receivedSoFar = $offset + count($nextPage['result']['components']);
-        }
-
-        $shellyComponentsFull['result']['components'] = $components;
-        return $shellyComponentsFull;
-    }
-
-    //Verschickt nur die Shelly.GetStatus-Anfrage, ohne auf die Antwort zu warten.
-    private function requestComponentsViaStatus($ShellyMQTTGTopic)
-    {
-        $Topic = $ShellyMQTTGTopic . '/rpc';
-
-        $this->SendDebug(__FUNCTION__, 'Topic: ' . $Topic, 0);
-
-        $Payload['id'] = 1;
-        $Payload['src'] = 'shellies/getComponentsConfiguratorViaStatus/' . $ShellyMQTTGTopic;
-        $Payload['method'] = 'Shelly.GetStatus';
-        $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
-    }
-
-    //Wartet gemeinsam auf mehrere zuvor per requestComponents()/requestComponentsViaStatus() gestellte
-    //Anfragen (max. $maxWaitSeconds insgesamt, nicht pro Gerät), statt seriell pro Gerät zu blockieren.
+    //Wartet gemeinsam auf mehrere zuvor per requestComponents() gestellte Anfragen (max. $maxWaitSeconds
+    //insgesamt, nicht pro Gerät), statt seriell pro Gerät zu blockieren.
     private function waitForComponentResponses(array $bufferKeys, float $maxWaitSeconds)
     {
         $responses = [];
@@ -484,11 +403,8 @@ class ShellyConfigurator extends IPSModule
         if (array_key_exists('Topic', $Buffer)) {
             //Die Shelly-ID steckt als mittleres Topic-Segment drin (aus dem "src" der Anfrage),
             //damit Antworten mehrerer parallel angefragter Geräte unterscheidbar sind.
-            if (preg_match('#^shellies/getComponentsConfiguratorViaStatus/([^/]+)/rpc$#', $Buffer['Topic'], $matches)) {
-                $this->SetBuffer('LastComponentResponse_' . $matches[1], $Buffer['Payload']);
-            }
-            if (preg_match('#^shellies/getComponentsConfigurator/([^/]+)/rpc$#', $Buffer['Topic'], $matches)) {
-                $this->SetBuffer('LastComponentResponse2_' . $matches[1], $Buffer['Payload']);
+            if (preg_match('#^shellies/getComponentsConfigurator/(dyn/)?([^/]+)/rpc$#', $Buffer['Topic'], $matches)) {
+                $this->SetBuffer('LastComponentResponse' . ($matches[1] != '' ? 'Dynamic' : '') . '_' . $matches[2], $Buffer['Payload']);
             }
 
             if (strpos($Buffer['Topic'], '/announce') !== false) {
