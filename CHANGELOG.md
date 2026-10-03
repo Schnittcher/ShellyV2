@@ -5,6 +5,8 @@ Neu: Das generische Shelly Device kann auch Powered by Shelly Geräte (XT1) anle
 Neu: Der vom Nutzer auf dem Gerät vergebene Name wird bei normalen Komponenten als Präfix vor die Variablennamen geschrieben (z. B. "Waschmaschine - Wirkleistung").
 Neu: Min-, Max- und Schrittweite-Werte werden vom Gerät übernommen, sofern es sie liefert (z. B. Stromlimit der Wallbox, Farbtemperatur bei CCT, BLU TRV). Fehlt die Schrittweite, wird 1 verwendet.
 Neu: Weitere Übersetzungen für die von den Geräten gelieferten Namen (z. B. Smart WaterValve, LinkedGo Thermostate).
+Neu: RGBCCT-Komponente (z. B. Lampen mit RGB und Weißtemperatur): Schalter, Modus RGB/CCT, Farbe, Farbtemperatur, Helligkeit mit Dim up/down/stop, Wirkleistung und Gesamtverbrauch.
+Neu: CB-Komponente (Shelly Pro 3CB, Leitungsschutzschalter): Schutzschalter-Status (Auslösen per Fernsteuerung), Sicherheitsschalter, Anzahl Auslösungen, Temperatur und Fehler.
 Fix: Variablen werden beim Anlegen einer Instanz automatisch erzeugt. Bisher existierte nur "Erreichbar", bis "Komponenten auslesen" gedrückt wurde.
 Fix: Warnung "Entry in parameter OPTIONS includes unknown sub-parameters" und ungültiges Formular bei Variablen mit Aufzählung (z. B. Wallbox, Helligkeit Dim up/down/stop).
 Fix: Sonderzeichen wie "°C" werden korrekt dargestellt.
@@ -12,6 +14,8 @@ Fix: Namen von Variablen bei Geräten mit mehreren Kanälen und virtuellen Kompo
 Fix: Der Configurator findet alle Komponenten eines Geräts (paginierte Abfrage) und lädt dabei alle Geräte gleichzeitig.
 Fix: Im Configurator werden die Komponenten jetzt immer dem richtigen Gerät zugeordnet (vorher hatten alle Geräte dieselbe ID).
 Fix: Darstellungen entsprechen jetzt der Symcon-Dokumentation (Reachable-Variable des XT1 Device, Rollladen-Position, Wertanzeigen von Alarm, Rauchmelder und Water Valve), dadurch entfallen Warnungen in der Konsole.
+Fix: Die Farbe bei RGB-, RGBW- und RGBCCT-Komponenten wird korrekt angezeigt und gesetzt (vorher blieb die Farb-Variable leer, beim Setzen konnten Rot und Blau vertauscht werden).
+Fix: Meldet ein Gerät für einen Wert "kein Wert" (null, z. B. Temperatur ohne Messwert), behält die Variable ihren letzten Wert statt auf 0 zu springen.
 
 30.08.2026 - Version 1.0.13 (Beta Version)
 Neu: Shelly Presence
