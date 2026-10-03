@@ -294,7 +294,9 @@ trait XMODServices
                             "IconActive" => false,
                             "IconValue" => "",
                             "ColorActive" => true,
-                            "ColorValue" => 65280
+                            "ColorValue" => 65280,
+                            "ContentColorActive" => false,
+                            "ContentColorValue" => -1
                         ],
                         [
                             "Value" => false,
@@ -302,7 +304,9 @@ trait XMODServices
                             "IconActive" => false,
                             "IconValue" => "",
                             "ColorActive" => true,
-                            "ColorValue" => 16711680
+                            "ColorValue" => 16711680,
+                            "ContentColorActive" => false,
+                            "ContentColorValue" => -1
                         ]
                     ],
                 ],
@@ -319,8 +323,7 @@ trait XMODServices
                     'ICON'         => 'water',
                     'MIN'          => 0,
                     'MAX'          => 0.075,
-                    'DIGITS'       => 2,
-                    'STEP_SIZE'    => 0.1
+                    'DIGITS'       => 2
                 ],
                 'receive' => 'number:200'
             ],
@@ -333,8 +336,7 @@ trait XMODServices
                     'SUFFIX'       => ' kPa',
                     'ICON'         => 'water',
                     'MIN'          => 0,
-                    'MAX'          => 1350,
-                    'STEP_SIZE'    => 1
+                    'MAX'          => 1350
                 ],
                 'receive' => 'number:201'
             ],
@@ -347,8 +349,7 @@ trait XMODServices
                     'SUFFIX'       => ' °C',
                     'ICON'         => 'water',
                     'MIN'          => -25,
-                    'MAX'          => 80,
-                    'STEP_SIZE'    => 1
+                    'MAX'          => 80
                 ],
                 'receive' => 'number:202'
             ],

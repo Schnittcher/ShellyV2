@@ -130,7 +130,9 @@ trait Components
                             "IconActive": false,
                             "IconValue": "",
                             "ColorActive": true,
-                            "ColorValue": 65280
+                            "ColorValue": 65280,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
                         },
                         {
                             "Value": false,
@@ -138,7 +140,9 @@ trait Components
                             "IconActive": false,
                             "IconValue": "",
                             "ColorActive": true,
-                            "ColorValue": 16711680
+                            "ColorValue": 16711680,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
                         }
                     ]',
                 ],
@@ -1355,7 +1359,6 @@ trait Components
                     'name'         => 'Position State',
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_SHUTTER,
-                        'ICON'         => 'Shutter',
                     ],
                     'action'        => [
                         'method' => 'Cover.GoToPosition',
@@ -1439,7 +1442,9 @@ trait Components
                             "IconActive": false,
                             "IconValue": "",
                             "ColorActive": true,
-                            "ColorValue": 65280
+                            "ColorValue": 65280,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
                         },
                         {
                             "Value": false,
@@ -1447,7 +1452,9 @@ trait Components
                             "IconActive": false,
                             "IconValue": "",
                             "ColorActive": true,
-                            "ColorValue": 16711680
+                            "ColorValue": 16711680,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
                         }
                     ]',
                 ],
