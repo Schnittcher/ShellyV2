@@ -981,6 +981,153 @@ trait Components
                 ],
             ],
         ],
+        //RGBCCT (z.B. Shelly RGBCCT Bulb G3, Duo Bulb G3): RGB und Weißtemperatur in einer Komponente, Felder
+        //laut Shelly-API-Doku (rgbcct:N). Die Doku nennt kein ct_range - MIN/MAX sind Standardwerte und werden
+        //durch das ct_range der Geräte-Config überschrieben, falls das Gerät eines liefert.
+        'rgbcct' => [
+            'output' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'RGBCCT State',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'RGBCCT.Set',
+                    'params' => ['id' => '', 'on' => ''
+                    ]
+                ],
+            ],
+            'mode' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'RGBCCT Mode',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": "rgb",
+                            "Caption": "RGB",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        },
+                        {
+                            "Value": "cct",
+                            "Caption": "CCT",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        }
+                    ]',
+                ],
+                'action'        => [
+                    'method' => 'RGBCCT.Set',
+                    'params' => ['id' => '', 'mode' => ''
+                    ]
+                ],
+            ],
+            'rgb' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'RGB',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_COLOR,
+                    'ENCODING'     => 0 //RGB
+                ],
+                'action'        => [
+                    'method' => 'RGBCCT.Set',
+                    'params' => ['id' => '', 'rgb' => ''
+                    ]
+                ],
+            ],
+            'ct' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'RGBCCT color temperature',
+                'presentation' => [
+                    'PRESENTATION'  => VARIABLE_PRESENTATION_SLIDER,
+                    'GRADIENT_TYPE' => 2,
+                    'USAGE_TYPE'    => 1,
+                    'PERCENTAGE'    => false,
+                    'MIN'           => 2700,
+                    'MAX'           => 6500,
+                    'SUFFIX'        => ' K'
+                ],
+                'action'        => [
+                    'method' => 'RGBCCT.Set',
+                    'params' => ['id' => '', 'ct' => ''
+                    ]
+                ],
+            ],
+            'brightness' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'RGBCCT Brightness',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                    'SUFFIX'       => ' %',
+                    'USAGE_TYPE'   => 2
+                ],
+                'action'        => [
+                    'method' => 'RGBCCT.Set',
+                    'params' => ['id' => '', 'brightness' => ''
+                    ]
+                ],
+                'actionWithExtraVariable' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'RGBCCT Brightness Action',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                        'ICON'         => 'Light',
+                        'LAYOUT'       => 1,
+                        'OPTIONS'      => '[
+                            {
+                                "Value": "DimUp",
+                                "Caption": "Dim up",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": 65280
+                            },
+                            {
+                                "Value": "DimDown",
+                                "Caption": "Dim down",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": 16753920
+                            },
+                            {
+                                "Value": "DimStop",
+                                "Caption": "Dim stop",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": 16711680
+                            }
+                        ]',
+                    ],
+                    'action'        => [
+                        'list'   => true,
+                        'method' => 'RGBCCT.',
+                        'params' => ['id' => ''
+                        ]
+                    ],
+                ],
+            ],
+            'apower' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'RGBCCT active power',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' W',
+                ],
+            ],
+            'aenergy' => [
+                'total' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'RGBCCT Total energy',
+                    'factor'       => 0.001,
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' kWh'
+                    ],
+                ],
+            ],
+        ],
         'blutrv' => [
             'current_C' => [
                 'type'         => VARIABLETYPE_FLOAT,

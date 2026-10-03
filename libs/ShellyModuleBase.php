@@ -116,10 +116,13 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $tmpComponents['action']['params']['params']['t_C'] = $Value;
                 } else {
                     $tmpComponents['action']['params'][$keys[1]] = $Value;
-                    //Ausnahme für RGB
-                    if ($IdentKeyPath[0] == 'rgb.rgb.0') {
-                        $rgb = json_decode($Value, true);
-                        $tmpComponents['action']['params'][$keys[1]] = array_values($rgb);
+                    //Farbwerte (rgb/rgbw/rgbcct): Die Variable enthält laut Symcon-Doku {"r":..,"g":..,"b":..}
+                    //(Reihenfolge der Schlüssel nicht garantiert), Shelly erwartet [r,g,b].
+                    if (($tmpComponents['presentation']['PRESENTATION'] ?? null) == VARIABLE_PRESENTATION_COLOR) {
+                        $rgb = json_decode((string) $Value, true);
+                        if (is_array($rgb)) {
+                            $tmpComponents['action']['params'][$keys[1]] = [$rgb['r'], $rgb['g'], $rgb['b']];
+                        }
                     }
                 }
             }
@@ -344,6 +347,13 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         'g' => $Payload['rgb:' . $componentsFromShellyResult['number']]['rgb'][1],
                         'b' => $Payload['rgb:' . $componentsFromShellyResult['number']]['rgb'][2]
                     ]);
+                }
+
+                //Farbwerte (rgb/rgbw/rgbcct): Shelly liefert [r,g,b] als Array, eine String-Variable mit der
+                //Farb-Darstellung (ENCODING RGB) erwartet laut Symcon-Doku {"r":..,"g":..,"b":..}. Ohne
+                //Umwandlung würde SetValue() das Array zu "r,g,b" verketten und die Darstellung bliebe leer.
+                if (($tmpComponent['presentation']['PRESENTATION'] ?? null) == VARIABLE_PRESENTATION_COLOR && is_array($value) && count($value) == 3) {
+                    $value = json_encode(['r' => $value[0], 'g' => $value[1], 'b' => $value[2]]);
                 }
 
                 $this->SetValue($componentsFromShellyResult['ident'], $value);
@@ -576,8 +586,8 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     // 0-100%, laut API-Doku geprüft) ist das bei CCT tatsächlich geräteabhängig. Nur
                     // das "ct"-Feld braucht das, nicht "output"/"brightness" desselben cct-Kanals -
                     // deshalb exakter CleanKeyPath-Match statt nur $base == 'cct'.
-                    if ($variable['CleanKeyPath'] == 'cct.ct') {
-                        $ctRange = $this->getComponentConfigField('cct', $variable['Channel'], 'ct_range');
+                    if (in_array($variable['CleanKeyPath'], ['cct.ct', 'rgbcct.ct'], true)) {
+                        $ctRange = $this->getComponentConfigField($base, $variable['Channel'], 'ct_range');
                         if (is_array($ctRange) && count($ctRange) == 2) {
                             $presentation['MIN'] = $ctRange[0];
                             $presentation['MAX'] = $ctRange[1];
