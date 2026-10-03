@@ -485,6 +485,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 }
             }
         }
+                    $dynamicEnumOptions = null;
 
         private function parsePayloadIntoVariables($Payload)
         {
@@ -600,6 +601,36 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $metadata = json_decode($this->GetBuffer('dynamicComponentsMetadata'), true);
             $result = is_array($metadata) ? ($metadata[$key] ?? null) : null;
 
+                    //Optionen der dynamischen Enum-Komponente (siehe oben) je nach endgültiger Darstellung:
+                    //- ENUMERATION kennt pro Option laut Symcon-Doku nur Value/Caption/IconActive/IconValue/
+                    //  Color - alles andere meldet Symcon als "unknown sub-parameters".
+                    //- VALUE_PRESENTATION (schreibgeschützt) kennt ColorActive/ColorValue, und sein
+                    //  Formular verlangt zusätzlich bei JEDEM Eintrag auch ContentColorActive/
+                    //  ContentColorValue - fehlen die, gibt's "Undefined array key"-Warnungen und ein
+                    //  ungültiges Formular (live beobachtet bei der EV-Charger-Wallbox).
+                    if ($dynamicEnumOptions !== null) {
+                        $options = [];
+                        foreach ($dynamicEnumOptions as $option) {
+                            if ($presentation['PRESENTATION'] == VARIABLE_PRESENTATION_ENUMERATION) {
+                                $options[] = $option + [
+                                    'IconActive' => false,
+                                    'IconValue'  => '',
+                                    'Color'      => -1,
+                                ];
+                            } else {
+                                $options[] = $option + [
+                                    'IconActive'         => false,
+                                    'IconValue'          => '',
+                                    'ColorActive'        => false,
+                                    'ColorValue'         => -1,
+                                    'ContentColorActive' => false,
+                                    'ContentColorValue'  => -1,
+                                ];
+                            }
+                        }
+                        $presentation['OPTIONS'] = json_encode($options);
+                    }
+
             //Ergänzung/Fallback: componentConfigs (aus getComponentsViaGetComponents(), Schritt 4)
             //liefert dieselbe Config-Form auch für dynamische Komponenten, unabhängig von der
             //separaten, dynamic_only-gefilterten getComponents()-Antwort oben. Falls die noch nicht da
@@ -707,24 +738,16 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             //(z.B. "charger_free" -> "Free") - falls nicht vorhanden, Rohwert als
                             //Fallback nutzen.
                             $titles = $componentMetadata['meta']['ui']['titles'] ?? [];
-                            $options = [];
+                            //Die Optionen werden erst NACH der Entscheidung ENUMERATION/VALUE_PRESENTATION
+                            //(siehe unten) aufgebaut, weil die beiden Darstellungen unterschiedliche
+                            //Felder pro Option kennen.
+                            $dynamicEnumOptions = [];
                             foreach ($componentMetadata['options'] as $optionValue) {
-                                //Symcons Formular für die Darstellung erwartet bei JEDEM OPTIONS-Eintrag
-                                //auch IconActive/IconValue/ColorActive/ColorValue/ContentColorActive/
-                                //ContentColorValue - fehlen die, gibt's "Undefined array key"-Warnungen
-                                //und ein ungültiges Formular (live beobachtet bei der EV-Charger-Wallbox).
-                                $options[] = [
-                                    'Value'               => $optionValue,
-                                    'Caption'             => $this->Translate($titles[$optionValue] ?? $optionValue),
-                                    'IconActive'          => false,
-                                    'IconValue'           => '',
-                                    'ColorActive'         => false,
-                                    'ColorValue'          => -1,
-                                    'ContentColorActive'  => false,
-                                    'ContentColorValue'   => -1,
+                                $dynamicEnumOptions[] = [
+                                    'Value'   => $optionValue,
+                                    'Caption' => $this->Translate($titles[$optionValue] ?? $optionValue),
                                 ];
                             }
-                            $presentation['OPTIONS'] = json_encode($options);
                         }
 
                         //Number: Min/Max/Einheit/Step vom Gerät übernehmen, falls vorhanden (z.B.

@@ -524,21 +524,21 @@ trait Components
                                 "Caption": "Dim up",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 65280
+                                "Color": 65280
                             },
                             {
                                 "Value": "DimDown",
                                 "Caption": "Dim down",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16753920
+                                "Color": 16753920
                             },
                             {
                                 "Value": "DimStop",
                                 "Caption": "Dim stop",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16711680
+                                "Color": 16711680
                             }
                         ]',
                     ],
@@ -638,21 +638,21 @@ trait Components
                                 "Caption": "Dim up",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 65280
+                                "Color": 65280
                             },
                             {
                                 "Value": "DimDown",
                                 "Caption": "Dim down",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16753920
+                                "Color": 16753920
                             },
                             {
                                 "Value": "DimStop",
                                 "Caption": "Dim stop",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16711680
+                                "Color": 16711680
                             }
                         ]',
                     ],
@@ -779,21 +779,21 @@ trait Components
                                 "Caption": "Dim up",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 65280
+                                "Color": 65280
                             },
                             {
                                 "Value": "DimDown",
                                 "Caption": "Dim down",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16753920
+                                "Color": 16753920
                             },
                             {
                                 "Value": "DimStop",
                                 "Caption": "Dim stop",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16711680
+                                "Color": 16711680
                             }
                         ]',
                     ],
@@ -905,21 +905,21 @@ trait Components
                                 "Caption": "Dim up",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 65280
+                                "Color": 65280
                             },
                             {
                                 "Value": "DimDown",
                                 "Caption": "Dim down",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16753920
+                                "Color": 16753920
                             },
                             {
                                 "Value": "DimStop",
                                 "Caption": "Dim stop",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16711680
+                                "Color": 16711680
                             }
                         ]',
                     ],
@@ -1285,21 +1285,21 @@ trait Components
                             "Caption": "Opening",
                             "IconActive": false,
                             "IconValue": "",
-                            "ColorValue": 65280
+                            "Color": 65280
                         },
                         {
                             "Value": "stopped",
                             "Caption": "Stopped",
                             "IconActive": false,
                             "IconValue": "",
-                            "ColorValue": 16753920
+                            "Color": 16753920
                         },
                         {
                             "Value": "closing",
                             "Caption": "Closing",
                             "IconActive": false,
                             "IconValue": "",
-                            "ColorValue": 16711680
+                            "Color": 16711680
                         }
                     ]',
                 ],
@@ -1316,21 +1316,21 @@ trait Components
                                 "Caption": "Open",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 65280
+                                "Color": 65280
                             },
                             {
                                 "Value": "stop",
                                 "Caption": "Stop",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16753920
+                                "Color": 16753920
                             },
                             {
                                 "Value": "close",
                                 "Caption": "Close",
                                 "IconActive": false,
                                 "IconValue": "",
-                                "ColorValue": 16711680
+                                "Color": 16711680
                             }
                         ]',
                     ],
@@ -1520,21 +1520,21 @@ trait Components
                             "Caption": "Dark",
                             "IconActive": false,
                             "IconValue": "",
-                            "ColorValue": 16711680
+                            "Color": 16711680
                         },
                         {
                             "Value": "twilight",
                             "Caption": "Twilight",
                             "IconActive": false,
                             "IconValue": "",
-                            "ColorValue": 16753920
+                            "Color": 16753920
                         },
                         {
                             "Value": "bright",
                             "Caption": "Bright",
                             "IconActive": false,
                             "IconValue": "",
-                            "ColorValue": 65280
+                            "Color": 65280
                         }
                     ]',
                 ],
