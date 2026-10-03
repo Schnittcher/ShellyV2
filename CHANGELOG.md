@@ -19,6 +19,7 @@ Fix: Im Configurator werden die Komponenten jetzt immer dem richtigen Gerät zug
 Fix: Darstellungen entsprechen jetzt der Symcon-Dokumentation (Reachable-Variable des XT1 Device, Rollladen-Position, Wertanzeigen von Alarm, Rauchmelder und Water Valve), dadurch entfallen Warnungen in der Konsole.
 Fix: Die Farbe bei RGB-, RGBW- und RGBCCT-Komponenten wird korrekt angezeigt und gesetzt (vorher blieb die Farb-Variable leer, beim Setzen konnten Rot und Blau vertauscht werden).
 Fix: Meldet ein Gerät für einen Wert "kein Wert" (null, z. B. Temperatur ohne Messwert), behält die Variable ihren letzten Wert statt auf 0 zu springen.
+Fix: Warnungen "has no type hint or an unsupported type hint" beim Laden des Moduls für SHY_setMQTTSettings und den Parameter method von SHY_callRPCFunction. Für den Parameter params (Array) bleibt die Warnung bestehen, Symcon erlaubt dafür keinen Typ.
 
 30.08.2026 - Version 1.0.13 (Beta Version)
 Neu: Shelly Presence
