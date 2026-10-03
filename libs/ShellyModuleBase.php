@@ -3,26 +3,26 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/MQTTHelper.php';
-require_once __DIR__ . '/vendor/SymconModulHelper/DebugHelper.php';
+require_once __DIR__ . '/DebugHelperStrict.php';
 require_once __DIR__ . '/components.php';
 require_once __DIR__ . '/ComponentDefinitionHelper.php';
 require_once __DIR__ . '/CameraStream.php';
 
-    class ShellyModuleBase extends IPSModule
+    class ShellyModuleBase extends IPSModuleStrict
     {
         use MQTTHelper;
-        use DebugHelper;
+        use StrictDebugHelper;
         use Components;
         use ComponentDefinitionHelper;
         use CameraStream;
 
-        public function Create()
+        public function Create(): void
         {
             //Never delete this line!
             parent::Create();
-            if (IPS_GetKernelVersion() < 8.2) {
-                $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
-            }
+            //Der übergeordnete MQTT-Server/-Client wird bei IPSModuleStrict automatisch über die Kompatibilität
+            //(parentRequirements in der module.json) von der Verwaltungskonsole verbunden - ConnectParent() gibt
+            //es dort nicht mehr.
             $this->RegisterPropertyString('MQTTTopic', '');
             $this->RegisterPropertyBoolean('DebugMissingIdents', false);
             $this->RegisterPropertyString('VariableList', '{}');
@@ -56,13 +56,13 @@ require_once __DIR__ . '/CameraStream.php';
             ], 99);
         }
 
-        public function Destroy()
+        public function Destroy(): void
         {
             //Never delete this line!
             parent::Destroy();
         }
 
-        public function ApplyChanges()
+        public function ApplyChanges(): void
         {
             parent::ApplyChanges();
             //Never delete this line!
@@ -76,7 +76,7 @@ require_once __DIR__ . '/CameraStream.php';
             $this->RegisterMessage($this->InstanceID, FM_CONNECT);
         }
 
-        public function MessageSink($TimeStamp, $SenderID, $Message, $Data)
+        public function MessageSink(int $TimeStamp, int $SenderID, int $Message, array $Data): void
         {
             parent::MessageSink($TimeStamp, $SenderID, $Message, $Data);
             if ($Message == FM_CONNECT && $SenderID == $this->InstanceID) {
@@ -86,7 +86,7 @@ require_once __DIR__ . '/CameraStream.php';
             }
         }
 
-        public function RequestAction($Ident, $Value)
+        public function RequestAction(string $Ident, mixed $Value): void
         {
             //Um den originalen Ident zu behalten, zum Beispiel für actionWithExtraVariable
             $originalIdent = $Ident;
@@ -150,12 +150,17 @@ require_once __DIR__ . '/CameraStream.php';
             $this->callRPCFunction($tmpComponents['action']['method'], $tmpComponents['action']['params']);
         }
 
-        public function ReceiveData($JSONString)
+        public function ReceiveData(string $JSONString): string
         {
             $Buffer = json_decode($JSONString, true);
             $this->SendDebug('JSON', $Buffer, 0);
 
-            $Payload = json_decode(utf8_decode($Buffer['Payload']), true);
+            //IPSModuleStrict: "Payload" ist HEX-kodiert (siehe MQTTHelper::decodeMQTTPayload()).
+            $Payload = json_decode($this->decodeMQTTPayload($Buffer), true);
+            //Außer beim "online"-Topic (true/false) erwarten alle Zweige ein JSON-Objekt.
+            if (!is_array($Payload) && !fnmatch('*/online', (string) ($Buffer['Topic'] ?? ''))) {
+                return '';
+            }
             if (array_key_exists('Topic', $Buffer)) {
                 if (fnmatch('*/online', $Buffer['Topic'])) {
                     $this->SetValue('Reachable', $Payload);
@@ -250,6 +255,7 @@ require_once __DIR__ . '/CameraStream.php';
                     $this->parsePayloadIntoVariables($Payload['params']);
                 }
             }
+            return '';
         }
 
         //Fragt ALLE Komponenten mit Status und Config per Shelly.GetComponents ab; die Antwort
@@ -262,7 +268,7 @@ require_once __DIR__ . '/CameraStream.php';
         //enum/text/presencezone), Shelly Presence G4, Shelly 1 Gen3, Pro RGBWW PM, Smart WaterValve (XT1),
         //BLU TRV (blutrv:201), per API-Doku für cover/em/temperature/humidity. Bei einem bisher
         //unbekannten Komponententyp vor breiterem Einsatz einmal live gegenprüfen.
-        public function requestComponentsStatus()
+        public function requestComponentsStatus(): void
         {
             $this->SetBuffer('componentsPageAccumulator', json_encode([]));
             $this->SetBuffer('componentsPageCount', '0');
@@ -271,7 +277,7 @@ require_once __DIR__ . '/CameraStream.php';
 
         //Öffentlicher Einstiegspunkt für den per RegisterOnceTimer() registrierten Timer - läuft
         //außerhalb des ReceiveData()-Aufruf-Stacks, liest den zu ladenden Offset aus dem Buffer.
-        public function RunNextComponentsPageAsync()
+        public function RunNextComponentsPageAsync(): void
         {
             $offset = (int) $this->GetBuffer('componentsNextPageOffset');
             $this->requestComponentsPage($offset);
@@ -290,7 +296,7 @@ require_once __DIR__ . '/CameraStream.php';
             $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
         }
 
-        public function callRPCFunction(string $method, $params)
+        public function callRPCFunction(string $method, array $params): void
         {
             $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
 
@@ -302,7 +308,7 @@ require_once __DIR__ . '/CameraStream.php';
             $this->sendMQTT($Topic, json_encode($Payload));
         }
 
-        protected function SetValue($Ident, $Value)
+        protected function SetValue(string $Ident, mixed $Value): bool
         {
             if (@$this->GetIDForIdent($Ident)) {
                 $this->SendDebug('SetValue :: ' . $Ident, $Value, 0);
@@ -310,15 +316,15 @@ require_once __DIR__ . '/CameraStream.php';
                 if (is_array($Value)) {
                     $Value = implode(',', $Value);
                 }
-                parent::SetValue($Ident, $Value);
-            } else {
-                if ($this->ReadPropertyBoolean('DebugMissingIdents')) {
-                    if (is_array($Value)) {
-                        $Value = json_encode($Value);
-                    }
-                    $this->SendDebug('Missing Ident :: Value', $Ident . ' :: ' . $Value, 0);
-                }
+                return parent::SetValue($Ident, $Value);
             }
+            if ($this->ReadPropertyBoolean('DebugMissingIdents')) {
+                if (is_array($Value)) {
+                    $Value = json_encode($Value);
+                }
+                $this->SendDebug('Missing Ident :: Value', $Ident . ' :: ' . $Value, 0);
+            }
+            return false;
         }
 
         //Alle Werte auf 0, false oder leer setzen, wenn die Funktion zeroing bei den Variablen aktiv geschaltet wurde

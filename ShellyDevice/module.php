@@ -5,13 +5,13 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
 
     class ShellyDevice extends ShellyModuleBase
     {
-        public function Create()
+        public function Create(): void
         {
             parent::Create();
             $this->RegisterPropertyString('ModelID', '');
         }
 
-        public function GetConfigurationForm()
+        public function GetConfigurationForm(): string
         {
             $reflector = new ReflectionClass($this);
             $Form = json_decode(file_get_contents(dirname($reflector->getFileName()) . '/form.json'), true);
@@ -24,7 +24,7 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
             return json_encode($Form);
         }
 
-        public function ApplyChanges()
+        public function ApplyChanges(): void
         {
             //Never delete this line!
             parent::ApplyChanges();

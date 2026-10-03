@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 require_once __DIR__ . '/../libs/MQTTHelper.php';
-require_once __DIR__ . '/../libs//vendor/SymconModulHelper/DebugHelper.php';
+require_once __DIR__ . '/../libs/DebugHelperStrict.php';
 require_once __DIR__ . '/../libs/XMODServices.php';
 
-class ShellyXT1Device extends IPSModule
+class ShellyXT1Device extends IPSModuleStrict
 {
     use MQTTHelper;
-    use DebugHelper;
+    use StrictDebugHelper;
     use XMODServices;
 
-    public function Create()
+    public function Create(): void
     {
         parent::Create();
         $this->RegisterPropertyString('MQTTTopic', '');
@@ -46,7 +46,7 @@ class ShellyXT1Device extends IPSModule
         ], 99);
     }
 
-    public function ApplyChanges()
+    public function ApplyChanges(): void
     {
         //Never delete this line!
         parent::ApplyChanges();
@@ -70,7 +70,7 @@ class ShellyXT1Device extends IPSModule
     }
 
     //Ausnahme für Shellys, welche nicht korrekt definiert sind, wie zum Beispiel WaterValve
-    public function RequestAction($Ident, $Value)
+    public function RequestAction(string $Ident, mixed $Value): void
     {
         $XMODServiceType = $this->ReadPropertyString('XMODServiceType');
 
@@ -101,12 +101,13 @@ class ShellyXT1Device extends IPSModule
     }
 
     //Ausnahme für Shellys, welche nicht korrekt definiert sind, wie zum Beispiel WaterValve
-    public function ReceiveData($JSONString)
+    public function ReceiveData(string $JSONString): string
     {
         $Buffer = json_decode($JSONString, true);
         $this->SendDebug('JSON', $Buffer, 0);
 
-        $Payload = json_decode($Buffer['Payload'], true);
+        //IPSModuleStrict: "Payload" ist HEX-kodiert (siehe MQTTHelper::decodeMQTTPayload()).
+        $Payload = json_decode($this->decodeMQTTPayload($Buffer), true);
 
         if (fnmatch('*/online', $Buffer['Topic'])) {
             $this->SetValue('Reachable', $Payload);
@@ -123,8 +124,7 @@ class ShellyXT1Device extends IPSModule
                 $XMODServiceType = $this->ReadPropertyString('XMODServiceType');
                 if (!array_key_exists($XMODServiceType, self::$services)) {
                     $this->LogMessage('ReceiveData :: This service is not available.', KL_ERROR);
-                    parent::ReceiveData($JSONString);
-                    return;
+                    return '';
                 }
                 $XMODService = self::$services[$XMODServiceType];
 
@@ -155,7 +155,7 @@ class ShellyXT1Device extends IPSModule
             }
         }
 
-        parent::ReceiveData($JSONString);
+        return '';
     }
 
 private function getValueToKeyPath($array, $keyPath)
@@ -176,7 +176,7 @@ private function getValueToKeyPath($array, $keyPath)
     return $result;
 }
 
-    public function callRPCFunction(string $method, $params)
+    public function callRPCFunction(string $method, array $params): void
     {
         $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
 

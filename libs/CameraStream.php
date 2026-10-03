@@ -48,7 +48,7 @@ trait CameraStream
 
     //Button im Formular ("Stream-Objekte aktualisieren"): z.B. nach geänderten Zugangsdaten. Liefert den
     //Hinweistext zurück (der Button gibt ihn per echo als Meldung aus).
-    public function CreateCameraStreams()
+    public function CreateCameraStreams(): string
     {
         return $this->maintainCameraStreams();
     }

@@ -34,7 +34,7 @@ RequestAction(12345, true);  //Status 1 Einschalten;
 RequestAction(12345, false); //Status 1 Ausschalten;
 ```
 
-`boolean SHY_callRPCFunction(integer $InstanzID, string $method, array $params);`
+`void SHY_callRPCFunction(integer $InstanzID, string $method, array $params);`
 Mit dieser Funktion können als RPC Funktionen von den Shellies ausgeführt werden.
 Die RPC Funktionen können in der API Beschreibung der Shellies gefunden werden: https://shelly-api-docs.shelly.cloud/gen2/
 
@@ -44,7 +44,7 @@ $params = ['id' => 0, 'on' => true]; //Parameter um den Kanal 0 des Gerätes ein
 SHY_callRPCFunction(integer 12345, string 'Switch.Set', $params);
 ```
 
-`boolean SHY_requestComponentsStatus(integer $InstanzID);`
+`void SHY_requestComponentsStatus(integer $InstanzID);`
 Ruft alle Components / Services ab und legt dazu die Variablen an, diese Funktion wird automatisch beim Speichern der Instanz aufgerufen.
 Diese Funktion kann ebenfalls dazu genutzt werden, um den Status der Variablen manuell abzufragen.
 

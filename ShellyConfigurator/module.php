@@ -5,39 +5,38 @@ declare(strict_types=1);
 require_once __DIR__ . '/../libs/MQTTHelper.php';
 require_once __DIR__ . '/../libs/ShellyRPCHelper.php';
 require_once __DIR__ . '/../libs/ShellyModels.php';
-require_once __DIR__ . '/../libs/vendor/SymconModulHelper/DebugHelper.php';
+require_once __DIR__ . '/../libs/DebugHelperStrict.php';
 require_once __DIR__ . '/../libs/components.php';
 require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 const GUID_SHELLY_DEVICE = '{86104D43-1A2F-EFA8-CB86-EBE8979F8D1A}';
 const GUID_SHELLY_XT1DEVICE = '{88774A56-2453-2EEC-24F5-BBC37D63B506}';
 const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
 
-class ShellyConfigurator extends IPSModule
+class ShellyConfigurator extends IPSModuleStrict
 {
     use Components;
     use ComponentDefinitionHelper;
     use MQTTHelper;
     use ShellyModels;
-    use DebugHelper;
+    use StrictDebugHelper;
     use ShellyRPCHelper;
 
-    public function Create()
+    public function Create(): void
     {
         //Never delete this line!
         parent::Create();
-        if (IPS_GetKernelVersion() < 8.2) {
-            $this->ConnectParent('{C6D2AEB3-6E1F-4B2E-8E69-3A1A00246850}');
-        }
+        //Der MQTT-Server/-Client wird bei IPSModuleStrict automatisch über die Kompatibilität (parentRequirements
+        //in der module.json) von der Verwaltungskonsole verbunden - ConnectParent() gibt es dort nicht mehr.
         $this->RegisterAttributeString('Shellies', '{}');
     }
 
-    public function Destroy()
+    public function Destroy(): void
     {
         //Never delete this line!
         parent::Destroy();
     }
 
-    public function ApplyChanges()
+    public function ApplyChanges(): void
     {
         //Never delete this line!
         parent::ApplyChanges();
@@ -55,7 +54,7 @@ class ShellyConfigurator extends IPSModule
         $this->SetReceiveDataFilter('.*(' . $Filter1 . '|' . $Filter2 . ').*');
     }
 
-    public function GetConfigurationForm()
+    public function GetConfigurationForm(): string
     {
         $Form = json_decode(file_get_contents(__DIR__ . '/form.json'), true);
         $this->getShellies();
@@ -64,7 +63,7 @@ class ShellyConfigurator extends IPSModule
         }
         $Form['actions'][2]['values'] = $this->getFormForMdnsDevices();
 
-        $Shellies = json_decode($this->ReadAttributeString('Shellies'), true); //$this->findShellysOnNetwork();
+        $Shellies = (json_decode((string) $this->ReadAttributeString('Shellies'), true) ?: []); //$this->findShellysOnNetwork();
         $Values = [];
 
         if (count($Shellies) == 0) {
@@ -371,9 +370,9 @@ class ShellyConfigurator extends IPSModule
         return $responses;
     }
 
-    public function getShellies()
+    public function getShellies(): void
     {
-        $Shellies = json_decode($this->ReadAttributeString('Shellies'), true);
+        $Shellies = (json_decode((string) $this->ReadAttributeString('Shellies'), true) ?: []);
 
         foreach ($Shellies as $key => $Shelly) {
             if ($Shelly['LastActivity'] + 86400 < time()) {
@@ -389,17 +388,15 @@ class ShellyConfigurator extends IPSModule
         }
     }
 
-    public function ReceiveData($JSONString)
+    public function ReceiveData(string $JSONString): string
     {
         $this->SendDebug('JSONString', $JSONString, 0);
         $Buffer = json_decode($JSONString, true);
         $this->SendDebug('JSON', $Buffer, 0);
 
-        //Für MQTT Fix in IPS Version 6.3
-        if (IPS_GetKernelDate() > 1670886000) {
-            $Buffer['Payload'] = utf8_decode($Buffer['Payload']);
-        }
-        $Shellies = json_decode($this->ReadAttributeString('Shellies'), true);
+        //IPSModuleStrict: "Payload" ist HEX-kodiert (siehe MQTTHelper::decodeMQTTPayload()).
+        $Buffer['Payload'] = $this->decodeMQTTPayload($Buffer);
+        $Shellies = (json_decode((string) $this->ReadAttributeString('Shellies'), true) ?: []);
 
         if (array_key_exists('Topic', $Buffer)) {
             //Die Shelly-ID steckt als mittleres Topic-Segment drin (aus dem "src" der Anfrage),
@@ -414,7 +411,7 @@ class ShellyConfigurator extends IPSModule
                 $parts = explode('/announce', $Buffer['Topic'], 2);
                 $MQTTTopic = $parts[0];
                 if ($MQTTTopic == 'shellies') {
-                    return;
+                    return '';
                 }
 
                 $Payload = json_decode($Buffer['Payload'], true);
@@ -436,7 +433,7 @@ class ShellyConfigurator extends IPSModule
                                 $Shellies[$foundedKey]['App'] = '';
                             }
                             $this->WriteAttributeString('Shellies', json_encode($Shellies));
-                            return;
+                            return '';
                         }
                         $Shelly = [];
                         $Shelly['Name'] = '-';
@@ -462,9 +459,10 @@ class ShellyConfigurator extends IPSModule
             }
             $this->WriteAttributeString('Shellies', json_encode($Shellies));
         }
+        return '';
     }
 
-    public function setMQTTSettings(string $selectedValue, string $broker, int $port, string $username, string $password)
+    public function setMQTTSettings(string $selectedValue, string $broker, int $port, string $username, string $password): void
     {
         $selectedValue = json_decode($selectedValue, true);
         //IPS_LogMessage('SelectedValue', print_r($selectedValue, true));
