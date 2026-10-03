@@ -464,7 +464,7 @@ class ShellyConfigurator extends IPSModule
         }
     }
 
-    public function setMQTTSettings($selectedValue, $broker, $port, $username, $password)
+    public function setMQTTSettings(string $selectedValue, string $broker, int $port, string $username, string $password)
     {
         $selectedValue = json_decode($selectedValue, true);
         //IPS_LogMessage('SelectedValue', print_r($selectedValue, true));

@@ -290,7 +290,7 @@ require_once __DIR__ . '/CameraStream.php';
             $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
         }
 
-        public function callRPCFunction($method, $params)
+        public function callRPCFunction(string $method, $params)
         {
             $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
 

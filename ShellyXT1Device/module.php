@@ -176,7 +176,7 @@ private function getValueToKeyPath($array, $keyPath)
     return $result;
 }
 
-    public function callRPCFunction($method, $params)
+    public function callRPCFunction(string $method, $params)
     {
         $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
 
