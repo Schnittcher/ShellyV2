@@ -38,18 +38,22 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     [
                         'Value'            => true,
                         'Caption'          => 'Online',
-                        'IconActive'       => false,
-                        'Icon'             => 'Information',
+                        'IconActive'       => true,
+                        'IconValue'        => 'Information',
                         'ColorActive'      => true,
-                        'ColorValue'       => 65280
+                        'ColorValue'       => 65280,
+                        'ContentColorActive' => false,
+                        'ContentColorValue'  => -1
                     ],
                     [
                         'Value'            => false,
                         'Caption'          => 'Offline',
-                        'IconActive'       => false,
-                        'Icon'             => 'Information',
+                        'IconActive'       => true,
+                        'IconValue'        => 'Information',
                         'ColorActive'      => true,
                         'ColorValue'       => 16711680,
+                        'ContentColorActive' => false,
+                        'ContentColorValue'  => -1
                     ],
                 ]
                     )
