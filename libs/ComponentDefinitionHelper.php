@@ -176,7 +176,7 @@ trait ComponentDefinitionHelper
     {
         $number = null;
         //Ausnahmen: Bei dem der Unterstrich nicht gegen einen Punkt ersetzt werden darf
-        $exceptions = ['current_pos', 'target_C', 'current_C', 'away_mode'];
+        $exceptions = ['current_pos', 'target_C', 'current_C', 'away_mode', 'cg_count'];
 
         foreach ($exceptions as $ending) {
             // Prüfen, ob die Endung im String vorkommt
@@ -200,6 +200,8 @@ trait ComponentDefinitionHelper
                     $result = implode('.', array_values($parts)); // array_values zur Neuindexierung
                     return [$result, $number];
                 }
+                // Komponente ohne Kanalnummer (z.B. dali.cg_count): der Pfad ist damit fertig
+                return [$input, null];
             }
             $parts = explode('_', $input);
             // Prüfen, ob an zweiter Stelle eine Zahl ist

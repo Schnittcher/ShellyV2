@@ -107,7 +107,10 @@ require_once __DIR__ . '/CameraStream.php';
 
             // 1. Hole alle Keys als Array
             $keys = array_keys($tmpComponents['action']['params']);
-            $tmpComponents['action']['params'][$keys[0]] = $IdentKeyPath[1];
+            //Aktionen ohne Parameter (z.B. DALI.StartScan, 'params' => []) bekommen auch keine Kanalnummer.
+            if (count($keys) > 0) {
+                $tmpComponents['action']['params'][$keys[0]] = $IdentKeyPath[1];
+            }
 
             //Werte aus der Geräte-Config (Definition mit 'configPath', z.B. Kamera rtsp.enable): per SetConfig mit
             //verschachtelter Config setzen und danach neu einlesen, damit die Variable den Gerätewert zeigt.
@@ -303,7 +306,8 @@ require_once __DIR__ . '/CameraStream.php';
             $Payload['id'] = 1;
             $Payload['src'] = 'user_1';
             $Payload['method'] = $method;
-            $Payload['params'] = $params;
+            //Shelly erwartet für "params" ein Objekt - ein leeres Array würde als [] statt {} gesendet.
+            $Payload['params'] = $params === [] ? new stdClass() : $params;
 
             $this->sendMQTT($Topic, json_encode($Payload));
         }

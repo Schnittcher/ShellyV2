@@ -1948,6 +1948,67 @@ trait Components
                 ],
             ],
         ],
+        //DALI (Shelly DALI Dimmer Gen3, Key "dali" ohne Nummer): Felder laut Shelly-API-Doku. Gedimmt wird über
+        //light:0. cg_count = Anzahl der beim letzten Scan gefundenen Vorschaltgeräte (null, solange nie
+        //gescannt - dann behält die Variable ihren Wert). Das Objekt "scan" gibt es nur WÄHREND eines Scans,
+        //deshalb 'alwaysCreate'. DALI.StartScan/DALI.PingKnownDevices haben keine Parameter ('params' => []).
+        //Das Ergebnis eines Scans meldet das Gerät zusätzlich als Event (scan_complete/ping_complete).
+        'dali' => [
+            'cg_count' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'DALI control gears',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+                'actionWithExtraVariable' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'DALI action',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                        'LAYOUT'       => 1,
+                        'OPTIONS'      => '[
+                            {
+                                "Value": "StartScan",
+                                "Caption": "Start scan",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": 65280
+                            },
+                            {
+                                "Value": "PingKnownDevices",
+                                "Caption": "Check devices",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": -1
+                            }
+                        ]',
+                    ],
+                    'action'        => [
+                        'list'   => true,
+                        'method' => 'DALI.',
+                        'params' => []
+                    ],
+                ],
+            ],
+            'scan' => [
+                'cg_count' => [
+                    'type'         => VARIABLETYPE_INTEGER,
+                    'name'         => 'DALI scan control gears',
+                    'alwaysCreate' => true,
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    ],
+                ],
+                'errors' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'DALI scan errors',
+                    'alwaysCreate' => true,
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    ],
+                ],
+            ],
+        ],
         'pm1' => [
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
