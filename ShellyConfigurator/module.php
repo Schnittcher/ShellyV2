@@ -73,11 +73,10 @@ class ShellyConfigurator extends IPSModule
             $Form['actions'][3]['visible'] = false;
         }
 
+        //Eindeutige ID je Gerätezeile - die Komponenten verweisen darüber per "parent" auf ihr Gerät.
         $idCount = 0;
 
         if (count($Shellies) > 0) {
-            $idCount++;
-
             //Phase 1: Komponentenlisten aller Geräte mit gültigem Modell einsammeln. Shelly.GetComponents ist die
             //einzige Quelle (inkl. BLU TRVs, dynamischer Komponenten und Add-on-Sensoren wie bei The Pill, die in
             //Shelly.GetStatus fehlen). Die Antworten sind paginiert - siehe collectComponents().
@@ -113,6 +112,8 @@ class ShellyConfigurator extends IPSModule
                 } else {
                     $DeviceType = $this->Translate('Unknown') . ' (' . $Shelly['Model'] . ')';
                 }
+
+                $idCount++;
 
                 if ($Shelly['App'] == 'XT1') {
                     $Values[] = [

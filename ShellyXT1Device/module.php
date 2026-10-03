@@ -22,20 +22,24 @@ class ShellyXT1Device extends IPSModule
             'OPTIONS'         => json_encode(
                 [
                 [
-                    'Value'            => true,
-                    'Caption'          => 'Online',
-                    'IconActive'       => false,
-                    'Icon'             => 'Information',
-                    'ColorActive'      => true,
-                    'ColorValue'       => 65280
+                    'Value'              => true,
+                    'Caption'            => 'Online',
+                    'IconActive'         => false,
+                    'IconValue'          => 'Information',
+                    'ColorActive'        => true,
+                    'ColorValue'         => 65280,
+                    'ContentColorActive' => false,
+                    'ContentColorValue'  => -1
                 ],
                 [
-                    'Value'            => false,
-                    'Caption'          => 'Offline',
-                    'IconActive'       => false,
-                    'Icon'             => 'Information',
-                    'ColorActive'      => true,
-                    'ColorValue'       => 16711680,
+                    'Value'              => false,
+                    'Caption'            => 'Offline',
+                    'IconActive'         => false,
+                    'IconValue'          => 'Information',
+                    'ColorActive'        => true,
+                    'ColorValue'         => 16711680,
+                    'ContentColorActive' => false,
+                    'ContentColorValue'  => -1
                 ],
                 ]
             )
