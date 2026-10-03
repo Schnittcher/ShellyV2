@@ -1286,6 +1286,77 @@ trait Components
                 ],
             ],
         ],
+        //CB (Shelly Pro 3CB, Leitungsschutzschalter): Felder laut Shelly-API-Doku (cb:N). Laut Doku kennt CB.Set
+        //nur "output": false (Hebel auslösen) - ein Einschalten aus der Ferne ist nicht dokumentiert, die
+        //Schalter-Variable löst also zuverlässig nur aus. Bei gesperrtem Sicherheitsschalter ("safety") ist
+        //das Schalten aus der Ferne deaktiviert.
+        'cb' => [
+            'output' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Breaker State',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'CB.Set',
+                    'params' => ['id' => '', 'output' => ''
+                    ]
+                ],
+            ],
+            'safety' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Safety lock',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": true,
+                            "Caption": "Locked",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": true,
+                            "ColorValue": 16711680,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        },
+                        {
+                            "Value": false,
+                            "Caption": "Unlocked",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": true,
+                            "ColorValue": 65280,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        }
+                    ]',
+                ],
+            ],
+            'total_cycles' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Total cycles',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'temperature' => [
+                'tC' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Temperature',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' °C'
+                    ],
+                ],
+            ],
+            'errors' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Errors',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
         'pm1' => [
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,

@@ -332,6 +332,12 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
                 //Value vom Params array holen mit dem originalen keypath
                 $value = $this->getValueByKeyPathFromArray($Payload, $componentsFromShellyResult['original']);
+                //Shelly meldet "kein Wert" als null (z.B. temperature.tC bei cb/switch, wenn der Sensor nichts
+                //liefert). SetValue() würde daraus 0 bzw. "" machen und einen echten Messwert vortäuschen - die
+                //Variable behält dann lieber ihren letzten Wert.
+                if ($value === null) {
+                    continue;
+                }
                 //ggf. umrechnung druchführen
                 if ($tmpComponent != null) {
                     if (array_key_exists('factor', $tmpComponent)) {
