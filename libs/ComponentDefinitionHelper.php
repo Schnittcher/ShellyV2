@@ -152,42 +152,16 @@ trait ComponentDefinitionHelper
             'ident'    => $ident
         ];
     }
-    //Mir dieser Funktion werden wird das Payload von getComponents so aufgearbeitet, dass es aussieht, als wären die Informationen von getStatus bekommen, sodass der restliche Code vom Modul genutzt werden kann.
-    protected function getBLUTRVs($Payload)
-    {
-        $trvs = [];
-        // Prüfen ob 'components' existiert
-        if (isset($Payload['components'])) {
-            foreach ($Payload['components'] as $component) {
-                if (!isset($component['key'])) {
-                    continue;
-                }
-                // Prüft ob der Key mit "blutrv:" beginnt
-                if (strpos($component['key'], 'blutrv:') === 0) {
-
-                    // ID aus dem Key extrahieren, falls du sie brauchst
-                    preg_match('/blutrv:(\d+)/', $component['key'], $matches);
-                    $id = isset($matches[1]) ? (int) $matches[1] : null;
-
-                    $trvs[$component['key']] = array_merge(
-                            ['id' => $id],
-                            $component['status'] ?? []
-                        );
-                }
-            }
-        } else {
-            IPS_LogMessage(__FUNCTION__, 'Keine Komponenten gefunden.');
-        }
-        return $trvs;
-    }
-
     // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
     // Extrahiert Komponenten aus dem Shelly.GetComponents-Ergebnis, die per RPC dynamisch
-    // hinzugefügt werden (ID-Raum ab 200) und deshalb (wie BLU TRVs, siehe getBLUTRVs()) weder in
-    // Shelly.GetStatus noch in Shelly.GetConfig auftauchen, sondern nur hier: Boolean/Number/Enum/
-    // Text (Shelly "User-defined components") sowie presencezone (Shelly Presence-Zonen - kein
-    // Boolean/Number/Enum/Text, aber genauso dynamisch angelegt und nur hier auffindbar). Details/
-    // Beispiel-Payload siehe components.php (Kommentar über dem 'boolean'-Eintrag).
+    // hinzugefügt werden (ID-Raum ab 200) und deshalb weder in Shelly.GetStatus noch in
+    // Shelly.GetConfig auftauchen, sondern nur hier: Boolean/Number/Enum/Text (Shelly "User-defined
+    // components") sowie presencezone (Shelly Presence-Zonen - kein Boolean/Number/Enum/Text, aber
+    // genauso dynamisch angelegt und nur hier auffindbar). Details/Beispiel-Payload siehe
+    // components.php (Kommentar über dem 'boolean'-Eintrag). Wird nur noch vom Configurator genutzt
+    // (Namen der dynamischen Komponenten in der Liste, z.B. "boolean:200 (Test)") - die Geräte-Module
+    // lesen Config und Status aller Komponenten direkt aus der Gesamtantwort (getComponentConfigs()/
+    // getAllComponentsAsStatusDict()).
     //
     // $Payload = das 'result' einer Shelly.GetComponents-Antwort, z.B.:
     //   {"components": [
@@ -224,12 +198,10 @@ trait ComponentDefinitionHelper
     }
     // ### ENDE TEST / EXPERIMENTELL ###
 
-    // ### TEST / EXPERIMENTELL - GetStatus-Ersatz über GetComponents ###
-    // Siehe TODO/ROADMAP-Kommentar bei getComponentsViaStatus() in ShellyModuleBase.php. Baut - anders
-    // als getBLUTRVs()/getDynamicallyAddedComponents(), die nur bestimmte Präfixe rausfiltern - das
-    // GESAMTE Shelly.GetComponents-Ergebnis in dasselbe flache {"switch:0":{...},"sys":{...},...}-Dict
-    // um, das Shelly.GetStatus liefert. Der INHALT (Feldnamen pro Komponente) ist laut Punkt 7 der
-    // Roadmap bereits verifiziert identisch - hier wird nur die HÜLLE übersetzt:
+    // Baut - anders als getDynamicallyAddedComponents(), das nach Präfix filtert - das GESAMTE
+    // Shelly.GetComponents-Ergebnis in ein flaches {"switch:0":{...},"sys":{...},...}-Dict um (die Form,
+    // die der Rest der Module-Pipeline kennt, ursprünglich die von Shelly.GetStatus). Der INHALT (Feldnamen
+    // pro Komponente) ist live verifiziert identisch - hier wird nur die HÜLLE übersetzt:
     //   {"components": [{"key":"switch:0","status":{...},"config":{...}}, ...]}
     //   ->
     //   {"switch:0": {...}, ...}
@@ -250,16 +222,13 @@ trait ComponentDefinitionHelper
     // ### TEST / EXPERIMENTELL - Vereinheitlichte Config-Quelle für ALLE Komponenten ###
     // Liefert {"switch:0": {...volle config...}, "boolean:200": {...volle config...}, ...} aus dem
     // GESAMTEN Shelly.GetComponents-Ergebnis - für JEDEN Komponententyp, nicht nur die dynamischen
-    // (anders als getDynamicallyAddedComponents(), das nach Präfix filtert). Ersetzt die frühere
-    // Trennung in "nur Namen für physische Komponenten" vs. "volle Metadaten nur für dynamische
-    // Komponenten aus einer separaten getComponents()-Antwort" - beide Infos stecken ja im selben
-    // Shelly.GetComponents-Ergebnis, eine künstliche Aufteilung auf zwei Quellen hat nur eine Race
-    // Condition zwischen zwei unabhängigen Anfragen provoziert (live beobachtet: "Boolean 200" statt
-    // "Power supply", weil die separate dynamic_only-Antwort noch nicht da war). Wird in
-    // registerComponentVariables()/createVariableListForForm() genutzt: für physische Komponenten als
-    // Namens-Präfix (z.B. "Waschmaschine - Active power"), für dynamische Komponenten als Fallback zu
-    // getDynamicComponentMetadata() (falls dessen eigentliche, dynamic_only-gefilterte Quelle noch
-    // nicht da ist).
+    // (anders als getDynamicallyAddedComponents(), das nach Präfix filtert). Einzige Config-Quelle der
+    // Geräte-Module: eine frühere zweite, dynamic_only-gefilterte Abfrage hat eine Race Condition
+    // zwischen zwei unabhängigen Anfragen provoziert (live beobachtet: "Boolean 200" statt "Power
+    // supply", weil die separate Antwort noch nicht da war). Wird in registerComponentVariables()/
+    // createVariableListForForm() genutzt: für physische Komponenten als Namens-Präfix (z.B.
+    // "Waschmaschine - Active power"), für dynamische Komponenten über getDynamicComponentMetadata()
+    // (Name, Optionen, Min/Max, Access).
     protected function getComponentConfigs($Payload)
     {
         $configs = [];

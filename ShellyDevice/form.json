@@ -77,11 +77,6 @@
             ]
         },
         {
-            "type": "CheckBox",
-            "name": "UseGetComponentsForStatus",
-            "caption": "TEST: Status über Shelly.GetComponents statt Shelly.GetStatus beziehen"
-        },
-        {
             "type": "ValidationTextBox",
             "name": "ModelID",
             "caption": "Shelly Model"

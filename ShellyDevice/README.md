@@ -44,12 +44,12 @@ $params = ['id' => 0, 'on' => true]; //Parameter um den Kanal 0 des Gerätes ein
 SHY_callRPCFunction(integer 12345, string 'Switch.Set', $params);
 ```
 
-`boolean SHY_getComponents(integer $InstanzID);`
+`boolean SHY_requestComponentsStatus(integer $InstanzID);`
 Ruft alle Components / Services ab und legt dazu die Variablen an, diese Funktion wird automatisch beim Speichern der Instanz aufgerufen.
 Diese Funktion kann ebenfalls dazu genutzt werden, um den Status der Variablen manuell abzufragen.
 
 Beispiel:
-`SHY_getComponents(12345);`
+`SHY_requestComponentsStatus(12345);`
 
 ## 3. Spenden
 Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:    

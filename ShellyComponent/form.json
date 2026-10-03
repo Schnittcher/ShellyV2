@@ -85,11 +85,6 @@
             "values": [
                 {}
             ]
-        },
-        {
-            "type": "CheckBox",
-            "name": "UseGetComponentsForStatus",
-            "caption": "TEST: Status über Shelly.GetComponents statt Shelly.GetStatus beziehen"
         }
     ],
     "actions": [

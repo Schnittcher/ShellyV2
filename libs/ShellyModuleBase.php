@@ -24,13 +24,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $this->RegisterPropertyString('MQTTTopic', '');
             $this->RegisterPropertyBoolean('DebugMissingIdents', false);
             $this->RegisterPropertyString('VariableList', '{}');
-            // ### TEST / EXPERIMENTELL - Schritt 4 der GetStatus->GetComponents-Migration (siehe
-            // ### TODO/ROADMAP bei getComponentsViaStatus()). War zunächst Opt-in (Default aus), da
-            // ### das der Kernpfad JEDER Instanz ist (Hürde 3) - nach erfolgreichen Tests an mehreren
-            // ### Gerätetypen (Presence G4, Shelly 1 Gen3, Pro RGBWW PM, Smart WaterValve) jetzt
-            // ### Default AN. getComponentsViaStatus() bleibt als Fallback/Opt-out erreichbar (Checkbox
-            // ### deaktivieren).
-            $this->RegisterPropertyBoolean('UseGetComponentsForStatus', true);
 
             $this->RegisterVariableBoolean('Reachable', $this->Translate('Reachable'), [
                 'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -72,9 +65,8 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             //Never delete this line!
             $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
             $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
-            if ($MQTTTopic != '' && $this->HasActiveParent()) {
-                $this->getComponents();
-            }
+            //Die Komponenten fragen die Instanz-Module (ShellyDevice/ShellyComponent) in ihrem
+            //ApplyChanges() per requestComponentsStatus() ab.
         }
 
         public function RequestAction($Ident, $Value)
@@ -137,59 +129,42 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 $componentsUpdated = false;
                 $valuesToParse = null;
 
-                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponentsViaStatus/rpc', $Buffer['Topic'])) {
-                    if (array_key_exists('result', $Payload)) {
-                        $this->SetBuffer('physicalComponentsList', json_encode($this->getArrayLeafKeyPaths($Payload['result'])));
-                        $valuesToParse = $Payload['result'];
-                    }
-                    $componentsUpdated = true;
-                }
-
-                // ############################################################
-                // ### TEST / EXPERIMENTELL - Schritt 4 der Migration:       ###
-                // ### Status über Shelly.GetComponents statt Shelly.GetStatus###
-                // ### beziehen (siehe TODO/ROADMAP + getComponentsViaGet-   ###
-                // ### Components()). Opt-in über Property                   ###
-                // ### 'UseGetComponentsForStatus'. Ersetzt für diese        ###
-                // ### Instanzen die Rolle von getComponentsViaStatus/rpc    ###
-                // ### oben - befüllt denselben Buffer                       ###
-                // ### 'physicalComponentsList' und denselben                ###
-                // ### $valuesToParse/$componentsUpdated-Mechanismus, damit  ###
-                // ### der Rest der Pipeline (createVariableListForForm(),   ###
-                // ### registerComponentVariables(), etc.) unverändert       ###
-                // ### weiterläuft. Pagination mit "include":["status"] +    ###
-                // ### RegisterOnceTimer()-Entkopplung, siehe                ###
-                // ### requestComponentsPage() für Details zum Fix.          ###
-                // ############################################################
-                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponentsViaGetComponents/rpc', $Buffer['Topic'])) {
+                //Antwort auf requestComponentsStatus() (Shelly.GetComponents mit "include":["status","config"]).
+                //Das Ergebnis enthält ALLE Komponenten (physische, BLU TRVs, dynamische Boolean/Number/Enum/
+                //Text/presencezone, Add-on-Sensoren) mit Status UND Config - eine zweite Abfrage ist nicht
+                //nötig. Alle Seiten werden gesammelt und erst danach in einem Rutsch verarbeitet. Folgeseiten
+                //werden über RegisterOnceTimer() entkoppelt angefragt: SendDataToParent() direkt aus
+                //ReceiveData() heraus hat live mehrfach den Produktiv-Broker/Symcon lahmgelegt (siehe
+                //RunNextComponentsPageAsync()).
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic'])) {
                     if (array_key_exists('result', $Payload) && array_key_exists('components', $Payload['result'])) {
-                        $statusAccumulated = json_decode($this->GetBuffer('statusViaComponentsAccumulator'), true) ?: [];
+                        $statusAccumulated = json_decode($this->GetBuffer('componentsPageAccumulator'), true) ?: [];
                         $statusAccumulated = array_merge($statusAccumulated, $Payload['result']['components']);
-                        $this->SetBuffer('statusViaComponentsAccumulator', json_encode($statusAccumulated));
+                        $this->SetBuffer('componentsPageAccumulator', json_encode($statusAccumulated));
 
                         $statusOffset = $Payload['result']['offset'] ?? 0;
                         $statusTotal = $Payload['result']['total'] ?? count($statusAccumulated);
                         $statusReceivedSoFar = $statusOffset + count($Payload['result']['components']);
 
-                        $statusPageCount = (int) ($this->GetBuffer('statusViaComponentsPageCount') ?: '0') + 1;
-                        $this->SetBuffer('statusViaComponentsPageCount', (string) $statusPageCount);
+                        $statusPageCount = (int) ($this->GetBuffer('componentsPageCount') ?: '0') + 1;
+                        $this->SetBuffer('componentsPageCount', (string) $statusPageCount);
                         $statusMaxPages = 30;
 
                         if ($statusReceivedSoFar < $statusTotal && count($Payload['result']['components']) > 0 && $statusPageCount < $statusMaxPages) {
                             //WICHTIG: SendDataToParent() darf nicht direkt aus ReceiveData() heraus
                             //aufgerufen werden (siehe Kommentar bei requestComponentsPage()) - über
                             //RegisterOnceTimer() entkoppeln.
-                            $this->SetBuffer('statusViaComponentsNextOffset', (string) $statusReceivedSoFar);
-                            $this->RegisterOnceTimer('GetComponentsViaGetComponentsNextPage', 'SHY_RunNextGetComponentsViaGetComponentsPageAsync($_IPS["TARGET"]);');
+                            $this->SetBuffer('componentsNextPageOffset', (string) $statusReceivedSoFar);
+                            $this->RegisterOnceTimer('GetComponentsNextPage', 'SHY_RunNextComponentsPageAsync($_IPS["TARGET"]);');
                         } else {
                             if ($statusPageCount >= $statusMaxPages) {
-                                $this->SendDebug('getComponentsViaGetComponents', 'Abbruch: Sicherheitslimit von ' . $statusMaxPages . ' Seiten erreicht (offset/total vom Gerät evtl. inkonsistent).', 0);
+                                $this->SendDebug('getComponents', 'Abbruch: Sicherheitslimit von ' . $statusMaxPages . ' Seiten erreicht (offset/total vom Gerät evtl. inkonsistent).', 0);
                             }
-                            $this->SetBuffer('statusViaComponentsAccumulator', json_encode([]));
-                            $this->SetBuffer('statusViaComponentsPageCount', '0');
+                            $this->SetBuffer('componentsPageAccumulator', json_encode([]));
+                            $this->SetBuffer('componentsPageCount', '0');
 
                             $statusDict = $this->getAllComponentsAsStatusDict(['components' => $statusAccumulated]);
-                            $this->SetBuffer('physicalComponentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
+                            $this->SetBuffer('componentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
                             //Volle Config für ALLE Komponenten (auch physische wie switch/cover/em/pm1,
                             //nicht nur dynamische) - siehe getComponentConfigs()/getPhysicalComponentName()/
                             //Fallback in getDynamicComponentMetadata().
@@ -199,87 +174,8 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         }
                     }
                 }
-                // ### ENDE TEST / EXPERIMENTELL ###
-
-                //Ausnahme für BLU TRVs, diese müssen über Shelly.GetComponents abgerufen werden.
-                // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
-                // Hier werden zusätzlich zu BLU TRVs auch Boolean/Number/Enum/Text-Komponenten und
-                // presencezone extrahiert, da diese ebenfalls nur über Shelly.GetComponents
-                // auffindbar sind. Shelly.GetComponents ist paginiert (auch mit dynamic_only kann
-                // ein Gerät theoretisch mehr Komponenten haben, als auf eine Seite passen) - deshalb
-                // werden hier alle Seiten gesammelt (Buffer 'componentsPageAccumulator'), bevor
-                // irgendetwas verarbeitet wird.
-                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic'])) {
-                    if (array_key_exists('result', $Payload) && array_key_exists('components', $Payload['result'])) {
-                        $accumulated = json_decode($this->GetBuffer('componentsPageAccumulator'), true) ?: [];
-                        $accumulated = array_merge($accumulated, $Payload['result']['components']);
-
-                        $offset = $Payload['result']['offset'] ?? 0;
-                        $total = $Payload['result']['total'] ?? count($accumulated);
-                        $receivedSoFar = $offset + count($Payload['result']['components']);
-
-                        //count(...) === 0 als Bremse: Falls eine Seite trotz offener "total" leer
-                        //zurückkommt (unerwartete Geräteantwort), würde $receivedSoFar sonst nie mehr
-                        //steigen und wir würden endlos weitere Seiten anfragen.
-                        //Zusätzlich hartes Seitenlimit: Falls ein Gerät offset/total inkonsistent
-                        //zurückliefert (z.B. immer wieder dieselbe Seite), verhindert das eine echte
-                        //Endlosschleife von RPC-Anfragen (ist mit der Diagnose-Variante ohne
-                        //dynamic_only live passiert und hat IP-Symcon lahmgelegt).
-                        $pageCount = (int) ($this->GetBuffer('componentsPageCount') ?: '0') + 1;
-                        $this->SetBuffer('componentsPageCount', (string) $pageCount);
-                        $maxPages = 30;
-
-                        if ($receivedSoFar < $total && count($Payload['result']['components']) > 0 && $pageCount < $maxPages) {
-                            //Noch nicht alle Seiten da - zwischenspeichern und nächste Seite anfragen,
-                            //hier absichtlich NICHT als "componentsUpdated" markieren.
-                            $this->SetBuffer('componentsPageAccumulator', json_encode($accumulated));
-                            //WICHTIG: SendDataToParent() darf nicht direkt aus ReceiveData() heraus
-                            //aufgerufen werden - hat live fünf Vorfälle am Produktiv-Broker verursacht
-                            //(Folge-Request erreicht laut MQTT Explorer nicht mal mehr den Broker,
-                            //alles hängt - vermutlich Kapazität/Reentrancy in Symcons eigener
-                            //Skript-Engine unter Last, kein Bug hier, kein Shelly-Firmware-Bug).
-                            //RegisterOnceTimer() entkoppelt das zuverlässig (läuft einmalig und sofort,
-                            //aber außerhalb des ReceiveData()-Aufruf-Stacks) - so gegen den
-                            //Produktiv-Broker bestätigt. Bisher hier nie ausgelöst, weil
-                            //dynamic_only-Ergebnisse bisher immer auf eine Seite passten - trotzdem als
-                            //Vorsichtsmaßnahme mit demselben Fix.
-                            $this->SetBuffer('componentsNextPageOffset', (string) $receivedSoFar);
-                            $this->RegisterOnceTimer('GetComponentsNextPage', 'SHY_RunNextComponentsPageAsync($_IPS["TARGET"]);');
-                        } else {
-                            if ($pageCount >= $maxPages) {
-                                $this->SendDebug('getComponents', 'Abbruch: Sicherheitslimit von ' . $maxPages . ' Seiten erreicht (offset/total vom Gerät evtl. inkonsistent).', 0);
-                            }
-                            $this->SetBuffer('componentsPageCount', '0');
-                            //Alle Seiten vollständig - jetzt aus dem GESAMTEN Ergebnis verarbeiten.
-                            $this->SetBuffer('componentsPageAccumulator', json_encode([]));
-                            $fullResult = ['components' => $accumulated];
-
-                            $blutrvs = $this->getBLUTRVs($fullResult);
-                            $dynamicComponents = $this->getDynamicallyAddedComponents($fullResult);
-                            $componentsFromGetComponents = array_merge($blutrvs, $dynamicComponents['status']);
-
-                            $this->SetBuffer('componentsFromGetComponents', json_encode($this->getArrayLeafKeyPaths($componentsFromGetComponents)));
-                            $this->SetBuffer('dynamicComponentsMetadata', json_encode($dynamicComponents['config']));
-                            $valuesToParse = $componentsFromGetComponents;
-                            $componentsUpdated = true;
-                        }
-                    }
-                }
-                // ### ENDE TEST / EXPERIMENTELL ###
-
                 if ($componentsUpdated) {
-                    //Physische Komponenten (aus Shelly.GetStatus) und Komponenten aus Shelly.GetComponents
-                    //(BLU TRVs, ggf. virtuelle Komponenten) zusammenführen. Beide Antworten kommen
-                    //unabhängig voneinander per MQTT an (unterschiedliche RPC-Aufrufe, keine feste
-                    //Reihenfolge) - deshalb puffert jeder der beiden obigen if-Blöcke sein Ergebnis in
-                    //einem eigenen Buffer, und hier wird bei JEDER der beiden Antworten neu aus dem
-                    //jeweils letzten Stand BEIDER Buffer zusammengesetzt. So geht z.B. die Liste der
-                    //physischen Komponenten nicht verloren, wenn danach noch die GetComponents-Antwort
-                    //eintrifft (und umgekehrt).
-                    $physicalComponents = json_decode($this->GetBuffer('physicalComponentsList'), true) ?: [];
-                    $componentsFromGetComponents = json_decode($this->GetBuffer('componentsFromGetComponents'), true) ?: [];
-                    // Duplikate entfernen
-                    $allComponentsFromShelly = array_unique(array_merge($physicalComponents, $componentsFromGetComponents));
+                    $allComponentsFromShelly = json_decode($this->GetBuffer('componentsList'), true) ?: [];
 
                     $propertyChannel = @$this->ReadPropertyInteger('Channel');
                     $propertyComponent = @$this->ReadPropertyString('Component');
@@ -308,123 +204,44 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 }
             }
         }
-        public function getComponents()
+
+        //Fragt ALLE Komponenten mit Status und Config per Shelly.GetComponents ab; die Antwort
+        //(ReceiveData()) legt die Variablen an bzw. aktualisiert sie. Gemeinsamer Einstieg für das
+        //ApplyChanges() der Instanz-Module und den "Read Componentes"-Button. Die Antwort ist paginiert
+        //(die Seitengröße bestimmt das Gerät), Folgeseiten werden in ReceiveData() per
+        //RegisterOnceTimer() angefordert.
+        //
+        //Verifiziert (Feldnamen/Ident-Stabilität, live): pm1, alle dynamischen Typen (boolean/number/
+        //enum/text/presencezone), Shelly Presence G4, Shelly 1 Gen3, Pro RGBWW PM, Smart WaterValve (XT1),
+        //BLU TRV (blutrv:201), per API-Doku für cover/em/temperature/humidity. Bei einem bisher
+        //unbekannten Komponententyp vor breiterem Einsatz einmal live gegenprüfen.
+        public function requestComponentsStatus()
         {
-            //Neue Abfrage: Seiten-Akkumulator zurücksetzen und bei offset=0 starten. Die Fortsetzung
-            //(weitere Seiten nachladen, falls nötig) passiert in ReceiveData().
             $this->SetBuffer('componentsPageAccumulator', json_encode([]));
             $this->SetBuffer('componentsPageCount', '0');
             $this->requestComponentsPage(0);
         }
 
-        //Öffentlicher Einstiegspunkt für den per RegisterOnceTimer() registrierten Timer (siehe
-        //ReceiveData()) - läuft außerhalb des ReceiveData()-Aufruf-Stacks, liest den zu ladenden
-        //Offset aus dem Buffer.
+        //Öffentlicher Einstiegspunkt für den per RegisterOnceTimer() registrierten Timer - läuft
+        //außerhalb des ReceiveData()-Aufruf-Stacks, liest den zu ladenden Offset aus dem Buffer.
         public function RunNextComponentsPageAsync()
         {
             $offset = (int) $this->GetBuffer('componentsNextPageOffset');
             $this->requestComponentsPage($offset);
         }
 
-        //Fragt eine einzelne Seite von Shelly.GetComponents ab. dynamic_only reduziert die Ergebnisse
-        //von vornherein auf BLU TRVs/Boolean/Number/Enum/Text/presencezone/etc. (weniger Daten,
-        //meist reicht eine Seite) - trotzdem kann theoretisch mehr als eine Seite nötig sein, deshalb
-        //unterstützt ReceiveData() das Nachladen über $offset.
         private function requestComponentsPage($offset)
         {
             $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
-
             $Payload['id'] = 1;
             $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponents';
             $Payload['method'] = 'Shelly.GetComponents';
-            $Payload['params'] = ['dynamic_only' => true, 'offset' => $offset];
-            $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
-        }
-
-        // ############################################################
-        // ### Status-Ersatz GetStatus -> GetComponents - Migration    ###
-        // ### abgeschlossen. requestComponentsStatus() ist der         ###
-        // ### gemeinsame Einstiegspunkt: entscheidet anhand der        ###
-        // ### Property 'UseGetComponentsForStatus' zwischen            ###
-        // ### getComponentsViaStatus() (Shelly.GetStatus, Fallback/    ###
-        // ### Opt-out) und getComponentsViaGetComponents()             ###
-        // ### (Shelly.GetComponents mit "include":["status"], jetzt    ###
-        // ### Standard) - genutzt von ApplyChanges() UND dem manuellen ###
-        // ### "Read Componentes"-Button, damit beide dieselbe          ###
-        // ### Einstellung respektieren.                                ###
-        // ###                                                          ###
-        // ### Feldnamen-Konsistenz (Ident-Stabilität) verifiziert:     ###
-        // ### live für pm1, alle dynamischen Typen (boolean/number/    ###
-        // ### enum/text/presencezone), Shelly Presence G4, Shelly 1    ###
-        // ### Gen3, Shelly Pro RGBWW PM sowie eine Smart WaterValve     ###
-        // ### (XT1); per offizieller API-Doku für cover/em/temperature/###
-        // ### humidity. Bei einem bisher unbekannten Komponententyp    ###
-        // ### vor breiterem Einsatz einmal live gegenprüfen (siehe     ###
-        // ### Chat-Verlauf für die Vorgehensweise per curl).           ###
-        // ###                                                          ###
-        // ### Mehrseiten-Pagination läuft über RegisterOnceTimer()     ###
-        // ### entkoppelt (siehe requestComponentsPage() oben) - ein    ###
-        // ### direkter Folge-Request aus ReceiveData() heraus hat live ###
-        // ### mehrfach den Produktiv-Broker/Symcon lahmgelegt.         ###
-        // ############################################################
-        public function requestComponentsStatus()
-        {
-            if ($this->ReadPropertyBoolean('UseGetComponentsForStatus')) {
-                $this->getComponentsViaGetComponents();
-            } else {
-                $this->getComponentsViaStatus();
-            }
-        }
-        // ### ENDE TEST / EXPERIMENTELL ###
-
-        public function getComponentsViaStatus()
-        {
-            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
-
-            $Payload['id'] = 1;
-            $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponentsViaStatus';
-            $Payload['method'] = 'Shelly.GetStatus';
-            $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
-        }
-
-        // ############################################################
-        // ### TEST / EXPERIMENTELL - Schritt 4 der Migration          ###
-        // ### (siehe TODO/ROADMAP oben). Ersatz für                    ###
-        // ### getComponentsViaStatus(), Opt-in über die Property       ###
-        // ### 'UseGetComponentsForStatus' (siehe ApplyChanges()).      ###
-        // ### Fragt ALLE Komponenten via Shelly.GetComponents ab (mit  ###
-        // ### "include":["status"], ohne dynamic_only), Pagination     ###
-        // ### über RegisterOnceTimer() entkoppelt (siehe ReceiveData()-###
-        // ### Handler für getComponentsViaGetComponents/rpc).          ###
-        // ############################################################
-        public function getComponentsViaGetComponents()
-        {
-            $this->SetBuffer('statusViaComponentsAccumulator', json_encode([]));
-            $this->SetBuffer('statusViaComponentsPageCount', '0');
-            $this->requestGetComponentsViaGetComponentsPage(0);
-        }
-
-        //Öffentlicher Einstiegspunkt für den per RegisterOnceTimer() registrierten Timer - läuft
-        //außerhalb des ReceiveData()-Aufruf-Stacks, liest den zu ladenden Offset aus dem Buffer.
-        public function RunNextGetComponentsViaGetComponentsPageAsync()
-        {
-            $offset = (int) $this->GetBuffer('statusViaComponentsNextOffset');
-            $this->requestGetComponentsViaGetComponentsPage($offset);
-        }
-
-        private function requestGetComponentsViaGetComponentsPage($offset)
-        {
-            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
-            $Payload['id'] = 1;
-            $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponentsViaGetComponents';
-            $Payload['method'] = 'Shelly.GetComponents';
             //"config" zusätzlich zu "status": liefert u.a. den vom Nutzer auf dem Gerät vergebenen
-            //Namen pro Kanal (z.B. "Waschmaschine" bei switch:0) - siehe getComponentConfigs()/
-            //getPhysicalComponentName()/getDynamicComponentMetadata().
+            //Namen pro Kanal (z.B. "Waschmaschine" bei switch:0), bei dynamischen Komponenten Optionen/
+            //Min/Max - siehe getComponentConfigs()/getPhysicalComponentName()/getDynamicComponentMetadata().
             $Payload['params'] = ['include' => ['status', 'config'], 'offset' => $offset];
             $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
         }
-        // ### ENDE TEST / EXPERIMENTELL ###############################
 
         public function callRPCFunction($method, $params)
         {
@@ -485,7 +302,6 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 }
             }
         }
-                    $dynamicEnumOptions = null;
 
         private function parsePayloadIntoVariables($Payload)
         {
@@ -577,9 +393,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         // ### Liefert den vom Nutzer auf dem Gerät hinterlegten     ###
         // ### Konfigurations-Eintrag (u.a. "name", bei Enum         ###
         // ### "options") für z.B. component='boolean', channel=200 ###
-        // ### -> sucht "boolean:200" im per Shelly.GetComponents    ###
-        // ### gepufferten Ergebnis (siehe                           ###
-        // ### getDynamicallyAddedComponents()). Liefert null, falls ###
+        // ### -> sucht "boolean:200" in 'componentConfigs' (volle   ###
+        // ### Config je Komponente aus Shelly.GetComponents, siehe  ###
+        // ### getComponentConfigs()). Liefert null, falls           ###
         // ### (noch) keine Metadaten vorliegen oder der Eintrag     ###
         // ### nicht existiert.                                      ###
         // ############################################################
@@ -597,54 +413,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             if (!in_array($component, self::$dynamicComponentTypes, true)) {
                 return null;
             }
-            $key = $component . ':' . $channel;
-            $metadata = json_decode($this->GetBuffer('dynamicComponentsMetadata'), true);
-            $result = is_array($metadata) ? ($metadata[$key] ?? null) : null;
-
-                    //Optionen der dynamischen Enum-Komponente (siehe oben) je nach endgültiger Darstellung:
-                    //- ENUMERATION kennt pro Option laut Symcon-Doku nur Value/Caption/IconActive/IconValue/
-                    //  Color - alles andere meldet Symcon als "unknown sub-parameters".
-                    //- VALUE_PRESENTATION (schreibgeschützt) kennt ColorActive/ColorValue, und sein
-                    //  Formular verlangt zusätzlich bei JEDEM Eintrag auch ContentColorActive/
-                    //  ContentColorValue - fehlen die, gibt's "Undefined array key"-Warnungen und ein
-                    //  ungültiges Formular (live beobachtet bei der EV-Charger-Wallbox).
-                    if ($dynamicEnumOptions !== null) {
-                        $options = [];
-                        foreach ($dynamicEnumOptions as $option) {
-                            if ($presentation['PRESENTATION'] == VARIABLE_PRESENTATION_ENUMERATION) {
-                                $options[] = $option + [
-                                    'IconActive' => false,
-                                    'IconValue'  => '',
-                                    'Color'      => -1,
-                                ];
-                            } else {
-                                $options[] = $option + [
-                                    'IconActive'         => false,
-                                    'IconValue'          => '',
-                                    'ColorActive'        => false,
-                                    'ColorValue'         => -1,
-                                    'ContentColorActive' => false,
-                                    'ContentColorValue'  => -1,
-                                ];
-                            }
-                        }
-                        $presentation['OPTIONS'] = json_encode($options);
-                    }
-
-            //Ergänzung/Fallback: componentConfigs (aus getComponentsViaGetComponents(), Schritt 4)
-            //liefert dieselbe Config-Form auch für dynamische Komponenten, unabhängig von der
-            //separaten, dynamic_only-gefilterten getComponents()-Antwort oben. Falls die noch nicht da
-            //ist oder einzelne Felder fehlen, von dort auffüllen (array_merge: $result gewinnt bei
-            //Überschneidung, die authentische dynamic_only-Antwort bleibt also maßgeblich, sobald sie
-            //da ist). Vermeidet die Race Condition zwischen den beiden unabhängigen Anfragen (live
-            //beobachtet: "Boolean 200" statt "Power supply", weil die dynamic_only-Antwort fehlte).
             $configs = json_decode($this->GetBuffer('componentConfigs'), true);
-            $fallback = is_array($configs) ? ($configs[$key] ?? null) : null;
-            if (is_array($fallback)) {
-                $result = $result === null ? $fallback : array_merge($fallback, $result);
-            }
-
-            return $result;
+            $entry = is_array($configs) ? ($configs[$component . ':' . $channel] ?? null) : null;
+            return is_array($entry) ? $entry : null;
         }
 
         // ### TEST / EXPERIMENTELL - Gerätename als Präfix für physische Komponenten ###
@@ -656,8 +427,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         // Komponenten alle Unterfelder gleich benennen (der pm1-Namenskollisions-Bug von früher in der
         // Session) - das Präfix behält die Unterscheidung (Active power/Voltage/...) bei gleichzeitiger
         // Zuordnung zum richtigen Gerät/Kanal. 'object' und die dynamischen Typen sind ausgenommen (die
-        // haben ihre eigene, passendere Namenslogik). Nur mit dem GetComponents-Status-Pfad verfügbar -
-        // Shelly.GetStatus liefert kein "config"/keine Namen.
+        // haben ihre eigene, passendere Namenslogik). Der Name stammt aus 'componentConfigs'.
         private function getPhysicalComponentName($component, $channel)
         {
             if (in_array($component, self::$dynamicComponentTypes, true) || $component == 'object') {
@@ -715,6 +485,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     }
                     $presentation = $tmpComponent['presentation'];
                     $isWritable = true;
+                    $dynamicEnumOptions = null;
 
                     // ### TEST / EXPERIMENTELL - dynamisch angelegte Komponenten: Name/Optionen/Min-Max-Einheit/Schreibschutz vom Gerät übernehmen ###
                     $componentMetadata = $this->getDynamicComponentMetadata($base, $variable['Channel']);
@@ -828,6 +599,36 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                     $writeOnlyPresentations = [VARIABLE_PRESENTATION_SLIDER, VARIABLE_PRESENTATION_SWITCH, VARIABLE_PRESENTATION_ENUMERATION, VARIABLE_PRESENTATION_VALUE_INPUT];
                     if (!$isWritable && in_array($presentation['PRESENTATION'], $writeOnlyPresentations, true)) {
                         $presentation['PRESENTATION'] = VARIABLE_PRESENTATION_VALUE_PRESENTATION;
+                    }
+
+                    //Optionen der dynamischen Enum-Komponente (siehe oben) je nach endgültiger Darstellung:
+                    //- ENUMERATION kennt pro Option laut Symcon-Doku nur Value/Caption/IconActive/IconValue/
+                    //  Color - alles andere meldet Symcon als "unknown sub-parameters".
+                    //- VALUE_PRESENTATION (schreibgeschützt) kennt ColorActive/ColorValue, und sein
+                    //  Formular verlangt zusätzlich bei JEDEM Eintrag auch ContentColorActive/
+                    //  ContentColorValue - fehlen die, gibt's "Undefined array key"-Warnungen und ein
+                    //  ungültiges Formular (live beobachtet bei der EV-Charger-Wallbox).
+                    if ($dynamicEnumOptions !== null) {
+                        $options = [];
+                        foreach ($dynamicEnumOptions as $option) {
+                            if ($presentation['PRESENTATION'] == VARIABLE_PRESENTATION_ENUMERATION) {
+                                $options[] = $option + [
+                                    'IconActive' => false,
+                                    'IconValue'  => '',
+                                    'Color'      => -1,
+                                ];
+                            } else {
+                                $options[] = $option + [
+                                    'IconActive'         => false,
+                                    'IconValue'          => '',
+                                    'ColorActive'        => false,
+                                    'ColorValue'         => -1,
+                                    'ContentColorActive' => false,
+                                    'ContentColorValue'  => -1,
+                                ];
+                            }
+                        }
+                        $presentation['OPTIONS'] = json_encode($options);
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###
 
