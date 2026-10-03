@@ -83,11 +83,49 @@ trait ComponentDefinitionHelper
         return $value;
     }
 
+    //Liefert die Pfade der Definitionen, die mit 'alwaysCreate' => true markiert sind, für jeden Komponenten-Key,
+    //der in $leafPaths vorkommt (z.B. "cury:0.slots.left.on"). Damit werden Variablen auch dann angelegt,
+    //wenn das Gerät das Feld gerade nicht liefert (z.B. leeres Fach: "left": null). Nur markierte Blätter -
+    //sonst entstünden Variablen für Felder, die ein Gerät nie meldet.
+    protected function getAlwaysCreatedLeafPaths(array $leafPaths)
+    {
+        $keys = [];
+        foreach ($leafPaths as $path) {
+            $keys[explode('.', $path)[0]] = true;
+        }
+        $result = [];
+        foreach (array_keys($keys) as $key) {
+            $base = explode(':', $key)[0];
+            if (isset(self::$components[$base]) && is_array(self::$components[$base])) {
+                $this->collectAlwaysCreatedLeafPaths(self::$components[$base], $key, $result);
+            }
+        }
+        return $result;
+    }
+
+    private function collectAlwaysCreatedLeafPaths(array $node, string $path, array &$result)
+    {
+        foreach ($node as $name => $child) {
+            if (!is_array($child)) {
+                continue;
+            }
+            if (array_key_exists('type', $child)) {
+                //Blatt-Definition einer Variable
+                if (!empty($child['alwaysCreate'])) {
+                    $result[] = $path . '.' . $name;
+                }
+            } else {
+                //Zwischenelement der Definition (z.B. slots, left, vial) - weiter absteigen
+                $this->collectAlwaysCreatedLeafPaths($child, $path . '.' . $name, $result);
+            }
+        }
+    }
+
     protected function convertIdentToKeyPath($input)
     {
         $number = null;
         //Ausnahmen: Bei dem der Unterstrich nicht gegen einen Punkt ersetzt werden darf
-        $exceptions = ['current_pos', 'target_C', 'current_C'];
+        $exceptions = ['current_pos', 'target_C', 'current_C', 'away_mode'];
 
         foreach ($exceptions as $ending) {
             // Prüfen, ob die Endung im String vorkommt

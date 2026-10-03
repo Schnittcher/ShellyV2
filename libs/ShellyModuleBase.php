@@ -106,7 +106,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $keys = array_keys($tmpComponents['action']['params']);
             $tmpComponents['action']['params'][$keys[0]] = $IdentKeyPath[1];
 
-            if (count($keys) > 1) {
+            //Bei 'list'-Aktionen steckt der Wert schon im Methodennamen (z.B. "Cury.Boost") - weitere feste
+            //Parameter (z.B. "slot") dürfen dann nicht mit dem Wert überschrieben werden.
+            if (count($keys) > 1 && !array_key_exists('list', $tmpComponents['action'])) {
                 //Ausnahme für BLUTRV - viel mehr Parameter beim RPC Aufruf
                 if ($IdentKeyPath[0] == 'blutrv.target_C') {
                     $tmpComponents['action']['params']['params']['target_C'] = $Value;
@@ -708,6 +710,14 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             //Immer die Event Komponenten hinzufügen!
             array_push($allComponentsFromShelly, 'events:0.component', 'events:0.event');
 
+            //Mit 'alwaysCreate' markierte Definitionen auch anlegen, wenn die Antwort das Feld nicht enthält
+            //(z.B. Cury mit leerem Fach: "left": null) - siehe getAlwaysCreatedLeafPaths().
+            foreach ($this->getAlwaysCreatedLeafPaths($allComponentsFromShelly) as $path) {
+                if (!in_array($path, $allComponentsFromShelly, true)) {
+                    $allComponentsFromShelly[] = $path;
+                }
+            }
+
             //Bei "object" ist die Zahl (z.B. "200") die interne Shelly-Komponenten-ID, kein echter
             //Kanal wie bei switch:0/switch:1 - deshalb nur anhängen, wenn tatsächlich MEHRERE
             //object-Komponenten auf demselben Gerät existieren.
@@ -731,7 +741,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                 }
 
                 $tmpComponent = $this->getValueByKeyPath($componentsFromShellyResult['clean']);
-                if ($tmpComponent != null) {
+                //Nur echte Variablendefinitionen (mit 'type'): Zeigt der Pfad auf ein Zwischenelement der
+                //Definition (z.B. cury.slots.left bei leerem Fach, Wert null), gibt es keine Variable dazu.
+                if (is_array($tmpComponent) && array_key_exists('type', $tmpComponent)) {
                     $name = $tmpComponent['name'];
                     //Bei "object" ist die Zahl (z.B. "200") die interne Shelly-Komponenten-ID, kein
                     //echter Kanal wie bei switch:0/switch:1 - deshalb hier ausgenommen (sonst z.B.

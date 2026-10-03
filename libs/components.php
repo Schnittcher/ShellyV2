@@ -1357,6 +1357,269 @@ trait Components
                 ],
             ],
         ],
+        //Cury (Shelly Cury, Duftspender): Felder laut Shelly-API-Doku (cury:N). Die Fächer "slots.left/right"
+        //sind null, solange kein Fläschchen steckt - die Blätter werden deshalb in createVariableListForForm()
+        //fest ergänzt. Der "slot" steht bei den Aktionen hinter dem Wertparameter, weil RequestAction() den
+        //zweiten Parameter mit dem Wert überschreibt. Der Boost läuft als Extra-Variable mit 'list' (Methode
+        //"Cury." + Boost/StopBoost). Nicht abgebildet: boost/timer (Zeitstempel), Fläschchenfarbe, vial_fault
+        //(laut Doku uneinheitlich verortet; Fehler stehen auch in "errors").
+        'cury' => [
+            'mode' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Room mode',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": "hall",
+                            "Caption": "Hall",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        },
+                        {
+                            "Value": "bedroom",
+                            "Caption": "Bedroom",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        },
+                        {
+                            "Value": "living_room",
+                            "Caption": "Living room",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        },
+                        {
+                            "Value": "lavatory_room",
+                            "Caption": "Lavatory",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        },
+                        {
+                            "Value": "reception",
+                            "Caption": "Reception",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        },
+                        {
+                            "Value": "workplace",
+                            "Caption": "Workplace",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        }
+                    ]',
+                ],
+                'action'        => [
+                    'method' => 'Cury.SetMode',
+                    'params' => ['id' => '', 'mode' => ''
+                    ]
+                ],
+            ],
+            'away_mode' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Away mode',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'Cury.SetAwayMode',
+                    'params' => ['id' => '', 'on' => ''
+                    ]
+                ],
+            ],
+            'slots' => [
+                'left' => [
+                    'on' => [
+                        'type'         => VARIABLETYPE_BOOLEAN,
+                        'name'         => 'Left slot state',
+                        'alwaysCreate' => true,
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                        ],
+                        'action'        => [
+                            'method' => 'Cury.Set',
+                            'params' => ['id' => '', 'on' => '', 'slot' => 'left'
+                            ]
+                        ],
+                        'actionWithExtraVariable' => [
+                            'type'         => VARIABLETYPE_STRING,
+                            'name'         => 'Left slot boost',
+                            'presentation' => [
+                                'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                                'LAYOUT'       => 1,
+                                'OPTIONS'      => '[
+                                    {
+                                        "Value": "Boost",
+                                        "Caption": "Boost",
+                                        "IconActive": false,
+                                        "IconValue": "",
+                                        "Color": 65280
+                                    },
+                                    {
+                                        "Value": "StopBoost",
+                                        "Caption": "Stop boost",
+                                        "IconActive": false,
+                                        "IconValue": "",
+                                        "Color": 16711680
+                                    }
+                                ]',
+                            ],
+                            'action'        => [
+                                'list'   => true,
+                                'method' => 'Cury.',
+                                'params' => ['id' => '', 'slot' => 'left'
+                                ]
+                            ],
+                        ],
+                    ],
+                    'intensity' => [
+                        'type'         => VARIABLETYPE_INTEGER,
+                        'name'         => 'Left slot intensity',
+                        'alwaysCreate' => true,
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                            'MIN'          => 0,
+                            'MAX'          => 100,
+                            'SUFFIX'       => ' %',
+                            'USAGE_TYPE'   => 5
+                        ],
+                        'action'        => [
+                            'method' => 'Cury.Set',
+                            'params' => ['id' => '', 'intensity' => '', 'slot' => 'left'
+                            ]
+                        ],
+                    ],
+                    'vial' => [
+                        'level' => [
+                            'type'         => VARIABLETYPE_INTEGER,
+                            'name'         => 'Left vial level',
+                            'alwaysCreate' => true,
+                            'presentation' => [
+                                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                                'SUFFIX'       => ' %'
+                            ],
+                        ],
+                        'name' => [
+                            'type'         => VARIABLETYPE_STRING,
+                            'name'         => 'Left vial name',
+                            'alwaysCreate' => true,
+                            'presentation' => [
+                                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            ],
+                        ],
+                        'serial' => [
+                            'type'         => VARIABLETYPE_STRING,
+                            'name'         => 'Left vial serial',
+                            'alwaysCreate' => true,
+                            'presentation' => [
+                                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            ],
+                        ],
+                    ],
+                ],
+                'right' => [
+                    'on' => [
+                        'type'         => VARIABLETYPE_BOOLEAN,
+                        'name'         => 'Right slot state',
+                        'alwaysCreate' => true,
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                        ],
+                        'action'        => [
+                            'method' => 'Cury.Set',
+                            'params' => ['id' => '', 'on' => '', 'slot' => 'right'
+                            ]
+                        ],
+                        'actionWithExtraVariable' => [
+                            'type'         => VARIABLETYPE_STRING,
+                            'name'         => 'Right slot boost',
+                            'presentation' => [
+                                'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                                'LAYOUT'       => 1,
+                                'OPTIONS'      => '[
+                                    {
+                                        "Value": "Boost",
+                                        "Caption": "Boost",
+                                        "IconActive": false,
+                                        "IconValue": "",
+                                        "Color": 65280
+                                    },
+                                    {
+                                        "Value": "StopBoost",
+                                        "Caption": "Stop boost",
+                                        "IconActive": false,
+                                        "IconValue": "",
+                                        "Color": 16711680
+                                    }
+                                ]',
+                            ],
+                            'action'        => [
+                                'list'   => true,
+                                'method' => 'Cury.',
+                                'params' => ['id' => '', 'slot' => 'right'
+                                ]
+                            ],
+                        ],
+                    ],
+                    'intensity' => [
+                        'type'         => VARIABLETYPE_INTEGER,
+                        'name'         => 'Right slot intensity',
+                        'alwaysCreate' => true,
+                        'presentation' => [
+                            'PRESENTATION' => VARIABLE_PRESENTATION_SLIDER,
+                            'MIN'          => 0,
+                            'MAX'          => 100,
+                            'SUFFIX'       => ' %',
+                            'USAGE_TYPE'   => 5
+                        ],
+                        'action'        => [
+                            'method' => 'Cury.Set',
+                            'params' => ['id' => '', 'intensity' => '', 'slot' => 'right'
+                            ]
+                        ],
+                    ],
+                    'vial' => [
+                        'level' => [
+                            'type'         => VARIABLETYPE_INTEGER,
+                            'name'         => 'Right vial level',
+                            'alwaysCreate' => true,
+                            'presentation' => [
+                                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                                'SUFFIX'       => ' %'
+                            ],
+                        ],
+                        'name' => [
+                            'type'         => VARIABLETYPE_STRING,
+                            'name'         => 'Right vial name',
+                            'alwaysCreate' => true,
+                            'presentation' => [
+                                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            ],
+                        ],
+                        'serial' => [
+                            'type'         => VARIABLETYPE_STRING,
+                            'name'         => 'Right vial serial',
+                            'alwaysCreate' => true,
+                            'presentation' => [
+                                'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'errors' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Errors',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
         'pm1' => [
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,
