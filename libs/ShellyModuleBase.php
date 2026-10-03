@@ -66,7 +66,21 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
             $this->SetReceiveDataFilter('.*' . $MQTTTopic . '.*');
             //Die Komponenten fragen die Instanz-Module (ShellyDevice/ShellyComponent) in ihrem
-            //ApplyChanges() per requestComponentsStatus() ab.
+            //ApplyChanges() per requestComponentsStatus() ab - aber nur, wenn dann schon ein Parent
+            //aktiv ist. Beim Anlegen einer Instanz (z.B. über den Configurator) ist das nicht der Fall:
+            //der Parent wird erst NACH dem ersten ApplyChanges() verbunden. Deshalb zusätzlich auf das
+            //Verbinden reagieren (siehe MessageSink()).
+            $this->RegisterMessage($this->InstanceID, FM_CONNECT);
+        }
+
+        public function MessageSink($TimeStamp, $SenderID, $Message, $Data)
+        {
+            parent::MessageSink($TimeStamp, $SenderID, $Message, $Data);
+            if ($Message == FM_CONNECT && $SenderID == $this->InstanceID) {
+                if ($this->ReadPropertyString('MQTTTopic') != '' && $this->HasActiveParent()) {
+                    $this->requestComponentsStatus();
+                }
+            }
         }
 
         public function RequestAction($Ident, $Value)
