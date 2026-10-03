@@ -125,6 +125,9 @@ trait ShellyModels
         'S3SN-0U12A' => [
             'Name'  => 'Shelly H&T Gen3',
         ],
+        'S3SN-0U53X' => [
+            'Name'  => 'The Pill by Shelly',
+        ],
         'SNPL-00110IT' => [
             'Name'  => 'Shelly Plus Plug IT',
         ],
