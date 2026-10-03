@@ -6,6 +6,7 @@ require_once __DIR__ . '/MQTTHelper.php';
 require_once __DIR__ . '/vendor/SymconModulHelper/DebugHelper.php';
 require_once __DIR__ . '/components.php';
 require_once __DIR__ . '/ComponentDefinitionHelper.php';
+require_once __DIR__ . '/CameraStream.php';
 
     class ShellyModuleBase extends IPSModule
     {
@@ -13,6 +14,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         use DebugHelper;
         use Components;
         use ComponentDefinitionHelper;
+        use CameraStream;
 
         public function Create()
         {
@@ -24,6 +26,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $this->RegisterPropertyString('MQTTTopic', '');
             $this->RegisterPropertyBoolean('DebugMissingIdents', false);
             $this->RegisterPropertyString('VariableList', '{}');
+            $this->registerCameraStreamProperties();
 
             $this->RegisterVariableBoolean('Reachable', $this->Translate('Reachable'), [
                 'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -106,6 +109,22 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
             $keys = array_keys($tmpComponents['action']['params']);
             $tmpComponents['action']['params'][$keys[0]] = $IdentKeyPath[1];
 
+            //Werte aus der Geräte-Config (Definition mit 'configPath', z.B. Kamera rtsp.enable): per SetConfig mit
+            //verschachtelter Config setzen und danach neu einlesen, damit die Variable den Gerätewert zeigt.
+            if (isset($tmpComponents['configPath'])) {
+                $config = [];
+                $reference = &$config;
+                foreach (explode('.', $tmpComponents['configPath']) as $part) {
+                    $reference[$part] = [];
+                    $reference = &$reference[$part];
+                }
+                $reference = $Value;
+                unset($reference);
+                $this->callRPCFunction($tmpComponents['action']['method'], ['id' => (int) $IdentKeyPath[1], 'config' => $config]);
+                $this->requestComponentsStatus();
+                return;
+            }
+
             //Bei 'list'-Aktionen steckt der Wert schon im Methodennamen (z.B. "Cury.Boost") - weitere feste
             //Parameter (z.B. "slot") dürfen dann nicht mit dem Wert überschrieben werden.
             if (count($keys) > 1 && !array_key_exists('list', $tmpComponents['action'])) {
@@ -183,11 +202,17 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             $this->SetBuffer('componentsPageCount', '0');
 
                             $statusDict = $this->getAllComponentsAsStatusDict(['components' => $statusAccumulated]);
-                            $this->SetBuffer('componentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
                             //Volle Config für ALLE Komponenten (auch physische wie switch/cover/em/pm1,
                             //nicht nur dynamische) - siehe getComponentConfigs()/getPhysicalComponentName()/
                             //Fallback in getDynamicComponentMetadata().
-                            $this->SetBuffer('componentConfigs', json_encode($this->getComponentConfigs(['components' => $statusAccumulated])));
+                            $componentConfigs = $this->getComponentConfigs(['components' => $statusAccumulated]);
+                            //IP-Adresse des Geräts (WLAN, sonst Ethernet) - z.B. für die RTSP-Adresse der Kamera.
+                            $deviceIP = $statusDict['wifi']['sta_ip'] ?? ($statusDict['eth']['ip'] ?? '');
+                            $this->SetBuffer('deviceIP', is_string($deviceIP) ? $deviceIP : '');
+                            //Werte aus der Geräte-Config (z.B. Kamera rtsp.enable) in den Status spiegeln.
+                            $statusDict = $this->mergeConfigBackedValues($statusDict, $componentConfigs);
+                            $this->SetBuffer('componentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
+                            $this->SetBuffer('componentConfigs', json_encode($componentConfigs));
                             $valuesToParse = $statusDict;
                             $componentsUpdated = true;
                         }
@@ -201,6 +226,9 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
 
                     $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
                     $this->registerComponentVariables();
+
+                    //Kamera: Stream-Objekte (RTSP) automatisch anlegen, sobald die IP-Adresse bekannt ist.
+                    $this->autoMaintainCameraStreams();
 
                     if ($valuesToParse != null) {
                         $this->parsePayloadIntoVariables($valuesToParse);
@@ -438,7 +466,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
         // (mehrere Unterwerte wie freq, aenergy.total, ...) der vom Nutzer vergebene Kanalname
         // fälschlich auf ALLE Unterwerte dieses Kanals übertragen, da Shelly.GetComponents für jede
         // Komponente einen "name" liefert.
-        private static $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone'];
+        private static $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone', 'camerazone'];
 
         private function getDynamicComponentMetadata($component, $channel)
         {
@@ -526,7 +554,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                             //presencezone hat pro Zone mehrere Felder (value/num_objects), aber nur
                             //EINEN Zonennamen - Namen kombinieren statt ersetzen, sonst heißen
                             //"Zone Presence" und "Objects in Zone" beide nur noch z.B. "Room".
-                            if ($base == 'presencezone') {
+                            if (in_array($base, ['presencezone', 'camerazone'], true)) {
                                 $name = $componentMetadata['name'] . ' (' . $this->Translate($tmpComponent['name']) . ')';
                             } else {
                                 //Translate() ist ein No-Op für Strings ohne passenden Locale-Eintrag
@@ -764,7 +792,7 @@ require_once __DIR__ . '/ComponentDefinitionHelper.php';
                         //presencezone hat pro Zone mehrere Felder (value/num_objects), aber nur
                         //EINEN Zonennamen - Namen kombinieren statt ersetzen, sonst heißen
                         //"Zone Presence" und "Objects in Zone" beide nur noch z.B. "Room".
-                        if ($componentsFromShellyResult['base'] == 'presencezone') {
+                        if (in_array($componentsFromShellyResult['base'], ['presencezone', 'camerazone'], true)) {
                             $name = $componentMetadata['name'] . ' (' . $this->Translate($tmpComponent['name']) . ')';
                         } else {
                             $name = $componentMetadata['name'];

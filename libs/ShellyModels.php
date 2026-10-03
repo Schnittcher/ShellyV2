@@ -128,6 +128,9 @@ trait ShellyModels
         'S3SN-0U53X' => [
             'Name'  => 'The Pill by Shelly',
         ],
+        'S1CM-0DXW00' => [
+            'Name'  => 'Shelly Camera',
+        ],
         'SNPL-00110IT' => [
             'Name'  => 'Shelly Plus Plug IT',
         ],

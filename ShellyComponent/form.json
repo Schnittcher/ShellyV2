@@ -85,6 +85,24 @@
             "values": [
                 {}
             ]
+        },
+        {
+            "type": "CheckBox",
+            "name": "AutoCreateStreams",
+            "caption": "Create stream objects automatically",
+            "visible": false
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "StreamUser",
+            "caption": "Stream user (only if device authentication is on)",
+            "visible": false
+        },
+        {
+            "type": "PasswordTextBox",
+            "name": "StreamPassword",
+            "caption": "Stream password",
+            "visible": false
         }
     ],
     "actions": [
@@ -92,6 +110,13 @@
             "type": "Button",
             "caption": "Read Componentes (get Variables)",
             "onClick": "SHY_requestComponentsStatus($id);"
+        },
+        {
+            "type": "Button",
+            "name": "CreateStreams",
+            "caption": "Update stream objects",
+            "onClick": "echo SHY_CreateCameraStreams($id);",
+            "visible": false
         },
         {
             "type": "TestCenter"

@@ -1620,6 +1620,334 @@ trait Components
                 ],
             ],
         ],
+        //Camera (Shelly Camera, Key camera:N): Status und Aktionen laut Shelly-API-Doku, am Gerät S1CM-0DXW00
+        //(Firmware 2.1.99) geprüft. Einträge mit 'configPath' kommen nicht aus dem Status, sondern aus der
+        //Geräte-Config (z.B. rtsp.enable): sie werden beim Einlesen in den Status gespiegelt
+        //(mergeConfigBackedValues()) und per Camera.SetConfig mit verschachtelter Config gesetzt
+        //(RequestAction()). Die Gruppennamen (rtsp, led, ...) sind frei gewählt und enthalten bewusst keinen
+        //Unterstrich, weil Idents an Unterstrichen zerlegt werden. 'recordings' (UUID als Schlüssel) wird nicht
+        //abgebildet. Die Schnappschuss-Aufnahme liefert nur eine media_id (Bild liegt in der Shelly-Cloud/auf der
+        //SD-Karte), der Live-Stream läuft über das Stream-Objekt der Instanz (siehe ShellyComponent).
+        'camera' => [
+            'arm' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Camera armed',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'Camera.Set',
+                    'params' => ['id' => '', 'arm' => ''
+                    ]
+                ],
+                'actionWithExtraVariable' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'Camera action',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                        'LAYOUT'       => 1,
+                        'OPTIONS'      => '[
+                            {
+                                "Value": "CaptureImage",
+                                "Caption": "Snapshot",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": -1
+                            },
+                            {
+                                "Value": "StartRecording",
+                                "Caption": "Start recording",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": 65280
+                            },
+                            {
+                                "Value": "StopRecording",
+                                "Caption": "Stop recording",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": 16711680
+                            }
+                        ]',
+                    ],
+                    'action'        => [
+                        'list'   => true,
+                        'method' => 'Camera.',
+                        'params' => ['id' => ''
+                        ]
+                    ],
+                ],
+            ],
+            'privacy' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Camera privacy',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                ],
+                'action'        => [
+                    'method' => 'Camera.Set',
+                    'params' => ['id' => '', 'privacy' => ''
+                    ]
+                ],
+            ],
+            'motion' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Camera motion',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": true,
+                            "Caption": "Motion",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": true,
+                            "ColorValue": 16753920,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        },
+                        {
+                            "Value": false,
+                            "Caption": "No motion",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": false,
+                            "ColorValue": -1,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        }
+                    ]',
+                ],
+            ],
+            'streamer' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Camera streamer',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'streams' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Camera streams',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Kein Statusfeld - nur zum Auslösen von Camera.PlaySound (Töne müssen am Gerät aktiviert sein und
+            //der Privatsphäre-Modus aus), deshalb 'alwaysCreate'.
+            'playsound' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Camera sound',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": "alert",
+                            "Caption": "Alert",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        },
+                        {
+                            "Value": "ding-dong",
+                            "Caption": "Ding-dong",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        },
+                        {
+                            "Value": "notification",
+                            "Caption": "Notification",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "Color": -1
+                        }
+                    ]',
+                ],
+                'action'        => [
+                    'method' => 'Camera.PlaySound',
+                    'params' => ['id' => '', 'sound' => ''
+                    ]
+                ],
+            ],
+            'errors' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Errors',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'rtsp' => [
+                'enable' => [
+                    'type'         => VARIABLETYPE_BOOLEAN,
+                    'name'         => 'Camera RTSP',
+                    'configPath'   => 'rtsp.enable',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                    ],
+                    'action'        => [
+                        'method' => 'Camera.SetConfig',
+                        'params' => ['id' => '', 'config' => ''
+                        ]
+                    ],
+                ],
+            ],
+            'led' => [
+                'enable' => [
+                    'type'         => VARIABLETYPE_BOOLEAN,
+                    'name'         => 'Camera LED',
+                    'configPath'   => 'led.enable',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                    ],
+                    'action'        => [
+                        'method' => 'Camera.SetConfig',
+                        'params' => ['id' => '', 'config' => ''
+                        ]
+                    ],
+                ],
+            ],
+            'sounds' => [
+                'enable' => [
+                    'type'         => VARIABLETYPE_BOOLEAN,
+                    'name'         => 'Camera sounds',
+                    'configPath'   => 'sounds.enable',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                    ],
+                    'action'        => [
+                        'method' => 'Camera.SetConfig',
+                        'params' => ['id' => '', 'config' => ''
+                        ]
+                    ],
+                ],
+            ],
+            'motionrecording' => [
+                'enable' => [
+                    'type'         => VARIABLETYPE_BOOLEAN,
+                    'name'         => 'Camera motion recording',
+                    'configPath'   => 'motion.recording.enable',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
+                    ],
+                    'action'        => [
+                        'method' => 'Camera.SetConfig',
+                        'params' => ['id' => '', 'config' => ''
+                        ]
+                    ],
+                ],
+            ],
+            'sensitivity' => [
+                'level' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'Camera motion sensitivity',
+                    'configPath'   => 'motion.sensitivity',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                        'OPTIONS'      => '[
+                            {
+                                "Value": "low",
+                                "Caption": "Low",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": -1
+                            },
+                            {
+                                "Value": "medium",
+                                "Caption": "Medium",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": -1
+                            },
+                            {
+                                "Value": "high",
+                                "Caption": "High",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": -1
+                            }
+                        ]',
+                    ],
+                    'action'        => [
+                        'method' => 'Camera.SetConfig',
+                        'params' => ['id' => '', 'config' => ''
+                        ]
+                    ],
+                ],
+            ],
+            'nightvision' => [
+                'mode' => [
+                    'type'         => VARIABLETYPE_STRING,
+                    'name'         => 'Camera night vision',
+                    'configPath'   => 'night_vision.mode',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_ENUMERATION,
+                        'OPTIONS'      => '[
+                            {
+                                "Value": "auto",
+                                "Caption": "Auto",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": -1
+                            },
+                            {
+                                "Value": "day",
+                                "Caption": "Day",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": -1
+                            },
+                            {
+                                "Value": "night",
+                                "Caption": "Night",
+                                "IconActive": false,
+                                "IconValue": "",
+                                "Color": -1
+                            }
+                        ]',
+                    ],
+                    'action'        => [
+                        'method' => 'Camera.SetConfig',
+                        'params' => ['id' => '', 'config' => ''
+                        ]
+                    ],
+                ],
+            ],
+        ],
+        //Kamerazone (camerazone:N, ab ID 200): Status "motion" gibt es nur bei Zonen vom Typ "motion". Der Zonenname
+        //aus der Config wird wie bei presencezone dem Variablennamen vorangestellt.
+        'camerazone' => [
+            'motion' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Zone motion',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": true,
+                            "Caption": "Motion",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": true,
+                            "ColorValue": 16753920,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        },
+                        {
+                            "Value": false,
+                            "Caption": "No motion",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": false,
+                            "ColorValue": -1,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        }
+                    ]',
+                ],
+            ],
+        ],
         'pm1' => [
             'voltage' => [
                 'type'         => VARIABLETYPE_FLOAT,

@@ -18,6 +18,9 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
             $Form = json_decode(file_get_contents(dirname($reflector->getFileName()) . '/form.json'), true);
             $Form['elements'][4]['values'] = json_decode($this->GetBuffer('variableList'), true);
 
+            //Stream-Felder und -Buttons nur bei Kameras anzeigen (siehe libs/CameraStream.php)
+            $Form = $this->applyCameraStreamFormVisibility($Form);
+
             return json_encode($Form);
         }
 

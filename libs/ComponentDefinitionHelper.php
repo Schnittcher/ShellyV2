@@ -121,6 +121,57 @@ trait ComponentDefinitionHelper
         }
     }
 
+    //Spiegelt Werte, die nicht im Status, sondern in der Geräte-Config stehen, in das Status-Dict (siehe
+    //'configPath' in components.php, z.B. camera rtsp.enable). Dadurch laufen sie durch dieselbe Pipeline wie
+    //alle anderen Werte (Variablenliste, Anlegen, SetValue). Der Wert landet an der Stelle der Definition
+    //(z.B. "camera:0" => ["rtsp" => ["enable" => true]]).
+    protected function mergeConfigBackedValues(array $statusDict, array $configs)
+    {
+        foreach (array_keys($statusDict) as $key) {
+            $base = explode(':', (string) $key)[0];
+            if (!isset(self::$components[$base]) || !is_array(self::$components[$base]) || !isset($configs[$key]) || !is_array($configs[$key])) {
+                continue;
+            }
+            $found = [];
+            $this->collectConfigBackedDefinitions(self::$components[$base], [], $found);
+            foreach ($found as [$definitionPath, $configPath]) {
+                $value = $this->getValueByKeyPathFromArray($configs[$key], $configPath);
+                if ($value === null) {
+                    continue;
+                }
+                if (!is_array($statusDict[$key])) {
+                    $statusDict[$key] = [];
+                }
+                $reference = &$statusDict[$key];
+                foreach ($definitionPath as $part) {
+                    if (!isset($reference[$part]) || !is_array($reference[$part])) {
+                        $reference[$part] = [];
+                    }
+                    $reference = &$reference[$part];
+                }
+                $reference = $value;
+                unset($reference);
+            }
+        }
+        return $statusDict;
+    }
+
+    private function collectConfigBackedDefinitions(array $node, array $path, array &$found)
+    {
+        foreach ($node as $name => $child) {
+            if (!is_array($child)) {
+                continue;
+            }
+            if (array_key_exists('type', $child)) {
+                if (isset($child['configPath'])) {
+                    $found[] = [array_merge($path, [$name]), $child['configPath']];
+                }
+            } else {
+                $this->collectConfigBackedDefinitions($child, array_merge($path, [$name]), $found);
+            }
+        }
+    }
+
     protected function convertIdentToKeyPath($input)
     {
         $number = null;
@@ -216,7 +267,7 @@ trait ComponentDefinitionHelper
     //   ]
     protected function getDynamicallyAddedComponents($Payload)
     {
-        $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone', 'object'];
+        $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone', 'camerazone', 'object'];
         $status = [];
         $config = [];
         if (isset($Payload['components'])) {
