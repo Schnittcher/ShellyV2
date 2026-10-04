@@ -97,7 +97,7 @@ trait ComponentDefinitionHelper
         foreach (array_keys($keys) as $key) {
             $base = explode(':', $key)[0];
             if (isset(self::$components[$base]) && is_array(self::$components[$base])) {
-                $this->collectAlwaysCreatedLeafPaths(self::$components[$base], $key, $result);
+                $result = array_merge($result, $this->collectAlwaysCreatedLeafPaths(self::$components[$base], $key));
             }
         }
         return $result;
@@ -115,7 +115,7 @@ trait ComponentDefinitionHelper
         foreach (array_keys($keys) as $key) {
             $base = explode(':', $key)[0];
             if (isset(self::$components[$base]) && is_array(self::$components[$base])) {
-                $this->collectAlwaysCreatedLeafPaths(self::$components[$base], $key, $result, 'resetWhenMissing');
+                $result = array_merge($result, $this->collectAlwaysCreatedLeafPaths(self::$components[$base], $key, 'resetWhenMissing'));
             }
         }
         return $result;
@@ -132,8 +132,7 @@ trait ComponentDefinitionHelper
             if (!isset(self::$components[$base]) || !is_array(self::$components[$base]) || !isset($configs[$key]) || !is_array($configs[$key])) {
                 continue;
             }
-            $found = [];
-            $this->collectConfigBackedDefinitions(self::$components[$base], [], $found);
+            $found = $this->collectConfigBackedDefinitions(self::$components[$base], []);
             foreach ($found as [$definitionPath, $configPath]) {
                 $value = $this->getValueByKeyPathFromArray($configs[$key], $configPath);
                 if ($value === null) {
@@ -317,8 +316,10 @@ trait ComponentDefinitionHelper
         return $configs;
     }
 
-    private function collectAlwaysCreatedLeafPaths(array $node, string $path, array &$result, string $flag = 'alwaysCreate')
+    //Sammelt die Pfade der Definitionen, die das Flag $flag gesetzt haben (Rückgabe: Liste der Pfade, z.B. "cury:0.slots.left.on").
+    private function collectAlwaysCreatedLeafPaths(array $node, string $path, string $flag = 'alwaysCreate')
     {
+        $result = [];
         foreach ($node as $name => $child) {
             if (!is_array($child)) {
                 continue;
@@ -330,13 +331,16 @@ trait ComponentDefinitionHelper
                 }
             } else {
                 //Zwischenelement der Definition (z.B. slots, left, vial) - weiter absteigen
-                $this->collectAlwaysCreatedLeafPaths($child, $path . '.' . $name, $result, $flag);
+                $result = array_merge($result, $this->collectAlwaysCreatedLeafPaths($child, $path . '.' . $name, $flag));
             }
         }
+        return $result;
     }
 
-    private function collectConfigBackedDefinitions(array $node, array $path, array &$found)
+    //Sammelt die Definitionen mit 'configPath' (Rückgabe: Liste aus [Pfad der Definition, Pfad in der Config]).
+    private function collectConfigBackedDefinitions(array $node, array $path)
     {
+        $found = [];
         foreach ($node as $name => $child) {
             if (!is_array($child)) {
                 continue;
@@ -346,8 +350,9 @@ trait ComponentDefinitionHelper
                     $found[] = [array_merge($path, [$name]), $child['configPath']];
                 }
             } else {
-                $this->collectConfigBackedDefinitions($child, array_merge($path, [$name]), $found);
+                $found = array_merge($found, $this->collectConfigBackedDefinitions($child, array_merge($path, [$name])));
             }
         }
+        return $found;
     }
 }
