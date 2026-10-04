@@ -7,6 +7,7 @@ require_once __DIR__ . '/DebugHelperStrict.php';
 require_once __DIR__ . '/components.php';
 require_once __DIR__ . '/ComponentDefinitionHelper.php';
 require_once __DIR__ . '/CameraStream.php';
+require_once __DIR__ . '/BTHomeObjects.php';
 
     class ShellyModuleBase extends IPSModuleStrict
     {
@@ -15,6 +16,7 @@ require_once __DIR__ . '/CameraStream.php';
         use Components;
         use ComponentDefinitionHelper;
         use CameraStream;
+        use BTHomeObjects;
 
         public function Create(): void
         {
@@ -182,7 +184,11 @@ require_once __DIR__ . '/CameraStream.php';
                 //werden über RegisterOnceTimer() entkoppelt angefragt: SendDataToParent() direkt aus
                 //ReceiveData() heraus hat live mehrfach den Produktiv-Broker/Symcon lahmgelegt (siehe
                 //RunNextComponentsPageAsync()).
-                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/rpc', $Buffer['Topic'])) {
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getComponents/' . $this->InstanceID . '/rpc', $Buffer['Topic'])) {
+                    //Seiten ohne laufenden Abruf (verspätete Reste eines früheren Abrufs) verwerfen.
+                    if ((float) $this->GetBuffer('componentsRunStarted') <= 0) {
+                        return '';
+                    }
                     if (array_key_exists('result', $Payload) && array_key_exists('components', $Payload['result'])) {
                         $statusAccumulated = json_decode($this->GetBuffer('componentsPageAccumulator'), true) ?: [];
                         $statusAccumulated = array_merge($statusAccumulated, $Payload['result']['components']);
@@ -208,6 +214,7 @@ require_once __DIR__ . '/CameraStream.php';
                             }
                             $this->SetBuffer('componentsPageAccumulator', json_encode([]));
                             $this->SetBuffer('componentsPageCount', '0');
+                            $this->SetBuffer('componentsRunStarted', '0');
 
                             $statusDict = $this->getAllComponentsAsStatusDict(['components' => $statusAccumulated]);
                             //Volle Config für ALLE Komponenten (auch physische wie switch/cover/em/pm1,
@@ -221,9 +228,22 @@ require_once __DIR__ . '/CameraStream.php';
                             $statusDict = $this->mergeConfigBackedValues($statusDict, $componentConfigs);
                             $this->SetBuffer('componentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
                             $this->SetBuffer('componentConfigs', json_encode($componentConfigs));
+                            //BTHome: Typ (Zahl/Boolean/Text) der Sensorwerte aus dem Status merken (siehe BTHomeObjects).
+                            $this->SetBuffer('bthomeValueTypes', json_encode($this->collectBTHomeValueTypes($statusDict)));
+                            $this->SetBuffer('bthomeDeviceModels', json_encode($this->collectBTHomeDeviceModels($statusAccumulated)));
                             $valuesToParse = $statusDict;
                             $componentsUpdated = true;
                         }
+                    }
+                }
+                //Antwort auf BTHome.GetObjectInfos (Name/Typ/Einheit der Sensor-Objekte, siehe RequestBTHomeObjectInfos()):
+                //Variablen mit den echten Angaben neu anlegen bzw. aktualisieren.
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getObjectInfos/' . $this->InstanceID . '/rpc', $Buffer['Topic'])) {
+                    if ($this->storeBTHomeObjectInfos($Payload)) {
+                        //Die Variablen sind meist schon mit Rückfall-Namen angelegt - umbenennen, sofern der Nutzer den
+                        //Namen nicht selbst geändert hat (MaintainVariable() setzt den Namen nur beim Anlegen).
+                        $this->syncBTHomeVariableNames();
+                        $this->rebuildVariables();
                     }
                 }
                 if ($componentsUpdated) {
@@ -237,6 +257,12 @@ require_once __DIR__ . '/CameraStream.php';
 
                     //Kamera: Stream-Objekte (RTSP) automatisch anlegen, sobald die IP-Adresse bekannt ist.
                     $this->autoMaintainCameraStreams();
+
+                    //BTHome: Name/Typ/Einheit der Messwerte beim Gerät erfragen - entkoppelt per Timer, weil
+                    //SendDataToParent() direkt aus ReceiveData() heraus den Datenfluss blockieren kann.
+                    if (count(json_decode($this->GetBuffer('bthomeValueTypes'), true) ?: []) > 0) {
+                        $this->RegisterOnceTimer('BTHomeObjectInfos', 'SHY_RequestBTHomeObjectInfos($_IPS["TARGET"]);');
+                    }
 
                     if ($valuesToParse != null) {
                         $this->parsePayloadIntoVariables($valuesToParse);
@@ -256,6 +282,12 @@ require_once __DIR__ . '/CameraStream.php';
             if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/events/rpc', $Buffer['Topic'])) {
                 if (array_key_exists('params', $Payload)) {
                     $this->parsePayloadIntoVariables($Payload['params']);
+                    //BLU-Taster: Tastendrücke kommen als Ereignis (NotifyEvent), nicht als Status - siehe BTHomeObjects.
+                    foreach (is_array($Payload['params']['events'] ?? null) ? $Payload['params']['events'] : [] as $event) {
+                        if (is_array($event)) {
+                            $this->setBTHomeButtonEvent($event);
+                        }
+                    }
                 }
             }
             return '';
@@ -271,8 +303,28 @@ require_once __DIR__ . '/CameraStream.php';
         //enum/text/presencezone), Shelly Presence G4, Shelly 1 Gen3, Pro RGBWW PM, Smart WaterValve (XT1),
         //BLU TRV (blutrv:201), per API-Doku für cover/em/temperature/humidity. Bei einem bisher
         //unbekannten Komponententyp vor breiterem Einsatz einmal live gegenprüfen.
+        //Legt die Variablen aus den bereits gespeicherten Komponentendaten neu an (ohne neue Abfrage beim Gerät) -
+        //z.B. wenn nachträglich Zusatzinformationen eingetroffen sind (BTHome.GetObjectInfos).
+        private function rebuildVariables(): void
+        {
+            $allComponentsFromShelly = json_decode($this->GetBuffer('componentsList'), true) ?: [];
+            $propertyChannel = @$this->ReadPropertyInteger('Channel');
+            $propertyComponent = @$this->ReadPropertyString('Component');
+            $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
+            $this->registerComponentVariables();
+            $this->ReloadForm();
+        }
+
         public function requestComponentsStatus(): void
         {
+            //Läuft bereits ein Abruf (z.B. aus ApplyChanges() und gleichzeitig aus dem Verbinden), wird kein zweiter gestartet:
+            //zwei parallele Abrufe teilen sich Accumulator und Seitenzähler, ein verspäteter Rest des einen überschrieb sonst das
+            //fertige Ergebnis des anderen (z.B. mit nur 1 statt 25 Komponenten). Nach 15 s gilt ein Abruf als gescheitert.
+            $started = (float) $this->GetBuffer('componentsRunStarted');
+            if ($started > 0 && (microtime(true) - $started) < 15) {
+                return;
+            }
+            $this->SetBuffer('componentsRunStarted', (string) microtime(true));
             $this->SetBuffer('componentsPageAccumulator', json_encode([]));
             $this->SetBuffer('componentsPageCount', '0');
             $this->requestComponentsPage(0);
@@ -290,7 +342,9 @@ require_once __DIR__ . '/CameraStream.php';
         {
             $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
             $Payload['id'] = 1;
-            $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponents';
+            //Die Instanz-ID in der Quelle macht das Antwort-Topic pro Instanz eindeutig: mehrere Instanzen desselben Geräts
+            //(z.B. eine je Komponente) fragen sonst gleichzeitig dieselbe Quelle ab und vermischen die Seiten.
+            $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponents/' . $this->InstanceID;
             $Payload['method'] = 'Shelly.GetComponents';
             //"config" zusätzlich zu "status": liefert u.a. den vom Nutzer auf dem Gerät vergebenen
             //Namen pro Kanal (z.B. "Waschmaschine" bei switch:0), bei dynamischen Komponenten Optionen/
@@ -376,6 +430,10 @@ require_once __DIR__ . '/CameraStream.php';
                 //liefert). SetValue() würde daraus 0 bzw. "" machen und einen echten Messwert vortäuschen - die
                 //Variable behält dann lieber ihren letzten Wert.
                 if ($value === null) {
+                    continue;
+                }
+                //BLU-Taster ohne bisherigen Tastendruck melden als Zeitstempel einen Platzhalter weit in der Vergangenheit.
+                if ($componentsFromShellyResult['clean'] == 'bthomesensor.last_updated_ts' && is_numeric($value) && $value < 1000000000) {
                     continue;
                 }
                 //ggf. umrechnung druchführen
@@ -500,7 +558,7 @@ require_once __DIR__ . '/CameraStream.php';
         // haben ihre eigene, passendere Namenslogik). Der Name stammt aus 'componentConfigs'.
         private function getPhysicalComponentName($component, $channel)
         {
-            if (in_array($component, self::$dynamicComponentTypes, true) || $component == 'object') {
+            if (in_array($component, self::$dynamicComponentTypes, true) || $component == 'object' || $component == 'bthomesensor') {
                 return null;
             }
             $configs = json_decode($this->GetBuffer('componentConfigs'), true);
@@ -554,6 +612,19 @@ require_once __DIR__ . '/CameraStream.php';
                         }
                     }
                     $presentation = $tmpComponent['presentation'];
+                    $variableType = $tmpComponent['type'];
+                    //BTHome-Sensorwert: Typ, Name und Darstellung je nach Objekt (siehe libs/BTHomeObjects.php).
+                    if ($variable['CleanKeyPath'] == 'bthomesensor.value') {
+                        $sensorVariable = $this->getBTHomeSensorVariable('bthomesensor:' . $variable['Channel']);
+                        $variableType = $sensorVariable['type'];
+                        $presentation = $sensorVariable['presentation'];
+                        $name = $sensorVariable['name'];
+                    } elseif ($variable['CleanKeyPath'] == 'bthomedevice.button') {
+                        $presentation = $this->bthomeButtonPresentation();
+                    } elseif ($variable['CleanKeyPath'] == 'bthomesensor.last_updated_ts') {
+                        //Zeitstempel eines Sensors: Sensorname voranstellen statt der Kanalnummer
+                        $name = $this->getBTHomeSensorVariable('bthomesensor:' . $variable['Channel'])['name'] . ' - ' . $this->Translate($tmpComponent['name']);
+                    }
                     $isWritable = true;
                     $dynamicEnumOptions = null;
 
@@ -703,7 +774,12 @@ require_once __DIR__ . '/CameraStream.php';
                     // ### ENDE TEST / EXPERIMENTELL ###
 
                     //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
-                    $this->MaintainVariable($variable['Ident'], $name, $tmpComponent['type'], $presentation, 0, $variable['Selected']);
+                    $this->MaintainVariable($variable['Ident'], $name, $variableType, $presentation, 0, $variable['Selected']);
+                    //BTHome-Sensorvariablen: automatisch vergebenen Namen merken, damit er später (wenn die Objektinfos
+                    //eintreffen) nur umbenannt wird, solange der Nutzer ihn nicht geändert hat.
+                    if (strpos($variable['Ident'], 'bthomesensor_') === 0) {
+                        $this->rememberBTHomeAutoName($variable['Ident'], $name);
+                    }
                     //Wenn die Komponetene eine Aktion besitzt, wird EnableAction aufgerufen
                     if (array_key_exists('action', $tmpComponent) && $isWritable) {
                         $this->EnableAction($variable['Ident']);
@@ -747,6 +823,16 @@ require_once __DIR__ . '/CameraStream.php';
 
             //Immer die Event Komponenten hinzufügen!
             array_push($allComponentsFromShelly, 'events:0.component', 'events:0.event');
+
+            //BTHome: Tasten-Variable nur für BLU-Geräte, bei denen eine Taste bekannt ist (siehe bthomeDeviceShowsButton()).
+            foreach ($allComponentsFromShelly as $entry) {
+                if (preg_match('/^(bthomedevice:\d+)\./', $entry, $deviceMatch) && $this->bthomeDeviceShowsButton($deviceMatch[1])) {
+                    $buttonPath = $deviceMatch[1] . '.button';
+                    if (!in_array($buttonPath, $allComponentsFromShelly, true)) {
+                        $allComponentsFromShelly[] = $buttonPath;
+                    }
+                }
+            }
 
             //Mit 'alwaysCreate' markierte Definitionen auch anlegen, wenn die Antwort das Feld nicht enthält
             //(z.B. Cury mit leerem Fach: "left": null) - siehe getAlwaysCreatedLeafPaths().
@@ -810,6 +896,13 @@ require_once __DIR__ . '/CameraStream.php';
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###
 
+                    //BTHome-Sensorwert: Name wie bei der Variable (Gerät/MAC - Objektname)
+                    if ($componentsFromShellyResult['clean'] == 'bthomesensor.value') {
+                        $name = $this->getBTHomeSensorVariable('bthomesensor:' . $componentsFromShellyResult['number'])['name'];
+                    } elseif ($componentsFromShellyResult['clean'] == 'bthomesensor.last_updated_ts') {
+                        $name = $this->getBTHomeSensorVariable('bthomesensor:' . $componentsFromShellyResult['number'])['name'] . ' - ' . $this->Translate($tmpComponent['name']);
+                    }
+
                     // ### TEST / EXPERIMENTELL - Gerätename als Präfix für physische Komponenten ###
                     $physicalName = $this->getPhysicalComponentName($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
                     if ($physicalName != null) {
@@ -817,7 +910,25 @@ require_once __DIR__ . '/CameraStream.php';
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###
 
-                    if (($componentsFromShellyResult['base'] == $component && $componentsFromShellyResult['number'] == $channel) || $componentsFromShellyResult['base'] == $component && $componentsFromShellyResult['number'] == '' || $component == '' && $channel == '') {
+                    //BTHome: Taster-Sensoren (ohne Status-Wert) bekommen keine Variablen - der Tastendruck steht in der Variable
+                    //des BLU-Geräts (bthomedevice.button).
+                    if ($componentsFromShellyResult['base'] == 'bthomesensor' && $this->isBTHomeButtonSensorKey('bthomesensor:' . $componentsFromShellyResult['number'])) {
+                        continue;
+                    }
+
+                    //BTHome: Eine Instanz für ein BLU-Gerät (bthomedevice:N) enthält auch alle Sensoren (bthomesensor:M) mit
+                    //derselben MAC-Adresse und - bei einem Thermostat - die Variablen des blutrv (mit den Aktionen).
+                    $isSensorOfSelectedBTHomeDevice = $component == 'bthomedevice' && in_array($componentsFromShellyResult['base'], ['bthomesensor', 'blutrv'], true) && $this->bthomeComponentBelongsToDevice($componentsFromShellyResult['base'] . ':' . $componentsFromShellyResult['number'], 'bthomedevice:' . $channel);
+                    //RSSI und Batterie hat der Thermostat (blutrv) genauso wie das BLU-Gerät - nur einmal anlegen.
+                    if ($isSensorOfSelectedBTHomeDevice && in_array($componentsFromShellyResult['clean'], ['blutrv.rssi', 'blutrv.battery'], true)) {
+                        continue;
+                    }
+                    //Sensoren, die eine Variable des Geräts bzw. des Thermostats doppeln (Batterie, Ziel-/externe Temperatur).
+                    if ($isSensorOfSelectedBTHomeDevice && $componentsFromShellyResult['base'] == 'bthomesensor' && $this->bthomeSensorDuplicatesDeviceVariable('bthomesensor:' . $componentsFromShellyResult['number'], 'bthomedevice:' . $channel)) {
+                        continue;
+                    }
+
+                    if (($componentsFromShellyResult['base'] == $component && $componentsFromShellyResult['number'] == $channel) || $componentsFromShellyResult['base'] == $component && $componentsFromShellyResult['number'] == '' || $component == '' && $channel == '' || $isSensorOfSelectedBTHomeDevice) {
                         $variableList[] = [
                             'Name'                        => $this->Translate($name),
                             'Ident'                       => $componentsFromShellyResult['ident'],

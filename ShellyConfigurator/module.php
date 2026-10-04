@@ -208,6 +208,13 @@ class ShellyConfigurator extends IPSModuleStrict
                         //Enum/Text/...) mit anzeigen, z.B. "boolean:200 (Test)".
                         $dynamicComponentNames = $this->getDynamicallyAddedComponents(['components' => $dynamicComponentLists[$Shelly['ID']] ?? []])['config'];
 
+                        $bthomeDeviceKeys = [];
+                        foreach ($componentLists[$Shelly['ID']] ?? [] as $shellyComponent) {
+                            if (isset($shellyComponent['key']) && strpos($shellyComponent['key'], 'bthomedevice:') === 0) {
+                                $bthomeDeviceKeys[] = $shellyComponent['key'];
+                            }
+                        }
+
                         foreach ($componentLists[$Shelly['ID']] ?? [] as $shellyComponent) {
                             if (!isset($shellyComponent['key'])) {
                                 continue;
@@ -216,6 +223,12 @@ class ShellyConfigurator extends IPSModuleStrict
                             $cleanedPath = $this->cleanComponentPath($key);
                             $component = $cleanedPath['clean'];
                             if (!$this->componentDefinitionExists($component)) {
+                                continue;
+                            }
+                            //BTHome: Die Sensoren (bthomesensor) eines BLU-Geräts werden mit der Instanz des Geräts
+                            //(bthomedevice) angelegt - sie bekommen keine eigene Zeile, solange das Gerät in der Liste steht.
+                            //Der Thermostat (blutrv) behält seine eigene Zeile.
+                            if ($component == 'bthomesensor' && $this->bthomeSensorHasDeviceRow($key, $bthomeDeviceKeys, $dynamicComponentNames)) {
                                 continue;
                             }
                             $componentChannel = intval($cleanedPath['number']);
@@ -254,6 +267,22 @@ class ShellyConfigurator extends IPSModuleStrict
             $Form['actions'][0]['values'] = $Values;
         }
         return json_encode($Form);
+    }
+
+    //Gibt es zu diesem Sensor (bthomesensor:N) ein BLU-Gerät (bthomedevice:M) mit derselben MAC-Adresse (Config addr) in
+    //der Liste?
+    private function bthomeSensorHasDeviceRow(string $key, array $deviceKeys, array $dynamicConfigs)
+    {
+        $addr = (string) ($dynamicConfigs[$key]['addr'] ?? '');
+        if ($addr == '') {
+            return false;
+        }
+        foreach ($deviceKeys as $deviceKey) {
+            if (strcasecmp((string) ($dynamicConfigs[$deviceKey]['addr'] ?? ''), $addr) == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     //Sammelt für alle übergebenen Geräte die Komponenten per Shelly.GetComponents - und zwar zwei Listen

@@ -1131,7 +1131,8 @@ trait Components
         'blutrv' => [
             'current_C' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                'name'         => 'Current Temperature',
+                //Die am Thermostat hinterlegte externe Temperatur (TRV.SetExternalTemperature), nicht die gemessene.
+                'name'         => 'External temperature',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' °C'
@@ -2006,6 +2007,140 @@ trait Components
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     ],
+                ],
+            ],
+        ],
+        //BTHome (Shelly BLU-Geräte an einem Gateway): bthomedevice:2xx ist das BLU-Gerät, bthomesensor:2xx je ein
+        //Messwert. Alles nur lesend. Der Dienst-Status 'bthome' (z.B. bluetooth_disabled) ist bewusst NICHT definiert,
+        //weil er sonst bei jedem Gen3-Gerät mit Bluetooth als Variable erscheinen würde. Der Typ von
+        //'bthomesensor.value' (Zahl/Boolean/Text), sein Name und die Einheit werden zur Laufzeit bestimmt (siehe
+        //libs/BTHomeObjects.php); die Definition hier ist nur der Standard. Felder am echten BLU Gateway G3 geprüft
+        //(04.10.2026): Zeitstempel heißt last_updated_ts, value kommt schon umgerechnet (z.B. 22.1 °C).
+        'bthomedevice' => [
+            'rssi' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'RSSI',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' dBm',
+                ],
+            ],
+            'battery' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Battery',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' %',
+                ],
+            ],
+            'last_updated_ts' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Last update',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_DATE_TIME,
+                    'DATE'         => 1,
+                    'TIME'         => 2,
+                ],
+            ],
+            'paired' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Paired',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": true,
+                            "Caption": "Paired",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": false,
+                            "ColorValue": -1,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        },
+                        {
+                            "Value": false,
+                            "Caption": "Not paired",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": true,
+                            "ColorValue": 16711680,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        }
+                    ]',
+                ],
+            ],
+            'key' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Encryption key set',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": true,
+                            "Caption": "Yes",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": false,
+                            "ColorValue": -1,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        },
+                        {
+                            "Value": false,
+                            "Caption": "No",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": false,
+                            "ColorValue": -1,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        }
+                    ]',
+                ],
+            ],
+            //Letzter Tastendruck (single_push, double_push, triple_push, ...): kommt nur als Ereignis (NotifyEvent), nicht im
+            //Status. Nicht jedes BLU-Gerät hat eine Taste - die Variable wird nur für Geräte angelegt, bei denen man das erkennt,
+            //sonst beim ersten Tastendruck (siehe bthomeDeviceShowsButton() in libs/BTHomeObjects.php). Die Darstellung mit den
+            //übersetzten Tastendrücken setzt registerComponentVariables().
+            'button' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Button',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'fw_ver' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Firmware version',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'errors' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Errors',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+        ],
+        'bthomesensor' => [
+            'value' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'BTHome value',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'last_updated_ts' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Last update',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_DATE_TIME,
+                    'DATE'         => 1,
+                    'TIME'         => 2,
                 ],
             ],
         ],
