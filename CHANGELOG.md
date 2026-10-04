@@ -3,7 +3,12 @@ Neu: BTHome (Shelly BLU-Geräte an einem Gateway): Eine Instanz für ein BLU-Ger
 Neu: BLU-Geräte und BLU TRVs ohne eigenen Namen werden im Konfigurator und als Präfix der Variablennamen mit ihrer MAC-Adresse angezeigt.
 Neu: Instanz "ShellyBLUDevice" für ein BLU-Gerät, das an einem oder mehreren Gateways angelernt ist (Erkennung über die MAC-Adresse, eine Instanz je Gerät). Messwerte kommen vom Gateway mit dem neuesten Zeitstempel, ein Tastendruck von jedem Gateway (derselbe Druck auf zwei Gateways zählt einmal), das Gerät ist erreichbar, solange ein Gateway online ist. Je Gateway gibt es RSSI und "Letzte Aktualisierung", dazu die Variable "Stärkstes Gateway" (z. B. für die Raumerkennung). Der Konfigurator zeigt die BLU-Geräte (außer BLU TRVs) in der Gruppe "BLU-Geräte" mit einer Zeile je MAC-Adresse.
 Neu: Bei einem Tastendruck am BLU-Gerät werden die mitgelieferten Sensorwerte übernommen und der Gerätestatus (Empfang, letzte Aktualisierung, Batterie) neu abgefragt, so dass alle Variablen des Geräts aktuell sind.
+Neu: Alle Komponenten, die Fehler melden (u. a. Switch, Cover, Light, RGB/RGBW/CCT, PM1, EM, EM1, Input, Temperatur, Feuchte, Flood, CB, Cury, Kamera, DALI, BTHome), haben die Variablen "Fehler" (die Fehlercodes übersetzt, z. B. "Übertemperatur, Überlast") und "Störung" (Ja/Nein, wird true, sobald ein Fehler vorliegt). Melden die Geräte keinen Fehler mehr, werden beide beim nächsten Auslesen zurückgesetzt. Unbekannte Fehlercodes werden unverändert angezeigt.
 Fix: Mehrere Instanzen desselben Geräts (z.B. eine je Komponente) stören sich beim Auslesen der Komponenten nicht mehr gegenseitig, und ein zweiter, gleichzeitig angestoßener Abruf überschreibt das fertige Ergebnis nicht mehr (dadurch fehlten bei Geräten mit vielen Komponenten teils Variablen).
+Fix: Flood: "Stummschalten" ist jetzt schreibgeschützt (die Shelly-API kennt dafür keine Methode, die Variable zeigt nur den Zustand).
+Fix: BLU TRV: Die Position wird mit der in der Doku genannten Methode TRV.SetPosition gesetzt.
+Fix: CCT: Die Variable für den Gesamtverbrauch entfällt, der CCT-Status enthält laut Doku keinen Energiezähler.
+Fix: DALI: Die Fehler stehen in der Variable "Fehler" der Komponente (laut Doku nicht unter dem Scan, die bisherige Variable "DALI scan errors" entfällt).
 
 04.10.2026 - Version 1.1 (Beta Version)
 Neu: The Pill by Shelly wird im Configurator erkannt und kann angelegt werden, inklusive der angeschlossenen Add-on-Sensoren (z. B. Temperatur).
