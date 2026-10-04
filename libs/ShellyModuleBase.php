@@ -8,6 +8,7 @@ require_once __DIR__ . '/components.php';
 require_once __DIR__ . '/ComponentDefinitionHelper.php';
 require_once __DIR__ . '/CameraStream.php';
 require_once __DIR__ . '/BTHomeObjects.php';
+require_once __DIR__ . '/ShellyKVS.php';
 
     class ShellyModuleBase extends IPSModuleStrict
     {
@@ -17,6 +18,7 @@ require_once __DIR__ . '/BTHomeObjects.php';
         use ComponentDefinitionHelper;
         use CameraStream;
         use BTHomeObjects;
+        use ShellyKVS;
 
         // IDEE / TODO - Presets-Zuordnungstabelle für ALLE
         // Komponenten (noch NICHT umgesetzt, kein akuter Bedarf,
@@ -209,6 +211,10 @@ require_once __DIR__ . '/BTHomeObjects.php';
             $Buffer = json_decode($JSONString, true);
             $this->SendDebug('JSON', $Buffer, 0);
 
+            //Antwort auf eine KVS-Anfrage (siehe libs/ShellyKVS.php): für die wartende Funktion ablegen.
+            if (isset($Buffer['Topic']) && $this->storeKVSResponse((string) $Buffer['Topic'], $this->decodeMQTTPayload($Buffer))) {
+                return '';
+            }
             //IPSModuleStrict: "Payload" ist HEX-kodiert (siehe MQTTHelper::decodeMQTTPayload()).
             $Payload = json_decode($this->decodeMQTTPayload($Buffer), true);
             //Außer beim "online"-Topic (true/false) erwarten alle Zweige ein JSON-Objekt.

@@ -95,6 +95,12 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
             }
             $rest = substr($topic, strlen($gateway));
 
+            //Antwort auf eine KVS-Anfrage an das Haupt-Gateway (siehe libs/ShellyKVS.php).
+            if (strpos($rest, '/kvs/') === 0) {
+                $this->storeKVSResponse($topic, $this->decodeMQTTPayload($Buffer));
+                return '';
+            }
+
             if ($rest == '/online') {
                 $this->handleOnline($gateway, json_decode($this->decodeMQTTPayload($Buffer), true));
                 return '';

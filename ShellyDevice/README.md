@@ -51,6 +51,35 @@ Diese Funktion kann ebenfalls dazu genutzt werden, um den Status der Variablen m
 Beispiel:
 `SHY_requestComponentsStatus(12345);`
 
+### KVS (Key-Value-Store des Geräts)
+Mit diesen Funktionen kann der persistente Speicher für Schlüssel/Wert-Paare auf dem Shelly gelesen und beschrieben werden (z. B. zum Austausch von Werten mit einem Shelly-Skript). Der Wert ist ein beliebiger JSON-Wert (Text, Zahl, Boolean, Array). Grenzen laut Shelly: Schlüssel höchstens 42 Zeichen, Wert höchstens 253 Zeichen, höchstens 50 Schlüssel. Die Funktionen warten bis zu 5 Sekunden auf die Antwort des Geräts.
+
+`bool SHY_KVSSet(integer $InstanzID, string $Key, mixed $Value);`
+Schlüssel anlegen oder ändern. Gibt true zurück, wenn das Gerät den Wert übernommen hat.
+
+`bool SHY_KVSSetIfUnchanged(integer $InstanzID, string $Key, mixed $Value, string $Etag);`
+Wie SHY_KVSSet, ändert aber nur, wenn der Eintrag seit dem Lesen nicht anderweitig geändert wurde (`etag` aus SHY_KVSGet).
+
+`string SHY_KVSGet(integer $InstanzID, string $Key);`
+Wert als JSON `{"etag": "...", "value": ...}`, leer wenn der Schlüssel nicht existiert oder das Gerät nicht antwortet.
+
+`bool SHY_KVSDelete(integer $InstanzID, string $Key);`
+Schlüssel löschen.
+
+`string SHY_KVSList(integer $InstanzID, string $Match);`
+Alle zum Muster passenden Schlüssel als JSON `{"keys": {"schluessel": {"etag": "..."}}, "rev": 12}`. `*` steht für beliebig viele Zeichen, `?` für ein Zeichen, ein Komma trennt Muster; `*` liefert alle Schlüssel.
+
+`string SHY_KVSGetMany(integer $InstanzID, string $Match);`
+Wie SHY_KVSList, aber mit den Werten: `{"items": {"schluessel": {"etag": "...", "value": ...}}, "rev": 12}`.
+
+**Beispiel:**
+```php
+SHY_KVSSet(12345, 'sollwert', 21.5);
+$antwort = json_decode(SHY_KVSGet(12345, 'sollwert'), true); // ['etag' => '...', 'value' => 21.5]
+$alle = json_decode(SHY_KVSGetMany(12345, '*'), true);
+SHY_KVSDelete(12345, 'sollwert');
+```
+
 ## 3. Spenden
 Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:    
 
