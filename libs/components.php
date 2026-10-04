@@ -97,6 +97,24 @@ trait Components
                     'SUFFIX'       => ' Hz'
                 ],
             ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         'voltmeter' => [
             'voltage' => [
@@ -113,6 +131,24 @@ trait Components
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' V',
+                ],
+            ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
         ],
@@ -147,23 +183,29 @@ trait Components
                     ]',
                 ],
             ],
+            //Nur Status: Die Doku kennt für Flood keine Methode zum Stummschalten (nur GetStatus/GetConfig/SetConfig).
             'mute' => [
                 'type'         => VARIABLETYPE_BOOLEAN,
                 'name'         => 'Mute',
                 'presentation' => [
-                    'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
-                ],
-                'action'        => [
-                    'method' => 'Flood.Mute',
-                    'params' => ['id' => ''
-                    ]
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
             'errors' => [
-                'type'          => VARIABLETYPE_STRING,
-                'componentType' => 'Array',
-                'name'          => 'Errors',
-                'presentation'  => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
@@ -249,6 +291,24 @@ trait Components
                 ],
                 'writable' => false
             ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         'em1data' => [
             'total_act_energy' => [
@@ -270,6 +330,24 @@ trait Components
                     'SUFFIX'       => ' kWh',
                 ],
                 'writable' => false
+            ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
             ],
         ],
         'em' => [
@@ -464,6 +542,24 @@ trait Components
                 ],
                 'writable' => false
             ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         'temperature' => [
             'tC' => [
@@ -472,6 +568,24 @@ trait Components
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'SUFFIX'       => ' °C'
+                ],
+            ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
         ],
@@ -486,6 +600,24 @@ trait Components
                     'MIN'          => 0,
                     'MAX'          => 100,
                     'DIGITS'       => 2,
+                ],
+            ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
         ],
@@ -587,6 +719,24 @@ trait Components
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                         'SUFFIX'       => ' kwh'
                     ],
+                ],
+            ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
         ],
@@ -730,6 +880,24 @@ trait Components
                     ],
                 ],
             ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         'rgb' => [
             'output' => [
@@ -854,6 +1022,24 @@ trait Components
                     ],
                 ],
             ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         'cct' => [
             'output' => [
@@ -959,17 +1145,6 @@ trait Components
                     'SUFFIX'       => ' A',
                 ],
             ],
-            'aenergy' => [
-                'total' => [
-                    'type'         => VARIABLETYPE_FLOAT,
-                    'name'         => 'CCT Total energy',
-                    'factor'       => 0.001,
-                    'presentation' => [
-                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kWh'
-                    ],
-                ],
-            ],
             'temperature' => [
                 'tC' => [
                     'type'         => VARIABLETYPE_FLOAT,
@@ -978,6 +1153,24 @@ trait Components
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                         'SUFFIX'       => ' °C'
                     ],
+                ],
+            ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
         ],
@@ -1174,7 +1367,7 @@ trait Components
                 ],
                 'action'        => [
                     'method' => 'BluTrv.Call',
-                    'params' => ['id' => '', 'method' => 'Trv.SetPosition', 'params' => [
+                    'params' => ['id' => '', 'method' => 'TRV.SetPosition', 'params' => [
                         'id' => 0, 'pos' => '']
                     ]
                 ],
@@ -1280,8 +1473,19 @@ trait Components
                 ],
             ],
             'errors' => [
-                'type'         => VARIABLETYPE_STRING,
-                'name'         => 'Errors',
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -1351,8 +1555,19 @@ trait Components
                 ],
             ],
             'errors' => [
-                'type'         => VARIABLETYPE_STRING,
-                'name'         => 'Errors',
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -1614,8 +1829,19 @@ trait Components
                 ],
             ],
             'errors' => [
-                'type'         => VARIABLETYPE_STRING,
-                'name'         => 'Errors',
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -1772,13 +1998,6 @@ trait Components
                     ]
                 ],
             ],
-            'errors' => [
-                'type'         => VARIABLETYPE_STRING,
-                'name'         => 'Errors',
-                'presentation' => [
-                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                ],
-            ],
             'rtsp' => [
                 'enable' => [
                     'type'         => VARIABLETYPE_BOOLEAN,
@@ -1915,6 +2134,24 @@ trait Components
                     ],
                 ],
             ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         //Kamerazone (camerazone:N, ab ID 200): Status "motion" gibt es nur bei Zonen vom Typ "motion". Der Zonenname
         //aus der Config wird wie bei presencezone dem Variablennamen vorangestellt.
@@ -2000,13 +2237,23 @@ trait Components
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     ],
                 ],
-                'errors' => [
-                    'type'         => VARIABLETYPE_STRING,
-                    'name'         => 'DALI scan errors',
-                    'alwaysCreate' => true,
-                    'presentation' => [
-                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                    ],
+            ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
         ],
@@ -2119,8 +2366,19 @@ trait Components
                 ],
             ],
             'errors' => [
-                'type'         => VARIABLETYPE_STRING,
-                'name'         => 'Errors',
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -2216,8 +2474,19 @@ trait Components
                 ],
             ],
             'errors' => [
-                'type'         => VARIABLETYPE_STRING,
-                'name'         => 'Errors',
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -2273,8 +2542,19 @@ trait Components
                 ],
             ],
             'errors' => [
-                'type'         => VARIABLETYPE_STRING,
-                'name'         => 'Errors',
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
@@ -2432,6 +2712,24 @@ trait Components
                     ],
                 ],
             ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         'smoke' => [
             'alarm' => [
@@ -2505,6 +2803,24 @@ trait Components
                     ],
                 ],
             ],
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         // Shelly Presence G4 (https://shelly-api-docs.shelly.cloud/gen2/Devices/Gen4/ShellyPresenceG4).
         // Die eigentliche Anwesenheitserkennung steckt in den einzelnen "presencezone:X"-Instanzen
@@ -2552,10 +2868,20 @@ trait Components
                 ],
             ],
             'errors' => [
-                'type'          => VARIABLETYPE_STRING,
-                'componentType' => 'Array',
-                'name'          => 'Illuminance Errors',
-                'presentation'  => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Fault',
+                'alwaysCreate' => true,
+                'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],

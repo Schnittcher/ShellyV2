@@ -292,6 +292,7 @@ require_once __DIR__ . '/BTHomeObjects.php';
             if ($valuesToParse != null) {
                 $this->parsePayloadIntoVariables($valuesToParse);
             }
+            $this->resetMissingErrorLists($allComponentsFromShelly);
 
             //Shelly muss online sein, da es sonst keine Antwort gegeben hatte, deswegen die Variable auf true setzen.
             $this->SetValue('Reachable', true);
@@ -301,6 +302,41 @@ require_once __DIR__ . '/BTHomeObjects.php';
             //schließen und wieder öffnen muss (die Antwort kommt asynchron per MQTT, ggf.
             //erst nachdem das Formular schon geöffnet wurde).
             $this->ReloadForm();
+        }
+
+        //Die Geräte melden "errors" nur, solange ein Fehler vorliegt. Fehlt das Feld im vollständigen Status, ist der Fehler behoben:
+        //Fehlertext leeren und "Störung" auf false setzen. $leafPaths = Blattpfade des Status (z.B. "switch:0.output").
+        protected function resetMissingErrorLists(array $leafPaths): void
+        {
+            foreach ($this->getResetWhenMissingLeafPaths($leafPaths) as $path) {
+                if (!in_array($path, $leafPaths, true)) {
+                    $ident = $this->cleanComponentPath($path)['ident'];
+                    $this->SetValue($ident, '');
+                    $this->SetValue(substr($ident, 0, -6) . 'fault', false);
+                }
+            }
+        }
+
+        //Fehlercode des Geräts (z.B. "overtemp", "out_of_range:voltage") übersetzen. Codes mit Zusatz (nach dem Doppelpunkt) werden
+        //in Teilen übersetzt, unbekannte Codes bleiben unverändert (Geräte können neue Codes liefern).
+        protected function translateErrorCode(string $code): string
+        {
+            $translated = $this->Translate($code);
+            if ($translated !== $code || strpos($code, ':') === false) {
+                return $translated;
+            }
+            [$base, $rest] = explode(':', $code, 2);
+            return $this->Translate($base) . ' (' . $this->Translate($rest) . ')';
+        }
+
+        //Darstellung der Variable "Störung" (siehe 'fault' in components.php).
+        protected function faultPresentation(): array
+        {
+            $options = [];
+            foreach ([[false, 'No fault', 65280], [true, 'Fault', 16711680]] as [$value, $caption, $color]) {
+                $options[] = ['Value' => $value, 'Caption' => $this->Translate($caption), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => true, 'ColorValue' => $color, 'ContentColorActive' => false, 'ContentColorValue' => -1];
+            }
+            return ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'OPTIONS' => json_encode($options)];
         }
 
         //Kanal der Komponente, für die diese Instanz gilt (Property "Channel", bei ShellyDevice 0). ShellyBLUDevice überschreibt das:
@@ -451,6 +487,15 @@ require_once __DIR__ . '/BTHomeObjects.php';
                 }
                 //BLU-Taster ohne bisherigen Tastendruck melden als Zeitstempel einen Platzhalter weit in der Vergangenheit.
                 if ($componentsFromShellyResult['clean'] == 'bthomesensor.last_updated_ts' && is_numeric($value) && $value < 1000000000) {
+                    continue;
+                }
+                //Fehlerlisten ('resetWhenMissing', z.B. switch.errors): Codes übersetzen und zusammenfassen; die Variable "Störung"
+                //(Ident <...>_fault) ist true, sobald mindestens ein Fehler vorliegt.
+                if (($tmpComponent['resetWhenMissing'] ?? false) && is_array($value)) {
+                    $this->SetValue($componentsFromShellyResult['ident'], implode(', ', array_map(function ($code) {
+                        return $this->translateErrorCode((string) $code);
+                    }, $value)));
+                    $this->SetValue(substr($componentsFromShellyResult['ident'], 0, -6) . 'fault', count($value) > 0);
                     continue;
                 }
                 //ggf. umrechnung druchführen
@@ -634,6 +679,9 @@ require_once __DIR__ . '/BTHomeObjects.php';
                     }
                     $presentation = $tmpComponent['presentation'];
                     $variableType = $tmpComponent['type'];
+                    if (substr($variable['CleanKeyPath'], -6) == '.fault') {
+                        $presentation = $this->faultPresentation();
+                    }
                     //BTHome-Sensorwert: Typ, Name und Darstellung je nach Objekt (siehe libs/BTHomeObjects.php).
                     if ($variable['CleanKeyPath'] == 'bthomesensor.value') {
                         $sensorVariable = $this->getBTHomeSensorVariable('bthomesensor:' . $variable['Channel']);

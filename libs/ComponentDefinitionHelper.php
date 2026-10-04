@@ -103,7 +103,25 @@ trait ComponentDefinitionHelper
         return $result;
     }
 
-    private function collectAlwaysCreatedLeafPaths(array $node, string $path, array &$result)
+    //Wie getAlwaysCreatedLeafPaths(), aber für Definitionen mit 'resetWhenMissing' => true (Fehlerlisten, die das Gerät nur dann
+    //meldet, wenn ein Fehler vorliegt): Fehlt das Feld im vollständigen Status, gilt "kein Fehler".
+    protected function getResetWhenMissingLeafPaths(array $leafPaths)
+    {
+        $keys = [];
+        foreach ($leafPaths as $path) {
+            $keys[explode('.', $path)[0]] = true;
+        }
+        $result = [];
+        foreach (array_keys($keys) as $key) {
+            $base = explode(':', $key)[0];
+            if (isset(self::$components[$base]) && is_array(self::$components[$base])) {
+                $this->collectAlwaysCreatedLeafPaths(self::$components[$base], $key, $result, 'resetWhenMissing');
+            }
+        }
+        return $result;
+    }
+
+    private function collectAlwaysCreatedLeafPaths(array $node, string $path, array &$result, string $flag = 'alwaysCreate')
     {
         foreach ($node as $name => $child) {
             if (!is_array($child)) {
@@ -111,12 +129,12 @@ trait ComponentDefinitionHelper
             }
             if (array_key_exists('type', $child)) {
                 //Blatt-Definition einer Variable
-                if (!empty($child['alwaysCreate'])) {
+                if (!empty($child[$flag])) {
                     $result[] = $path . '.' . $name;
                 }
             } else {
                 //Zwischenelement der Definition (z.B. slots, left, vial) - weiter absteigen
-                $this->collectAlwaysCreatedLeafPaths($child, $path . '.' . $name, $result);
+                $this->collectAlwaysCreatedLeafPaths($child, $path . '.' . $name, $result, $flag);
             }
         }
     }
