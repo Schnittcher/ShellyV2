@@ -8,6 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout module
-      uses: actions/checkout@master
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        tools: php-cs-fixer:3
     - name: Check style
-      uses: schnittcher/action-style@master
+      run: php-cs-fixer fix --config=.style/.php-cs-fixer.php -v --dry-run --allow-risky=yes --diff
