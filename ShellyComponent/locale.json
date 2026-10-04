@@ -250,7 +250,7 @@
             "Wifi IP-Address": "Wifi IP-Adresse",
             "Component": "Komponente",
             "Channel": "Kanal",
-            "Shelly Komponente (Gen2+)": "Shelly Component (Gen2+)",
+            "Shelly Device (Gen2+)": "Shelly Gerät (Gen2+)",
             "White": "Weiß",
             "Current Temperature 200": "Aktuelle Temperatur 200",
             "Target Temperature 200": "Zieltemperatur 200",
@@ -409,7 +409,14 @@
             "Turned up": "Hoch gedreht",
             "Rotation 1": "Drehung 1",
             "Rotation 2": "Drehung 2",
-            "Rotation 3": "Drehung 3"
+            "Rotation 3": "Drehung 3",
+            "Shelly Komponente (Gen2+)": "Shelly Component (Gen2+)",
+            "Main gateway (MQTT topic)": "Haupt-Gateway (MQTT Topic)",
+            "MAC address of the BLU device": "MAC-Adresse des BLU-Geräts",
+            "Additional gateways": "Weitere Gateways",
+            "Strongest gateway: maximum age in seconds": "Stärkstes Gateway: maximales Alter in Sekunden",
+            "Strongest gateway": "Stärkstes Gateway",
+            "MQTT Topic": "MQTT Topic"
         }
     }
 }
