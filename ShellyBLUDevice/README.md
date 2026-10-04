@@ -26,7 +26,11 @@ Debug: Fehlende Idents | Zusätzliche Debug-Ausgaben, falls Variablen fehlen.
 Variablen | Auswahl der Variablen, ebenfalls die Funktion "Zeroing" (Variable wird zurückgesetzt, wenn alle Gateways offline sind).
 
 ## 2. Variablen
-Die Variablen des Geräts entsprechen denen einer `bthomedevice`-Komponenten-Instanz (Sensoren, Batterie, Empfang, Kopplung, Firmware und der letzte Tastendruck).
+Die Variablen des Geräts entsprechen denen einer `bthomedevice`-Komponenten-Instanz: Sensoren (je nach Modell, z. B. Fenster, Bewegung, Temperatur, Luftfeuchtigkeit), Batterie, Empfang, Kopplung, Firmware sowie Fehler und Störung.
+
+Tasten und Rad kommen als Ereignis des Geräts:
+* `Taste` zeigt den letzten Tastendruck (Einfach, Doppelt, Dreifach, Lang, Halten). Geräte mit mehreren Tasten (z. B. BLU RC Button 4, Wall Switch 4) haben `Taste 1` bis `Taste 4`.
+* Die BLU Remote Control ZB hat für das Drehrad `Rad` (Hoch gedreht / Runter gedreht) und `Rad Schritte` (Schritte der letzten Drehung, runter negativ).
 
 Beim Zusammenführen der Gateways gilt:
 * Messwerte: der Wert mit dem neuesten Zeitstempel (`last_updated_ts`) aller Gateways.

@@ -13,6 +13,8 @@ Dieses Modul findet alles Shelly Gen2+ Geräte per MQTT und kann diese als kompl
 
 Findet alle Shellies per MQTT im Netzwerk, welches auf das Topic /announce reagieren.
 Die Shellies können als komplettes Gerät angelegt werden, oder aber die einzelnen Komponenten des Shellies.
+
+**Shelly BLU-Geräte** stehen in einer eigenen Gruppe "BLU-Geräte", mit einer Zeile je MAC-Adresse. Die Zeile zeigt die MAC-Adresse (und die Gateways, an denen das Gerät angelernt ist), der Gerätetyp steht in der Spalte "Device Type". Beim Anlegen entsteht eine Instanz ShellyBLUDevice mit allen diesen Gateways; der Instanzname bekommt den Gerätetyp vor die MAC-Adresse (z. B. "Shelly BLU Button Tough 1 ZB - f8:44:77:43:0d:86"). BLU TRVs (Thermostate) hängen an genau einem Gateway und stehen deshalb bei diesem Gateway als einzelne Komponenten.
  
 ## 2. Spenden
 Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:    

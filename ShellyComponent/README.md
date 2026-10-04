@@ -18,7 +18,7 @@ MQTT Topic | Hier wird das Topic des Geräte hinterlegt-
 Komponente      | Hier wird die Komponente hinterlegt, für welche diese Instanz gelten soll. zum Beispiel switch
 Kanal      | Hier wird der Kanal hinterlegt, für welchen diese Instanz gelten soll. zum Beispiel 0 wenn es sich um die Komponente switch:0 handelt.
 Debug: Fehlende Idents     | Mit diesem Schalter können im Debug mehr Daten angezeigt werden, dies kann nützlich sein, wenn Variablen fehlen und das Debug im Forum gepostet werden soll.
-Variablen | In dieser Liste kann ausgewählt werden, ob die Variablen angezeigt werden sollen, ebenfalls gibt es die Möglichkeit die Funktion "Zeroing" zu aktivieren. Durch das Aktivieren der Funktion wird die Variable zurückgesetzt, wenn das Gerät offline ist.
+Variablen | In dieser Liste kann ausgewählt werden, ob die Variablen angezeigt werden sollen, ebenfalls gibt es die Möglichkeit die Funktion "Zeroing" zu aktivieren. Durch das Aktivieren der Funktion wird die Variable zurückgesetzt, wenn das Gerät offline ist. Komponenten, die Fehler melden, haben zusätzlich die Variablen "Fehler" (die Fehlercodes als Text) und "Störung" (Ja/Nein, true sobald ein Fehler vorliegt).
 
 ## 2. Funktionen
 

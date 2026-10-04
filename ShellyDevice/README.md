@@ -17,7 +17,7 @@ Feld | Beschreibung
 ------------ | ----------------
 MQTT Topic | Hier wird das Topic des Geräte hinterlegt-
 Debug: Fehlende Idents     | Mit diesem Schalter können im Debug mehr Daten angezeigt werden, dies kann nützlich sein, wenn Variablen fehlen und das Debug im Forum gepostet werden soll.
-Variablen | In dieser Liste kann ausgewählt werden, ob die Variablen angezeigt werden sollen, ebenfalls gibt es die Möglichkeit die Funktion "Zeroing" zu aktivieren. Durch das Aktivieren der Funktion wird die Variable zurückgesetzt, wenn das Gerät offline ist.
+Variablen | In dieser Liste kann ausgewählt werden, ob die Variablen angezeigt werden sollen, ebenfalls gibt es die Möglichkeit die Funktion "Zeroing" zu aktivieren. Durch das Aktivieren der Funktion wird die Variable zurückgesetzt, wenn das Gerät offline ist. Komponenten, die Fehler melden, haben zusätzlich die Variablen "Fehler" (die Fehlercodes als Text) und "Störung" (Ja/Nein, true sobald ein Fehler vorliegt).
 Shelly Model | Hier wird das Model des Shellies eingetragen. Wird unteranderem dazu genutzt um ggf. Ausnahmen zu behandeln, zum Beispiel bei "Powered by Shelly" Geräten.
 
 ## 2. Funktionen
