@@ -18,7 +18,8 @@
             "MQTT Password": "MQTT Passwort",
             "Please press OK!": "Bitte drücken Sie OK!",
             "Save": "Speichern",
-            "This feature is experimental and allows you to adjust the Shellie's MQTT settings.": "Diese Funktion ist experimentell und ermöglicht es Ihnen, die MQTT-Einstellungen des Shelly anzupassen."
+            "This feature is experimental and allows you to adjust the Shellie's MQTT settings.": "Diese Funktion ist experimentell und ermöglicht es Ihnen, die MQTT-Einstellungen des Shelly anzupassen.",
+            "BLU devices": "BLU-Geräte"
         }
     }
 }

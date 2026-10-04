@@ -11,6 +11,7 @@ require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
 const GUID_SHELLY_DEVICE = '{86104D43-1A2F-EFA8-CB86-EBE8979F8D1A}';
 const GUID_SHELLY_XT1DEVICE = '{88774A56-2453-2EEC-24F5-BBC37D63B506}';
 const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
+const GUID_SHELLY_BLU_DEVICE = '{CA77258B-0517-49FE-AC93-562122342AED}';
 
 class ShellyConfigurator extends IPSModuleStrict
 {
@@ -90,6 +91,33 @@ class ShellyConfigurator extends IPSModuleStrict
             $collected = $this->collectComponents($deviceIDs);
             $componentLists = $collected['keys'];
             $dynamicComponentLists = $collected['dynamic'];
+
+            //BLU-Geräte (außer Thermostaten) können an mehreren Gateways angelernt sein und bekommen deshalb eine eigene Gruppe mit
+            //einer Zeile je MAC-Adresse (Instanz ShellyBLUDevice, siehe unten) - unter den Gateways erscheinen sie nicht mehr.
+            $bluDevices = [];
+            $bluDeviceKeys = [];
+            foreach ($deviceIDs as $shellyID) {
+                $trvDeviceKeys = [];
+                foreach ($dynamicComponentLists[$shellyID] ?? [] as $entry) {
+                    if (isset($entry['key']) && strpos($entry['key'], 'blutrv:') === 0 && isset($entry['config']['trv'])) {
+                        $trvDeviceKeys[] = $entry['config']['trv'];
+                    }
+                }
+                foreach ($dynamicComponentLists[$shellyID] ?? [] as $entry) {
+                    if (!isset($entry['key']) || strpos($entry['key'], 'bthomedevice:') !== 0 || in_array($entry['key'], $trvDeviceKeys, true) || ($entry['attrs']['model_id'] ?? 0) == 8) {
+                        continue;
+                    }
+                    $mac = strtolower((string) ($entry['config']['addr'] ?? ''));
+                    if ($mac == '') {
+                        continue;
+                    }
+                    $bluDevices[$mac]['gateways'][] = $shellyID;
+                    if (trim((string) ($entry['config']['name'] ?? '')) != '' && empty($bluDevices[$mac]['name'])) {
+                        $bluDevices[$mac]['name'] = trim((string) $entry['config']['name']);
+                    }
+                    $bluDeviceKeys[$shellyID][] = $entry['key'];
+                }
+            }
 
             //Phase 3: Formular wie gewohnt aufbauen, jetzt aus den bereits eingesammelten Antworten.
             foreach ($Shellies as $key => $Shelly) {
@@ -238,6 +266,10 @@ class ShellyConfigurator extends IPSModuleStrict
                             if ($component == 'bthomesensor' && $this->bthomeSensorHasDeviceRow($key, $bthomeDeviceKeys, $dynamicComponentNames)) {
                                 continue;
                             }
+                            //BLU-Geräte stehen in der Gruppe "BLU-Geräte", nicht unter dem Gateway.
+                            if ($component == 'bthomedevice' && in_array($key, $bluDeviceKeys[$Shelly['ID']] ?? [], true)) {
+                                continue;
+                            }
                             $componentChannel = intval($cleanedPath['number']);
                             $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $component, $componentChannel);
 
@@ -278,9 +310,67 @@ class ShellyConfigurator extends IPSModuleStrict
                     }
                 }
             }
+            //Gruppe "BLU-Geräte": eine Zeile je MAC-Adresse. Die Instanz bekommt alle Gateways, an denen das Gerät angelernt ist
+            //(das erste ist das Haupt-Gateway mit der Nummerierung der Variablen).
+            if (count($bluDevices) > 0) {
+                $idCount++;
+                $groupID = $idCount;
+                $Values[] = [
+                    'id'                    => $groupID,
+                    'name'                  => $this->Translate('BLU devices'),
+                    'MQTTTopic'             => $this->Translate('BLU devices'),
+                    'InstanceName'          => '',
+                    'DeviceType'            => '',
+                    'IPAddress'             => '',
+                    'App'                   => '',
+                    'Firmware'              => '',
+                    'instanceID'            => 0,
+                ];
+                foreach ($bluDevices as $mac => $bluDevice) {
+                    $gateways = array_values(array_unique($bluDevice['gateways']));
+                    $label = ($bluDevice['name'] ?? '') != '' ? $bluDevice['name'] . ' (' . $mac . ')' : $mac;
+                    $additionalGateways = [];
+                    foreach (array_slice($gateways, 1) as $gateway) {
+                        $additionalGateways[] = ['MQTTTopic' => $gateway];
+                    }
+                    $bluInstanceID = $this->getBLUDeviceInstance($mac);
+                    $Values[] = [
+                        'parent'                => $groupID,
+                        'name'                  => $label,
+                        'MQTTTopic'             => $label . ' - ' . implode(', ', $gateways),
+                        'InstanceName'          => $this->getInstanceName($bluInstanceID),
+                        'DeviceType'            => '',
+                        'IPAddress'             => '',
+                        'App'                   => '',
+                        'Firmware'              => '',
+                        'instanceID'            => $bluInstanceID,
+                        'create'                => [
+                            'moduleID'      => GUID_SHELLY_BLU_DEVICE,
+                            'info'          => $mac,
+                            'configuration' => [
+                                'MQTTTopic'          => $gateways[0],
+                                'BLUAddress'         => $mac,
+                                //Listen-Properties sind String-Properties mit JSON - ein Array wird von der Konsole abgelehnt (Code -32603).
+                                'AdditionalGateways' => json_encode($additionalGateways),
+                            ]
+                        ]
+                    ];
+                }
+            }
             $Form['actions'][0]['values'] = $Values;
         }
         return json_encode($Form);
+    }
+
+    //Vorhandene BLU-Geräte-Instanz (ShellyBLUDevice) für diese MAC-Adresse am selben MQTT-Server/-Client, sonst 0.
+    private function getBLUDeviceInstance(string $mac)
+    {
+        foreach (IPS_GetInstanceListByModuleID(GUID_SHELLY_BLU_DEVICE) as $id) {
+            if (strtolower(trim(IPS_GetProperty($id, 'BLUAddress'))) == $mac && IPS_GetInstance($id)['ConnectionID'] === IPS_GetInstance($this->InstanceID)['ConnectionID']) {
+                return $id;
+            }
+        }
+        return 0;
     }
 
     //Gibt es zu diesem Sensor (bthomesensor:N) ein BLU-Gerät (bthomedevice:M) mit derselben MAC-Adresse (Config addr) in

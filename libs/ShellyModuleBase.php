@@ -174,9 +174,6 @@ require_once __DIR__ . '/BTHomeObjects.php';
                     }
                 }
 
-                $componentsUpdated = false;
-                $valuesToParse = null;
-
                 //Antwort auf requestComponentsStatus() (Shelly.GetComponents mit "include":["status","config"]).
                 //Das Ergebnis enthält ALLE Komponenten (physische, BLU TRVs, dynamische Boolean/Number/Enum/
                 //Text/presencezone, Add-on-Sensoren) mit Status UND Config - eine zweite Abfrage ist nicht
@@ -216,24 +213,15 @@ require_once __DIR__ . '/BTHomeObjects.php';
                             $this->SetBuffer('componentsPageCount', '0');
                             $this->SetBuffer('componentsRunStarted', '0');
 
-                            $statusDict = $this->getAllComponentsAsStatusDict(['components' => $statusAccumulated]);
-                            //Volle Config für ALLE Komponenten (auch physische wie switch/cover/em/pm1,
-                            //nicht nur dynamische) - siehe getComponentConfigs()/getPhysicalComponentName()/
-                            //Fallback in getDynamicComponentMetadata().
-                            $componentConfigs = $this->getComponentConfigs(['components' => $statusAccumulated]);
-                            //IP-Adresse des Geräts (WLAN, sonst Ethernet) - z.B. für die RTSP-Adresse der Kamera.
-                            $deviceIP = $statusDict['wifi']['sta_ip'] ?? ($statusDict['eth']['ip'] ?? '');
-                            $this->SetBuffer('deviceIP', is_string($deviceIP) ? $deviceIP : '');
-                            //Werte aus der Geräte-Config (z.B. Kamera rtsp.enable) in den Status spiegeln.
-                            $statusDict = $this->mergeConfigBackedValues($statusDict, $componentConfigs);
-                            $this->SetBuffer('componentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
-                            $this->SetBuffer('componentConfigs', json_encode($componentConfigs));
-                            //BTHome: Typ (Zahl/Boolean/Text) der Sensorwerte aus dem Status merken (siehe BTHomeObjects).
-                            $this->SetBuffer('bthomeValueTypes', json_encode($this->collectBTHomeValueTypes($statusDict)));
-                            $this->SetBuffer('bthomeDeviceModels', json_encode($this->collectBTHomeDeviceModels($statusAccumulated)));
-                            $valuesToParse = $statusDict;
-                            $componentsUpdated = true;
+                            $this->applyComponentsResult($statusAccumulated);
                         }
+                    }
+                }
+                //Antwort auf die Status-Abfrage eines BLU-Geräts nach einem Tastendruck (siehe scheduleBTHomeRefresh()).
+                if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getBTHomeStatus/' . $this->InstanceID . '/rpc', $Buffer['Topic'])) {
+                    $statusParams = $this->bthomeStatusParams($Payload);
+                    if (count($statusParams) > 0) {
+                        $this->parsePayloadIntoVariables($statusParams);
                     }
                 }
                 //Antwort auf BTHome.GetObjectInfos (Name/Typ/Einheit der Sensor-Objekte, siehe RequestBTHomeObjectInfos()):
@@ -245,37 +233,6 @@ require_once __DIR__ . '/BTHomeObjects.php';
                         $this->syncBTHomeVariableNames();
                         $this->rebuildVariables();
                     }
-                }
-                if ($componentsUpdated) {
-                    $allComponentsFromShelly = json_decode($this->GetBuffer('componentsList'), true) ?: [];
-
-                    $propertyChannel = @$this->ReadPropertyInteger('Channel');
-                    $propertyComponent = @$this->ReadPropertyString('Component');
-
-                    $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
-                    $this->registerComponentVariables();
-
-                    //Kamera: Stream-Objekte (RTSP) automatisch anlegen, sobald die IP-Adresse bekannt ist.
-                    $this->autoMaintainCameraStreams();
-
-                    //BTHome: Name/Typ/Einheit der Messwerte beim Gerät erfragen - entkoppelt per Timer, weil
-                    //SendDataToParent() direkt aus ReceiveData() heraus den Datenfluss blockieren kann.
-                    if (count(json_decode($this->GetBuffer('bthomeValueTypes'), true) ?: []) > 0) {
-                        $this->RegisterOnceTimer('BTHomeObjectInfos', 'SHY_RequestBTHomeObjectInfos($_IPS["TARGET"]);');
-                    }
-
-                    if ($valuesToParse != null) {
-                        $this->parsePayloadIntoVariables($valuesToParse);
-                    }
-
-                    //Shelly muss online sein, da es sonst keine Antwort gegeben hatte, deswegen die Variable auf true setzen.
-                    $this->SetValue('Reachable', true);
-
-                    //Falls das Konfigurationsformular gerade offen ist: neu laden, damit die
-                    //aktualisierte Variablenliste sichtbar wird, ohne dass man das Formular manuell
-                    //schließen und wieder öffnen muss (die Antwort kommt asynchron per MQTT, ggf.
-                    //erst nachdem das Formular schon geöffnet wurde).
-                    $this->ReloadForm();
                 }
             }
 
@@ -293,6 +250,78 @@ require_once __DIR__ . '/BTHomeObjects.php';
             return '';
         }
 
+        //Verarbeitet das vollständige Ergebnis von Shelly.GetComponents ($statusAccumulated = Liste der Komponenteneinträge mit
+        //key/status/config): Buffer setzen, Variablenliste und Variablen anlegen, Werte übernehmen. Wird aufgerufen, wenn die
+        //letzte Seite eingetroffen ist. Die Instanz für BLU-Geräte an mehreren Gateways (ShellyBLUDevice) ruft es mit dem
+        //zusammengeführten Ergebnis aller Gateways auf.
+        protected function applyComponentsResult(array $statusAccumulated): void
+        {
+            $statusDict = $this->getAllComponentsAsStatusDict(['components' => $statusAccumulated]);
+            //Volle Config für ALLE Komponenten (auch physische wie switch/cover/em/pm1,
+            //nicht nur dynamische) - siehe getComponentConfigs()/getPhysicalComponentName()/
+            //Fallback in getDynamicComponentMetadata().
+            $componentConfigs = $this->getComponentConfigs(['components' => $statusAccumulated]);
+            //IP-Adresse des Geräts (WLAN, sonst Ethernet) - z.B. für die RTSP-Adresse der Kamera.
+            $deviceIP = $statusDict['wifi']['sta_ip'] ?? ($statusDict['eth']['ip'] ?? '');
+            $this->SetBuffer('deviceIP', is_string($deviceIP) ? $deviceIP : '');
+            //Werte aus der Geräte-Config (z.B. Kamera rtsp.enable) in den Status spiegeln.
+            $statusDict = $this->mergeConfigBackedValues($statusDict, $componentConfigs);
+            $this->SetBuffer('componentsList', json_encode($this->getArrayLeafKeyPaths($statusDict)));
+            $this->SetBuffer('componentConfigs', json_encode($componentConfigs));
+            //BTHome: Typ (Zahl/Boolean/Text) der Sensorwerte aus dem Status merken (siehe BTHomeObjects).
+            $this->SetBuffer('bthomeValueTypes', json_encode($this->collectBTHomeValueTypes($statusDict)));
+            $this->SetBuffer('bthomeDeviceModels', json_encode($this->collectBTHomeDeviceModels($statusAccumulated)));
+            $valuesToParse = $statusDict;
+            $allComponentsFromShelly = json_decode($this->GetBuffer('componentsList'), true) ?: [];
+
+            $propertyChannel = $this->componentChannel();
+            $propertyComponent = @$this->ReadPropertyString('Component');
+
+            $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
+            $this->registerComponentVariables();
+
+            //Kamera: Stream-Objekte (RTSP) automatisch anlegen, sobald die IP-Adresse bekannt ist.
+            $this->autoMaintainCameraStreams();
+
+            //BTHome: Name/Typ/Einheit der Messwerte beim Gerät erfragen - entkoppelt per Timer, weil
+            //SendDataToParent() direkt aus ReceiveData() heraus den Datenfluss blockieren kann.
+            if (count(json_decode($this->GetBuffer('bthomeValueTypes'), true) ?: []) > 0) {
+                $this->RegisterOnceTimer('BTHomeObjectInfos', 'SHY_RequestBTHomeObjectInfos($_IPS["TARGET"]);');
+            }
+
+            if ($valuesToParse != null) {
+                $this->parsePayloadIntoVariables($valuesToParse);
+            }
+
+            //Shelly muss online sein, da es sonst keine Antwort gegeben hatte, deswegen die Variable auf true setzen.
+            $this->SetValue('Reachable', true);
+
+            //Falls das Konfigurationsformular gerade offen ist: neu laden, damit die
+            //aktualisierte Variablenliste sichtbar wird, ohne dass man das Formular manuell
+            //schließen und wieder öffnen muss (die Antwort kommt asynchron per MQTT, ggf.
+            //erst nachdem das Formular schon geöffnet wurde).
+            $this->ReloadForm();
+        }
+
+        //Kanal der Komponente, für die diese Instanz gilt (Property "Channel", bei ShellyDevice 0). ShellyBLUDevice überschreibt das:
+        //dort ergibt sich der Kanal aus der MAC-Adresse des BLU-Geräts am Haupt-Gateway.
+        protected function componentChannel()
+        {
+            return @$this->ReadPropertyInteger('Channel');
+        }
+
+        //Legt die Variablen aus den bereits gespeicherten Komponentendaten neu an (ohne neue Abfrage beim Gerät) -
+        //z.B. wenn nachträglich Zusatzinformationen eingetroffen sind (BTHome.GetObjectInfos).
+        protected function rebuildVariables(): void
+        {
+            $allComponentsFromShelly = json_decode($this->GetBuffer('componentsList'), true) ?: [];
+            $propertyChannel = $this->componentChannel();
+            $propertyComponent = @$this->ReadPropertyString('Component');
+            $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
+            $this->registerComponentVariables();
+            $this->ReloadForm();
+        }
+
         //Fragt ALLE Komponenten mit Status und Config per Shelly.GetComponents ab; die Antwort
         //(ReceiveData()) legt die Variablen an bzw. aktualisiert sie. Gemeinsamer Einstieg für das
         //ApplyChanges() der Instanz-Module und den "Read Componentes"-Button. Die Antwort ist paginiert
@@ -303,18 +332,6 @@ require_once __DIR__ . '/BTHomeObjects.php';
         //enum/text/presencezone), Shelly Presence G4, Shelly 1 Gen3, Pro RGBWW PM, Smart WaterValve (XT1),
         //BLU TRV (blutrv:201), per API-Doku für cover/em/temperature/humidity. Bei einem bisher
         //unbekannten Komponententyp vor breiterem Einsatz einmal live gegenprüfen.
-        //Legt die Variablen aus den bereits gespeicherten Komponentendaten neu an (ohne neue Abfrage beim Gerät) -
-        //z.B. wenn nachträglich Zusatzinformationen eingetroffen sind (BTHome.GetObjectInfos).
-        private function rebuildVariables(): void
-        {
-            $allComponentsFromShelly = json_decode($this->GetBuffer('componentsList'), true) ?: [];
-            $propertyChannel = @$this->ReadPropertyInteger('Channel');
-            $propertyComponent = @$this->ReadPropertyString('Component');
-            $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
-            $this->registerComponentVariables();
-            $this->ReloadForm();
-        }
-
         public function requestComponentsStatus(): void
         {
             //Läuft bereits ein Abruf (z.B. aus ApplyChanges() und gleichzeitig aus dem Verbinden), wird kein zweiter gestartet:
@@ -414,7 +431,7 @@ require_once __DIR__ . '/BTHomeObjects.php';
             }
         }
 
-        private function parsePayloadIntoVariables($Payload)
+        protected function parsePayloadIntoVariables($Payload)
         {
             //Components vom Shelly Params Payload holen.
             $components = $this->getArrayLeafKeyPaths($Payload);

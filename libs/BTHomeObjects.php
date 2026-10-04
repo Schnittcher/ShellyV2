@@ -321,6 +321,95 @@ trait BTHomeObjects
             }
         }
         $this->SetValue($ident, $eventName);
+        //Ein Tastendruck ist ein vom Gateway empfangenes Paket des Geräts: die im Ereignis mitgelieferten Sensorwerte übernehmen und
+        //den Status des Geräts (RSSI, letzte Aktualisierung, Batterie) neu abfragen - dafür sendet das Gateway keine eigene Meldung.
+        $this->applyBTHomeEventSensors($component, $event);
+        $this->scheduleBTHomeRefresh($component);
+    }
+
+    //Sensorwerte, die ein Tastendruck-Ereignis mitliefert: "sensors": {"<obj_id>": [{"id": <Sensor-ID>, "value": ...,
+    //"last_updated_ts": ...}]}. Rückgabe: Liste mit obj_id, id, value und last_updated_ts.
+    protected function bthomeEventSensors(array $event)
+    {
+        $result = [];
+        foreach (is_array($event['sensors'] ?? null) ? $event['sensors'] : [] as $objId => $entries) {
+            foreach (is_array($entries) ? $entries : [] as $entry) {
+                if (is_array($entry) && isset($entry['id'])) {
+                    $result[] = ['obj_id' => (int) $objId] + $entry;
+                }
+            }
+        }
+        return $result;
+    }
+
+    //Sensorwerte aus dem Ereignis in die Variablen übernehmen (bei einer Instanz für ein einzelnes Gateway; die Sensor-IDs
+    //gehören zum selben Gateway). Die Batterie (obj_id 1) setzt zusätzlich die Batterie-Variable des BLU-Geräts.
+    protected function applyBTHomeEventSensors(string $deviceKey, array $event)
+    {
+        $params = [];
+        foreach ($this->bthomeEventSensors($event) as $sensor) {
+            $status = ['id' => $sensor['id']];
+            if (isset($sensor['value'])) {
+                $status['value'] = $sensor['value'];
+            }
+            if (isset($sensor['last_updated_ts'])) {
+                $status['last_updated_ts'] = $sensor['last_updated_ts'];
+            }
+            $params['bthomesensor:' . $sensor['id']] = $status;
+            if ($sensor['obj_id'] == 1 && isset($sensor['value'])) {
+                $this->SetValue('bthomedevice_' . substr($deviceKey, strlen('bthomedevice:')) . '_battery', (int) $sensor['value']);
+            }
+        }
+        if (count($params) > 0) {
+            $this->parsePayloadIntoVariables($params);
+        }
+    }
+
+    //Nach einem Tastendruck den Status des BLU-Geräts neu abfragen (RPC aus ReceiveData() heraus senden blockiert den
+    //Datenfluss, deshalb per Timer).
+    protected function scheduleBTHomeRefresh(string $deviceKey)
+    {
+        $keys = json_decode($this->GetBuffer('bthomeRefreshKeys'), true);
+        $keys = is_array($keys) ? $keys : [];
+        if (!in_array($deviceKey, $keys, true)) {
+            $keys[] = $deviceKey;
+            $this->SetBuffer('bthomeRefreshKeys', json_encode($keys));
+        }
+        $this->RegisterOnceTimer('BTHomeRefresh', 'SHY_RefreshBTHomeDevice($_IPS["TARGET"]);');
+    }
+
+    //Öffentlicher Einstiegspunkt für den Timer: Status der vorgemerkten BLU-Geräte abfragen (Shelly.GetComponents mit "keys").
+    public function RefreshBTHomeDevice(): void
+    {
+        $keys = json_decode($this->GetBuffer('bthomeRefreshKeys'), true);
+        $this->SetBuffer('bthomeRefreshKeys', '[]');
+        if (is_array($keys) && count($keys) > 0) {
+            $this->requestBTHomeDeviceStatus($this->ReadPropertyString('MQTTTopic'), $keys);
+        }
+    }
+
+    //Status einzelner Komponenten abfragen; die Antwort kommt auf <topic>/getBTHomeStatus/<InstanceID>/rpc.
+    protected function requestBTHomeDeviceStatus(string $topic, array $keys)
+    {
+        $Payload = [
+            'id'     => 1,
+            'src'    => $topic . '/getBTHomeStatus/' . $this->InstanceID,
+            'method' => 'Shelly.GetComponents',
+            'params' => ['keys' => array_values($keys), 'include' => ['status']],
+        ];
+        $this->sendMQTT($topic . '/rpc', json_encode($Payload, JSON_UNESCAPED_SLASHES));
+    }
+
+    //Antwort von requestBTHomeDeviceStatus() als {"bthomedevice:200": {Status}, ...}.
+    protected function bthomeStatusParams(array $Payload)
+    {
+        $params = [];
+        foreach (is_array($Payload['result']['components'] ?? null) ? $Payload['result']['components'] : [] as $component) {
+            if (is_array($component) && isset($component['key'], $component['status']) && is_array($component['status'])) {
+                $params[(string) $component['key']] = $component['status'];
+            }
+        }
+        return $params;
     }
 
     //Soll das BLU-Gerät (bthomedevice:N) die Tasten-Variable bekommen? Ja, wenn es einen Taster-Sensor hat (z.B. der

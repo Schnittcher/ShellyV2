@@ -34,6 +34,7 @@ Die selben Zugangsdaten müssen über das Shelly Webinterface unter Settings -> 
 
 ## 2. Enthaltene Module
 
+* [ShellyBLUDevice](ShellyBLUDevice/README.md)
 * [ShellyComponent](ShellyComponent/README.md)
 * [ShellyConfigurator](ShellyConfigurator/README.md)
 * [ShellyDevice](ShellyDevice/README.md)
