@@ -2348,9 +2348,9 @@ trait Components
                 ],
             ],
             //Letzter Tastendruck (single_push, double_push, triple_push, ...): kommt nur als Ereignis (NotifyEvent), nicht im
-            //Status. Nicht jedes BLU-Gerät hat eine Taste - die Variable wird nur für Geräte angelegt, bei denen man das erkennt,
-            //sonst beim ersten Tastendruck (siehe bthomeDeviceShowsButton() in libs/BTHomeObjects.php). Die Darstellung mit den
-            //übersetzten Tastendrücken setzt registerComponentVariables().
+            //Status. Die Variable wird für Geräte angelegt, bei denen eine Taste bekannt ist (Modellliste, Taster-Sensor), sonst beim
+            //ersten Tastendruck - Anzahl und Pfade siehe bthomeDeviceButtonCount()/bthomeButtonLeafPaths() in libs/BTHomeObjects.php.
+            //Die Darstellung mit den übersetzten Tastendrücken setzt registerComponentVariables().
             'button' => [
                 'type'         => VARIABLETYPE_STRING,
                 'name'         => 'Button',

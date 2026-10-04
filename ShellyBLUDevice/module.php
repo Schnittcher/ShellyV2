@@ -54,6 +54,10 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
             }
         }
 
+        //HINWEIS: Der seitenweise Abruf (hier und in handleComponentsPage()) ist die Variante je Gateway des Abrufs in ShellyModuleBase
+        //(requestComponentsStatus()/ReceiveData()/RunNextComponentsPageAsync()) - gleiche Logik (Sperre 15 s, Seitenlimit 30, Folgeseiten per
+        //Timer), nur mit Buffern je Gateway. Änderungen an der Seitenlogik in beiden Klassen machen.
+        //
         //Fragt alle Gateways ab (jedes mit eigener Antwort-Adresse und eigenem Abrufzustand).
         public function requestComponentsStatus(): void
         {

@@ -338,6 +338,11 @@ trait BTHomeObjects
             $this->setBTHomeDialEvent($component, $eventName, $event);
             return;
         }
+        //Nur Tastendrücke (single_push, double_push, ..., hold_press): andere Ereignisse des Geräts, z.B. config_changed beim Ändern der
+        //Einstellungen am Gerät, sind keine Taste.
+        if (!isset(self::$bthomeButtonEvents[$eventName]) && substr($eventName, -5) !== '_push') {
+            return;
+        }
         //Tastennummer: "idx" im Ereignis (0 = Taste 1). Mehr als vier Tasten kennt kein BLU-Gerät.
         $idx = (int) ($event['idx'] ?? 0);
         if ($idx < 0 || $idx > 3) {
@@ -531,27 +536,6 @@ trait BTHomeObjects
             $paths[] = $deviceKey . '.dialsteps';
         }
         return $paths;
-    }
-
-    //Soll das BLU-Gerät (bthomedevice:N) die Tasten-Variable bekommen? Ja, wenn es einen Taster-Sensor hat (z.B. der
-    //Thermostat), von seinem Modell bekannt ist, dass es eine Taste hat, oder schon ein Tastendruck eingetroffen ist.
-    protected function bthomeDeviceShowsButton(string $deviceKey)
-    {
-        $seen = json_decode($this->GetBuffer('bthomeButtonDevices'), true);
-        if (is_array($seen) && in_array($deviceKey, $seen, true)) {
-            return true;
-        }
-        $models = json_decode($this->GetBuffer('bthomeDeviceModels'), true);
-        if (is_array($models) && isset($models[$deviceKey]) && $this->bthomeModelHasButton((int) $models[$deviceKey])) {
-            return true;
-        }
-        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
-        foreach (is_array($configs) ? array_keys($configs) : [] as $key) {
-            if (strpos((string) $key, 'bthomesensor:') === 0 && $this->isBTHomeButtonSensorKey((string) $key) && $this->bthomeComponentBelongsToDevice((string) $key, $deviceKey)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     //Gerätemodelle (attrs.model_id) der BLU-Geräte aus der Antwort von Shelly.GetComponents: Komponenten-Key => model_id.

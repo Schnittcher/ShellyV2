@@ -358,6 +358,12 @@ require_once __DIR__ . '/BTHomeObjects.php';
             $this->ReloadForm();
         }
 
+        //HINWEIS: Das seitenweise Auslesen (Abruf starten, Seiten sammeln, Folgeseiten per Timer, Ergebnis an applyComponentsResult())
+        //gibt es bewusst zweimal: hier für ein Gateway (Buffer componentsRun*/componentsPage*) und in ShellyBLUDevice je Gateway
+        //(Buffer bluRun_*/bluAcc_*/bluPages_*/bluNext_*, Methoden requestComponentsStatus()/handleComponentsPage()). Der Abruf hier ist der
+        //zentrale Pfad aller Geräte und wurde deshalb nicht zu einem gemeinsamen Helfer zusammengelegt (Aufwand und Risiko stehen in keinem
+        //Verhältnis zum Nutzen). Änderungen an der Seitenlogik (z.B. Seitenlimit, Sperre gegen überlappende Abrufe) in beiden Klassen machen.
+        //
         //Fragt ALLE Komponenten mit Status und Config per Shelly.GetComponents ab; die Antwort
         //(ReceiveData()) legt die Variablen an bzw. aktualisiert sie. Gemeinsamer Einstieg für das
         //ApplyChanges() der Instanz-Module und den "Read Componentes"-Button. Die Antwort ist paginiert
@@ -899,7 +905,7 @@ require_once __DIR__ . '/BTHomeObjects.php';
             //Immer die Event Komponenten hinzufügen!
             array_push($allComponentsFromShelly, 'events:0.component', 'events:0.event');
 
-            //BTHome: Tasten-Variable nur für BLU-Geräte, bei denen eine Taste bekannt ist (siehe bthomeDeviceShowsButton()).
+            //BTHome: Tasten- und Rad-Variablen (Taste 1 bis 4, Rad) nur für BLU-Geräte, bei denen sie bekannt sind (siehe bthomeButtonLeafPaths()).
             foreach ($allComponentsFromShelly as $entry) {
                 if (preg_match('/^(bthomedevice:\d+)\./', $entry, $deviceMatch)) {
                     foreach ($this->bthomeButtonLeafPaths($deviceMatch[1]) as $buttonPath) {
