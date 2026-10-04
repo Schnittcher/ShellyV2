@@ -717,7 +717,7 @@ trait Components
                     'factor'       => 0.001,
                     'presentation' => [
                         'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
-                        'SUFFIX'       => ' kwh'
+                        'SUFFIX'       => ' kWh'
                     ],
                 ],
             ],
