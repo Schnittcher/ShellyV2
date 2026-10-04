@@ -4,11 +4,15 @@ BLU TRVs (Thermostate) sind davon ausgenommen, sie laufen an genau einem Gateway
 
 Idealerweise wird die Instanz über den Konfigurator angelegt (Gruppe "BLU-Geräte"), dann wird die gesamte Konfiguration korrekt ausgefüllt.
 
-## Inhaltverzeichnis
+## Inhaltsverzeichnis
 - [ShellyBLUDevice](#shellybludevice)
-  - [Inhaltverzeichnis](#inhaltverzeichnis)
+  - [Inhaltsverzeichnis](#inhaltsverzeichnis)
   - [1. Konfiguration](#1-konfiguration)
   - [2. Variablen](#2-variablen)
+    - [2.1 Variablen des Geräts](#21-variablen-des-geräts)
+    - [2.2 Tasten und Rad](#22-tasten-und-rad)
+    - [2.3 Sensoren (Messwerte)](#23-sensoren-messwerte)
+    - [2.4 Variablen der Instanz (mehrere Gateways)](#24-variablen-der-instanz-mehrere-gateways)
   - [3. Modelle](#3-modelle)
   - [4. Funktionen](#4-funktionen)
   - [5. Spenden](#5-spenden)
@@ -26,22 +30,65 @@ Debug: Fehlende Idents | Zusätzliche Debug-Ausgaben, falls Variablen fehlen.
 Variablen | Auswahl der Variablen, ebenfalls die Funktion "Zeroing" (Variable wird zurückgesetzt, wenn alle Gateways offline sind).
 
 ## 2. Variablen
-Die Variablen des Geräts entsprechen denen einer `bthomedevice`-Komponenten-Instanz: Sensoren (je nach Modell, z. B. Fenster, Bewegung, Temperatur, Luftfeuchtigkeit), Batterie, Empfang, Kopplung, Firmware sowie Fehler und Störung.
+Alle Variablen einer Instanz. Die Namen der Variablen des Geräts beginnen mit dem Namen des Geräts, den man am Gateway vergeben hat, sonst mit der MAC-Adresse (z. B. `f8:44:77:43:0d:86 - Battery`). In der Liste "Variablen" der Instanz kann man einzelne abwählen.
 
-Tasten und Rad kommen als Ereignis des Geräts:
-* `Taste` zeigt den letzten Tastendruck (Einfach, Doppelt, Dreifach, Lang, Halten). Geräte mit mehreren Tasten (z. B. BLU RC Button 4, Wall Switch 4) haben `Taste 1` bis `Taste 4`.
-* Die BLU Remote Control ZB hat für das Drehrad `Rad` (Hoch gedreht / Runter gedreht) und `Rad Schritte` (Schritte der letzten Drehung, runter negativ).
+### 2.1 Variablen des Geräts
+Der Ident beginnt mit `bthomedevice_<N>_`, `<N>` ist die Nummer des Geräts am Haupt-Gateway.
 
+Variable | Ident | Typ | Beschreibung
+------------ | ------------ | ------------ | ----------------
+RSSI | `rssi` | Ganzzahl (dBm) | Signalstärke, mit der das Gerät empfangen wird. Bei mehreren Gateways der Wert des stärksten Gateways.
+Battery | `battery` | Ganzzahl (%) | Batteriestand.
+Letzte Aktualisierung | `last_updated_ts` | Datum/Uhrzeit | Wann das letzte Paket des Geräts empfangen wurde (der neueste Zeitpunkt aller Gateways).
+Gekoppelt | `paired` | Ja/Nein | Ob das Gerät am Gateway angelernt ist.
+Schlüssel hinterlegt | `key` | Ja/Nein | Ob am Gateway ein Verschlüsselungsschlüssel für das Gerät hinterlegt ist (nur bei verschlüsselten Geräten nötig).
+Firmware-Version | `fw_ver` | Text | Firmware des BLU-Geräts.
+Fehler | `errors` | Text | Fehler des Geräts als Text (z. B. "Entschlüsselung fehlgeschlagen" bei einem fehlenden oder falschen Schlüssel), leer wenn keiner vorliegt.
+Störung | `fault` | Ja/Nein | `true`, sobald ein Fehler vorliegt, praktisch für Ereignisse und Benachrichtigungen.
+
+### 2.2 Tasten und Rad
+Sie kommen als Ereignis des Geräts (beim Druck bzw. Drehen), nicht beim Auslesen. Welche es gibt, steht in der Modellliste (siehe 3.).
+
+Variable | Ident | Typ | Beschreibung
+------------ | ------------ | ------------ | ----------------
+Taste | `button` | Text | Letzter Tastendruck: Einfach gedrückt, Doppelt gedrückt, Dreifach gedrückt, Lang gedrückt oder Gehalten. Bei Geräten mit mehreren Tasten heißt sie `Taste 1`.
+Taste 2 bis Taste 4 | `button2` bis `button4` | Text | Die weiteren Tasten (BLU RC Button 4, Wall Switch 4). Die Tastennummer liefert das Gerät im Ereignis.
+Rad | `dial` | Text | Letzte Drehrichtung des Drehrads (BLU Remote Control ZB): Hoch gedreht oder Runter gedreht.
+Rad Schritte | `dialsteps` | Ganzzahl | Schritte der letzten Drehung, runter negativ.
+
+Geräte mit einer Taste als Hauptfunktion (z. B. Button, Wall Switch) haben die Variable von Anfang an. Bei den übrigen (z. B. Tür-/Fenstersensor, H&T, Motion) entsteht sie beim ersten Tastendruck.
+
+### 2.3 Sensoren (Messwerte)
+Je Sensor des Geräts gibt es eine Variable mit dem Messwert und eine mit dem Zeitpunkt der letzten Meldung ("<Sensor> - Letzte Aktualisierung"). Der Ident ist `bthomesensor_<Objekt * 100 + Index>_value` bzw. `..._last_updated_ts` (z. B. `bthomesensor_4500_value` für das Fenster), an allen Gateways gleich. Name, Typ und Einheit kommen vom Gerät bzw. aus der Liste unten. Die Batterie hat keine eigene Sensor-Variable, sie steht schon bei den Variablen des Geräts.
+
+Die Sensoren, die ein Modell sendet, legt die Instanz **sofort** an (Liste siehe 3.), sie füllen sich mit dem ersten Paket des Geräts. Bis dahin zeigen sie den Standardwert (0, "Keine Bewegung") und bei der Zeit "-". Sendet ein Gerät einen Sensor nicht (mehr), bleibt die Variable bei dem letzten bekannten Wert.
+
+Sensor | BTHome-Objekt | Typ | Werte | Geräte (Beispiele)
+------------ | ------------ | ------------ | ------------ | ------------
+Fenster | 45 | Ja/Nein | Offen / Geschlossen | Tür-/Fenstersensor
+Bewegung | 33 | Ja/Nein | Bewegung / Keine Bewegung | Motion, Motion ZB
+Temperatur | 69 | Zahl | °C | HT, H&T Display, Wetterstation
+Luftfeuchtigkeit | 46 | Zahl | % | HT, H&T Display, Wetterstation
+Beleuchtungsstärke | 5 | Zahl | lx | Tür-/Fenstersensor, Motion, Wetterstation
+Drehung | 63 | Zahl | ° | Tür-/Fenstersensor: Öffnungswinkel. Remote Control ZB: drei Werte "Drehung 1" bis "Drehung 3" (Bedeutung vom Hersteller nicht beschrieben, vermutlich Lage des Geräts, ändern sich beim Drehen des Rads nicht)
+Helligkeitsstufe | 100 | Aufzählung | Dunkel / Dämmerung / Hell | Motion ZB, Tür-/Fenstersensor ZB, H&T Display
+Licht | 30 | Ja/Nein | Hell / Dunkel | H&T Display
+Batterie schwach | 21 | Ja/Nein | Schwach / OK | H&T Display
+Abstand | 64 | Zahl | mm | Distance
+Kanal | 96 | Zahl | aktiver Kanal | Remote Control ZB
+Luftdruck, Taupunkt, Spannung, Niederschlag, Feuchtigkeit (Regen), Wind (Geschwindigkeit und Böen), UV-Index, Richtung | 4, 8, 12, 95, 32, 68, 70, 94 | Zahl bzw. Ja/Nein | hPa, °C, V, mm, Nass/Trocken, m/s, -, ° | Wetterstation (nach der Doku, nicht an einem echten Gerät geprüft)
+
+### 2.4 Variablen der Instanz (mehrere Gateways)
 Beim Zusammenführen der Gateways gilt:
 * Messwerte: der Wert mit dem neuesten Zeitstempel (`last_updated_ts`) aller Gateways.
 * Tastendruck: von jedem Gateway; derselbe Druck, den zwei Gateways kurz nacheinander melden, wird nur einmal gezählt.
-* Erreichbar: online, solange mindestens ein Gateway online ist.
-* RSSI des Geräts: Signal des stärksten Gateways.
 
-Zusätzlich je Gateway:
-* `RSSI (<Gateway>)`: Signalstärke, mit der dieses Gateway das Gerät empfängt.
-* `Letzte Aktualisierung (<Gateway>)`: wann dieses Gateway das Gerät zuletzt gehört hat.
-* `Stärkstes Gateway`: das Gateway mit dem stärksten Signal (nur Gateways, die das Gerät innerhalb des maximalen Alters gehört haben) - z. B. für die Raumerkennung.
+Variable | Ident | Typ | Beschreibung
+------------ | ------------ | ------------ | ----------------
+Erreichbar | `Reachable` | Online/Offline | Online, solange mindestens ein Gateway online ist.
+RSSI (<Gateway>) | `GwRssi_...` | Ganzzahl (dBm) | Signalstärke, mit der dieses Gateway das Gerät empfängt (eine Variable je Gateway).
+Letzte Aktualisierung (<Gateway>) | `GwSeen_...` | Datum/Uhrzeit | Wann dieses Gateway das Gerät zuletzt gehört hat (eine Variable je Gateway).
+Stärkstes Gateway | `NearestGateway` | Text | Das Gateway mit dem stärksten Signal (nur Gateways, die das Gerät innerhalb des maximalen Alters gehört haben), z. B. für die Raumerkennung.
 
 ## 3. Modelle
 Welches BLU-Gerät es ist, steht in der Modell-ID (attrs.model_id der Komponente am Gateway). Die Liste der bekannten Modelle steht in libs/BTHomeModels.php (Name, Taste, Thermostat und die BTHome-Objekte, die das Modell sendet). Für diese Modelle gibt es die Sensor-Variablen (Fenster, Luftfeuchtigkeit, Temperatur, ...) sofort beim Anlegen der Instanz, auch wenn das Gateway sie noch nicht gemeldet hat; die Variablen füllen sich beim ersten Paket des Geräts. Unbekannte Modelle funktionieren weiter, aber nur mit den Sensoren, die das Gateway meldet. Ein neues Modell trägt man in der Liste ein.

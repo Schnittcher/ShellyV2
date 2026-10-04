@@ -14,11 +14,14 @@ Idealerweise wird dies über den Konfigurator getan, dann wird die gesamte Konfi
 
 Feld | Beschreibung
 ------------ | ----------------
-MQTT Topic | Hier wird das Topic des Geräte hinterlegt-
+MQTT Topic | Hier wird das Topic des Geräts hinterlegt.
 Komponente      | Hier wird die Komponente hinterlegt, für welche diese Instanz gelten soll. zum Beispiel switch
 Kanal      | Hier wird der Kanal hinterlegt, für welchen diese Instanz gelten soll. zum Beispiel 0 wenn es sich um die Komponente switch:0 handelt.
 Debug: Fehlende Idents     | Mit diesem Schalter können im Debug mehr Daten angezeigt werden, dies kann nützlich sein, wenn Variablen fehlen und das Debug im Forum gepostet werden soll.
-Variablen | In dieser Liste kann ausgewählt werden, ob die Variablen angezeigt werden sollen, ebenfalls gibt es die Möglichkeit die Funktion "Zeroing" zu aktivieren. Durch das Aktivieren der Funktion wird die Variable zurückgesetzt, wenn das Gerät offline ist. Komponenten, die Fehler melden, haben zusätzlich die Variablen "Fehler" (die Fehlercodes als Text) und "Störung" (Ja/Nein, true sobald ein Fehler vorliegt).
+Variablen | In dieser Liste kann ausgewählt werden, ob die Variablen angezeigt werden sollen, ebenfalls gibt es die Möglichkeit die Funktion "Zeroing" zu aktivieren. Durch das Aktivieren der Funktion wird die Variable zurückgesetzt, wenn das Gerät offline ist. Welche Variablen es je Komponente gibt (Name, Ident, Typ, Einheit, bedienbar), steht in [Komponenten.md](../Komponenten.md). Komponenten, die Fehler melden, haben zusätzlich die Variablen "Fehler" (die Fehlercodes als Text) und "Störung" (Ja/Nein, true sobald ein Fehler vorliegt).
+Stream-Objekte automatisch anlegen | Nur bei einer Shelly Camera: Legt die Stream-Objekte (RTSP, Hauptstream und zweiter Stream) automatisch an, sobald die IP-Adresse des Geräts bekannt ist.
+Stream-Benutzer | Nur bei einer Shelly Camera, nur nötig, wenn am Gerät die Authentifizierung aktiv ist (der Benutzer ist laut Weboberfläche der Kamera "admin").
+Stream-Passwort | Das zugehörige Passwort, wird in die Adresse der Stream-Objekte übernommen.
 
 ## 2. Funktionen
 
@@ -45,11 +48,13 @@ SHY_callRPCFunction(integer 12345, string 'Switch.Set', $params);
 ```
 
 `void SHY_requestComponentsStatus(integer $InstanzID);`
-Ruft alle Components / Services ab und legt dazu die Variablen an, diese Funktion wird automatisch beim Speichern der Instanz aufgerufen.
-Diese Funktion kann ebenfalls dazu genutzt werden, um den Status der Variablen manuell abzufragen.
+Liest alle Komponenten und Dienste des Geräts mit Status und Konfiguration (`Shelly.GetComponents`, seitenweise), legt die Variablen an und aktualisiert die Werte. Die Funktion wird automatisch beim Speichern der Instanz und beim Verbinden mit dem MQTT-Server/-Client aufgerufen, im Formular gibt es dafür den Button "Komponenten auslesen". Sie kann auch genutzt werden, um alle Werte manuell abzufragen, z. B. nach Änderungen am Gerät.
 
 Beispiel:
 `SHY_requestComponentsStatus(12345);`
+
+`string SHY_CreateCameraStreams(integer $InstanzID);`
+Nur bei einer Shelly Camera: Legt die Stream-Objekte an bzw. aktualisiert ihre Adresse (z. B. nach geänderten Zugangsdaten), im Formular der Button "Stream-Objekte aktualisieren". Gibt einen Hinweistext zurück.
 
 ### KVS (Key-Value-Store des Geräts)
 Mit diesen Funktionen kann der persistente Speicher für Schlüssel/Wert-Paare auf dem Shelly gelesen und beschrieben werden (z. B. zum Austausch von Werten mit einem Shelly-Skript). Der Wert ist ein beliebiger JSON-Wert (Text, Zahl, Boolean, Array). Grenzen laut Shelly: Schlüssel höchstens 42 Zeichen, Wert höchstens 253 Zeichen, höchstens 50 Schlüssel. Die Funktionen warten bis zu 5 Sekunden auf die Antwort des Geräts.
