@@ -214,6 +214,13 @@ class ShellyConfigurator extends IPSModuleStrict
                                 $bthomeDeviceKeys[] = $shellyComponent['key'];
                             }
                         }
+                        //Name und MAC-Adresse der BLU-Geräte und Thermostate (Config), für die Anzeige ohne eigenen Namen.
+                        $bthomeDeviceConfigs = [];
+                        foreach ($dynamicComponentLists[$Shelly['ID']] ?? [] as $shellyComponent) {
+                            if (isset($shellyComponent['key'], $shellyComponent['config']) && preg_match('/^(bthomedevice|blutrv):/', $shellyComponent['key'])) {
+                                $bthomeDeviceConfigs[$shellyComponent['key']] = $shellyComponent['config'];
+                            }
+                        }
 
                         foreach ($componentLists[$Shelly['ID']] ?? [] as $shellyComponent) {
                             if (!isset($shellyComponent['key'])) {
@@ -236,6 +243,13 @@ class ShellyConfigurator extends IPSModuleStrict
 
                             $displayName = $key;
                             $componentName = $dynamicComponentNames[$key]['name'] ?? '';
+                            //BLU-Gerät oder Thermostat: Name aus der Config, ohne Namen die MAC-Adresse.
+                            if ($component == 'bthomedevice' || $component == 'blutrv') {
+                                $componentName = trim((string) ($bthomeDeviceConfigs[$key]['name'] ?? ''));
+                                if ($componentName == '') {
+                                    $componentName = (string) ($bthomeDeviceConfigs[$key]['addr'] ?? '');
+                                }
+                            }
                             if ($componentName != '') {
                                 $displayName = $key . ' (' . $componentName . ')';
                             }

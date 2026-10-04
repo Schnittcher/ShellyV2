@@ -567,6 +567,10 @@ require_once __DIR__ . '/BTHomeObjects.php';
             }
             $key = $component . ':' . $channel;
             $name = $configs[$key]['name'] ?? null;
+            //BLU-Geräte ohne Namen: MAC-Adresse als Präfix (wie bei deren Sensoren).
+            if (($name === null || $name === '') && ($component == 'bthomedevice' || $component == 'blutrv')) {
+                return $this->bthomeUnnamedDeviceName($key);
+            }
             return ($name !== null && $name !== '') ? $name : null;
         }
 

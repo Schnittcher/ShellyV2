@@ -250,6 +250,16 @@ trait BTHomeObjects
         return isset($config['obj_id']) && in_array((int) $config['obj_id'], self::$bthomeButtonObjectIds, true);
     }
 
+    //MAC-Adresse (Config addr) eines BLU-Geräts bzw. Thermostats ohne vom Nutzer vergebenen Namen (bthomedevice:N oder
+    //blutrv:N), sonst null. Das Gerät liefert keinen Standardnamen (die Shelly-Weboberfläche setzt ihn selbst aus der
+    //Modell-ID zusammen), die MAC-Adresse ist das, was bei MQTT ankommt.
+    protected function bthomeUnnamedDeviceName(string $componentKey)
+    {
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        $addr = is_array($configs) ? (string) ($configs[$componentKey]['addr'] ?? '') : '';
+        return $addr != '' ? $addr : null;
+    }
+
     //Name des BLU-Geräts (bthomedevice mit gleicher MAC-Adresse), sonst die MAC-Adresse selbst - als Namenspräfix.
     protected function bthomeDevicePrefix(array $configs, string $addr)
     {
