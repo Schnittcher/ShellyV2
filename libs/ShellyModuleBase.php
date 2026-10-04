@@ -18,6 +18,59 @@ require_once __DIR__ . '/BTHomeObjects.php';
         use CameraStream;
         use BTHomeObjects;
 
+        // ############################################################
+        // ### IDEE / TODO - Presets-Zuordnungstabelle für ALLE        ###
+        // ### Komponenten (noch NICHT umgesetzt, kein akuter Bedarf,  ###
+        // ### nur damit die Idee nicht verloren geht):                ###
+        // ### getDynamicComponentMetadata() unten liefert pro         ###
+        // ### Instanz schon Name/Optionen/Min-Max/Access direkt vom   ###
+        // ### Gerät - aber nur für Felder, die der Shelly selbst      ###
+        // ### kennt UND nur für die dynamischen Typen. Für rein       ###
+        // ### Symcon-seitige Darstellung (z.B. ein Icon) oder Werte,  ###
+        // ### die der Shelly nicht/nicht konsistent mitliefert (z.B.  ###
+        // ### unterschiedliche Kelvin-Bereiche bei CCT-Lampen je nach ###
+        // ### Modell), könnte man zusätzlich eine GLOBALE             ###
+        // ### Presets-Tabelle bauen, keyed auf ModelID + Komponenten- ###
+        // ### Typ (Bevorzugte Variante, siehe Chat) - ähnlich wie     ###
+        // ### XMODServices.php es für LinkedGo/BLU-Geräte schon       ###
+        // ### macht, nur eben als Ergänzung zu components.php statt   ###
+        // ### Ersatz. components.php selbst eignet sich dafür NICHT   ###
+        // ### (global, kennt keine Geräte-/Instanz-Zugehörigkeit,     ###
+        // ### würde bei unterschiedlicher Nutzung z.B. von            ###
+        // ### boolean:200 auf verschiedenen Geräten kollidieren).     ###
+        // ### WICHTIG: Bewusst generisch für JEDEN Komponententyp     ###
+        // ### bauen (auch cover/light, nicht nur number/CCT) - auch   ###
+        // ### wenn z.B. cover.current_pos (0-100%) ein fester         ###
+        // ### Shelly-Protokollwert ist und aktuell KEIN konkreter     ###
+        // ### Bedarf für eine Override dort besteht, soll der         ###
+        // ### Mechanismus nicht künstlich auf bestimmte Typen         ###
+        // ### beschränkt sein, falls doch mal ein Sonderfall auftaucht.###
+        // ### Fallback für Fälle außerhalb der Presets-Tabelle:       ###
+        // ### manuelles Override-Feld in der VariableList-Property    ###
+        // ### (schon heute pro Instanz/pro Variable, siehe            ###
+        // ### Selected/Zeroing).                                      ###
+        // ############################################################
+
+        // ############################################################
+        // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
+        // ### Liefert den vom Nutzer auf dem Gerät hinterlegten     ###
+        // ### Konfigurations-Eintrag (u.a. "name", bei Enum         ###
+        // ### "options") für z.B. component='boolean', channel=200 ###
+        // ### -> sucht "boolean:200" in 'componentConfigs' (volle   ###
+        // ### Config je Komponente aus Shelly.GetComponents, siehe  ###
+        // ### getComponentConfigs()). Liefert null, falls           ###
+        // ### (noch) keine Metadaten vorliegen oder der Eintrag     ###
+        // ### nicht existiert.                                      ###
+        // ############################################################
+        // Nur diese Basis-Typen werden per Shelly.GetComponents auf Name/Optionen/Min-Max/Access
+        // geprüft - Boolean/Number/Enum/Text (Shelly "User-defined components") und presencezone
+        // (physischer Sensor, aber ebenfalls nur über Shelly.GetComponents mit "name" pro Zone
+        // auffindbar, z.B. "Room"/"test"). WICHTIG: Ohne diese Einschränkung würde z.B. bei "pm1:0"
+        // (mehrere Unterwerte wie freq, aenergy.total, ...) der vom Nutzer vergebene Kanalname
+        // fälschlich auf ALLE Unterwerte dieses Kanals übertragen, da Shelly.GetComponents für jede
+        // Komponente einen "name" liefert.
+        private static $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone', 'camerazone'];
+
         public function Create(): void
         {
             //Never delete this line!
@@ -34,22 +87,22 @@ require_once __DIR__ . '/BTHomeObjects.php';
                 'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 'OPTIONS'         => json_encode([
                     [
-                        'Value'            => true,
-                        'Caption'          => 'Online',
-                        'IconActive'       => true,
-                        'IconValue'        => 'Information',
-                        'ColorActive'      => true,
-                        'ColorValue'       => 65280,
+                        'Value'              => true,
+                        'Caption'            => 'Online',
+                        'IconActive'         => true,
+                        'IconValue'          => 'Information',
+                        'ColorActive'        => true,
+                        'ColorValue'         => 65280,
                         'ContentColorActive' => false,
                         'ContentColorValue'  => -1
                     ],
                     [
-                        'Value'            => false,
-                        'Caption'          => 'Offline',
-                        'IconActive'       => true,
-                        'IconValue'        => 'Information',
-                        'ColorActive'      => true,
-                        'ColorValue'       => 16711680,
+                        'Value'              => false,
+                        'Caption'            => 'Offline',
+                        'IconActive'         => true,
+                        'IconValue'          => 'Information',
+                        'ColorActive'        => true,
+                        'ColorValue'         => 16711680,
                         'ContentColorActive' => false,
                         'ContentColorValue'  => -1
                     ],
@@ -250,6 +303,58 @@ require_once __DIR__ . '/BTHomeObjects.php';
             return '';
         }
 
+        //HINWEIS: Das seitenweise Auslesen (Abruf starten, Seiten sammeln, Folgeseiten per Timer, Ergebnis an applyComponentsResult())
+        //gibt es bewusst zweimal: hier für ein Gateway (Buffer componentsRun*/componentsPage*) und in ShellyBLUDevice je Gateway
+        //(Buffer bluRun_*/bluAcc_*/bluPages_*/bluNext_*, Methoden requestComponentsStatus()/handleComponentsPage()). Der Abruf hier ist der
+        //zentrale Pfad aller Geräte und wurde deshalb nicht zu einem gemeinsamen Helfer zusammengelegt (Aufwand und Risiko stehen in keinem
+        //Verhältnis zum Nutzen). Änderungen an der Seitenlogik (z.B. Seitenlimit, Sperre gegen überlappende Abrufe) in beiden Klassen machen.
+        //
+        //Fragt ALLE Komponenten mit Status und Config per Shelly.GetComponents ab; die Antwort
+        //(ReceiveData()) legt die Variablen an bzw. aktualisiert sie. Gemeinsamer Einstieg für das
+        //ApplyChanges() der Instanz-Module und den "Read Componentes"-Button. Die Antwort ist paginiert
+        //(die Seitengröße bestimmt das Gerät), Folgeseiten werden in ReceiveData() per
+        //RegisterOnceTimer() angefordert.
+        //
+        //Verifiziert (Feldnamen/Ident-Stabilität, live): pm1, alle dynamischen Typen (boolean/number/
+        //enum/text/presencezone), Shelly Presence G4, Shelly 1 Gen3, Pro RGBWW PM, Smart WaterValve (XT1),
+        //BLU TRV (blutrv:201), per API-Doku für cover/em/temperature/humidity. Bei einem bisher
+        //unbekannten Komponententyp vor breiterem Einsatz einmal live gegenprüfen.
+        public function requestComponentsStatus(): void
+        {
+            //Läuft bereits ein Abruf (z.B. aus ApplyChanges() und gleichzeitig aus dem Verbinden), wird kein zweiter gestartet:
+            //zwei parallele Abrufe teilen sich Accumulator und Seitenzähler, ein verspäteter Rest des einen überschrieb sonst das
+            //fertige Ergebnis des anderen (z.B. mit nur 1 statt 25 Komponenten). Nach 15 s gilt ein Abruf als gescheitert.
+            $started = (float) $this->GetBuffer('componentsRunStarted');
+            if ($started > 0 && (microtime(true) - $started) < 15) {
+                return;
+            }
+            $this->SetBuffer('componentsRunStarted', (string) microtime(true));
+            $this->SetBuffer('componentsPageAccumulator', json_encode([]));
+            $this->SetBuffer('componentsPageCount', '0');
+            $this->requestComponentsPage(0);
+        }
+
+        //Öffentlicher Einstiegspunkt für den per RegisterOnceTimer() registrierten Timer - läuft
+        //außerhalb des ReceiveData()-Aufruf-Stacks, liest den zu ladenden Offset aus dem Buffer.
+        public function RunNextComponentsPageAsync(): void
+        {
+            $offset = (int) $this->GetBuffer('componentsNextPageOffset');
+            $this->requestComponentsPage($offset);
+        }
+
+        public function callRPCFunction(string $method, array $params): void
+        {
+            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
+
+            $Payload['id'] = 1;
+            $Payload['src'] = 'user_1';
+            $Payload['method'] = $method;
+            //Shelly erwartet für "params" ein Objekt - ein leeres Array würde als [] statt {} gesendet.
+            $Payload['params'] = $params === [] ? new stdClass() : $params;
+
+            $this->sendMQTT($Topic, json_encode($Payload));
+        }
+
         //Verarbeitet das vollständige Ergebnis von Shelly.GetComponents ($statusAccumulated = Liste der Komponenteneinträge mit
         //key/status/config): Buffer setzen, Variablenliste und Variablen anlegen, Werte übernehmen. Wird aufgerufen, wenn die
         //letzte Seite eingetroffen ist. Die Instanz für BLU-Geräte an mehreren Gateways (ShellyBLUDevice) ruft es mit dem
@@ -358,73 +463,6 @@ require_once __DIR__ . '/BTHomeObjects.php';
             $this->ReloadForm();
         }
 
-        //HINWEIS: Das seitenweise Auslesen (Abruf starten, Seiten sammeln, Folgeseiten per Timer, Ergebnis an applyComponentsResult())
-        //gibt es bewusst zweimal: hier für ein Gateway (Buffer componentsRun*/componentsPage*) und in ShellyBLUDevice je Gateway
-        //(Buffer bluRun_*/bluAcc_*/bluPages_*/bluNext_*, Methoden requestComponentsStatus()/handleComponentsPage()). Der Abruf hier ist der
-        //zentrale Pfad aller Geräte und wurde deshalb nicht zu einem gemeinsamen Helfer zusammengelegt (Aufwand und Risiko stehen in keinem
-        //Verhältnis zum Nutzen). Änderungen an der Seitenlogik (z.B. Seitenlimit, Sperre gegen überlappende Abrufe) in beiden Klassen machen.
-        //
-        //Fragt ALLE Komponenten mit Status und Config per Shelly.GetComponents ab; die Antwort
-        //(ReceiveData()) legt die Variablen an bzw. aktualisiert sie. Gemeinsamer Einstieg für das
-        //ApplyChanges() der Instanz-Module und den "Read Componentes"-Button. Die Antwort ist paginiert
-        //(die Seitengröße bestimmt das Gerät), Folgeseiten werden in ReceiveData() per
-        //RegisterOnceTimer() angefordert.
-        //
-        //Verifiziert (Feldnamen/Ident-Stabilität, live): pm1, alle dynamischen Typen (boolean/number/
-        //enum/text/presencezone), Shelly Presence G4, Shelly 1 Gen3, Pro RGBWW PM, Smart WaterValve (XT1),
-        //BLU TRV (blutrv:201), per API-Doku für cover/em/temperature/humidity. Bei einem bisher
-        //unbekannten Komponententyp vor breiterem Einsatz einmal live gegenprüfen.
-        public function requestComponentsStatus(): void
-        {
-            //Läuft bereits ein Abruf (z.B. aus ApplyChanges() und gleichzeitig aus dem Verbinden), wird kein zweiter gestartet:
-            //zwei parallele Abrufe teilen sich Accumulator und Seitenzähler, ein verspäteter Rest des einen überschrieb sonst das
-            //fertige Ergebnis des anderen (z.B. mit nur 1 statt 25 Komponenten). Nach 15 s gilt ein Abruf als gescheitert.
-            $started = (float) $this->GetBuffer('componentsRunStarted');
-            if ($started > 0 && (microtime(true) - $started) < 15) {
-                return;
-            }
-            $this->SetBuffer('componentsRunStarted', (string) microtime(true));
-            $this->SetBuffer('componentsPageAccumulator', json_encode([]));
-            $this->SetBuffer('componentsPageCount', '0');
-            $this->requestComponentsPage(0);
-        }
-
-        //Öffentlicher Einstiegspunkt für den per RegisterOnceTimer() registrierten Timer - läuft
-        //außerhalb des ReceiveData()-Aufruf-Stacks, liest den zu ladenden Offset aus dem Buffer.
-        public function RunNextComponentsPageAsync(): void
-        {
-            $offset = (int) $this->GetBuffer('componentsNextPageOffset');
-            $this->requestComponentsPage($offset);
-        }
-
-        private function requestComponentsPage($offset)
-        {
-            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
-            $Payload['id'] = 1;
-            //Die Instanz-ID in der Quelle macht das Antwort-Topic pro Instanz eindeutig: mehrere Instanzen desselben Geräts
-            //(z.B. eine je Komponente) fragen sonst gleichzeitig dieselbe Quelle ab und vermischen die Seiten.
-            $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponents/' . $this->InstanceID;
-            $Payload['method'] = 'Shelly.GetComponents';
-            //"config" zusätzlich zu "status": liefert u.a. den vom Nutzer auf dem Gerät vergebenen
-            //Namen pro Kanal (z.B. "Waschmaschine" bei switch:0), bei dynamischen Komponenten Optionen/
-            //Min/Max - siehe getComponentConfigs()/getPhysicalComponentName()/getDynamicComponentMetadata().
-            $Payload['params'] = ['include' => ['status', 'config'], 'offset' => $offset];
-            $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
-        }
-
-        public function callRPCFunction(string $method, array $params): void
-        {
-            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
-
-            $Payload['id'] = 1;
-            $Payload['src'] = 'user_1';
-            $Payload['method'] = $method;
-            //Shelly erwartet für "params" ein Objekt - ein leeres Array würde als [] statt {} gesendet.
-            $Payload['params'] = $params === [] ? new stdClass() : $params;
-
-            $this->sendMQTT($Topic, json_encode($Payload));
-        }
-
         protected function SetValue(string $Ident, mixed $Value): bool
         {
             if (@$this->GetIDForIdent($Ident)) {
@@ -498,7 +536,8 @@ require_once __DIR__ . '/BTHomeObjects.php';
                 //Fehlerlisten ('resetWhenMissing', z.B. switch.errors): Codes übersetzen und zusammenfassen; die Variable "Störung"
                 //(Ident <...>_fault) ist true, sobald mindestens ein Fehler vorliegt.
                 if (($tmpComponent['resetWhenMissing'] ?? false) && is_array($value)) {
-                    $this->SetValue($componentsFromShellyResult['ident'], implode(', ', array_map(function ($code) {
+                    $this->SetValue($componentsFromShellyResult['ident'], implode(', ', array_map(function ($code)
+                    {
                         return $this->translateErrorCode((string) $code);
                     }, $value)));
                     $this->SetValue(substr($componentsFromShellyResult['ident'], 0, -6) . 'fault', count($value) > 0);
@@ -551,58 +590,20 @@ require_once __DIR__ . '/BTHomeObjects.php';
             }
         }
 
-        // ############################################################
-        // ### IDEE / TODO - Presets-Zuordnungstabelle für ALLE        ###
-        // ### Komponenten (noch NICHT umgesetzt, kein akuter Bedarf,  ###
-        // ### nur damit die Idee nicht verloren geht):                ###
-        // ### getDynamicComponentMetadata() unten liefert pro         ###
-        // ### Instanz schon Name/Optionen/Min-Max/Access direkt vom   ###
-        // ### Gerät - aber nur für Felder, die der Shelly selbst      ###
-        // ### kennt UND nur für die dynamischen Typen. Für rein       ###
-        // ### Symcon-seitige Darstellung (z.B. ein Icon) oder Werte,  ###
-        // ### die der Shelly nicht/nicht konsistent mitliefert (z.B.  ###
-        // ### unterschiedliche Kelvin-Bereiche bei CCT-Lampen je nach ###
-        // ### Modell), könnte man zusätzlich eine GLOBALE             ###
-        // ### Presets-Tabelle bauen, keyed auf ModelID + Komponenten- ###
-        // ### Typ (Bevorzugte Variante, siehe Chat) - ähnlich wie     ###
-        // ### XMODServices.php es für LinkedGo/BLU-Geräte schon       ###
-        // ### macht, nur eben als Ergänzung zu components.php statt   ###
-        // ### Ersatz. components.php selbst eignet sich dafür NICHT   ###
-        // ### (global, kennt keine Geräte-/Instanz-Zugehörigkeit,     ###
-        // ### würde bei unterschiedlicher Nutzung z.B. von            ###
-        // ### boolean:200 auf verschiedenen Geräten kollidieren).     ###
-        // ### WICHTIG: Bewusst generisch für JEDEN Komponententyp     ###
-        // ### bauen (auch cover/light, nicht nur number/CCT) - auch   ###
-        // ### wenn z.B. cover.current_pos (0-100%) ein fester         ###
-        // ### Shelly-Protokollwert ist und aktuell KEIN konkreter     ###
-        // ### Bedarf für eine Override dort besteht, soll der         ###
-        // ### Mechanismus nicht künstlich auf bestimmte Typen         ###
-        // ### beschränkt sein, falls doch mal ein Sonderfall auftaucht.###
-        // ### Fallback für Fälle außerhalb der Presets-Tabelle:       ###
-        // ### manuelles Override-Feld in der VariableList-Property    ###
-        // ### (schon heute pro Instanz/pro Variable, siehe            ###
-        // ### Selected/Zeroing).                                      ###
-        // ############################################################
-
-        // ############################################################
-        // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
-        // ### Liefert den vom Nutzer auf dem Gerät hinterlegten     ###
-        // ### Konfigurations-Eintrag (u.a. "name", bei Enum         ###
-        // ### "options") für z.B. component='boolean', channel=200 ###
-        // ### -> sucht "boolean:200" in 'componentConfigs' (volle   ###
-        // ### Config je Komponente aus Shelly.GetComponents, siehe  ###
-        // ### getComponentConfigs()). Liefert null, falls           ###
-        // ### (noch) keine Metadaten vorliegen oder der Eintrag     ###
-        // ### nicht existiert.                                      ###
-        // ############################################################
-        // Nur diese Basis-Typen werden per Shelly.GetComponents auf Name/Optionen/Min-Max/Access
-        // geprüft - Boolean/Number/Enum/Text (Shelly "User-defined components") und presencezone
-        // (physischer Sensor, aber ebenfalls nur über Shelly.GetComponents mit "name" pro Zone
-        // auffindbar, z.B. "Room"/"test"). WICHTIG: Ohne diese Einschränkung würde z.B. bei "pm1:0"
-        // (mehrere Unterwerte wie freq, aenergy.total, ...) der vom Nutzer vergebene Kanalname
-        // fälschlich auf ALLE Unterwerte dieses Kanals übertragen, da Shelly.GetComponents für jede
-        // Komponente einen "name" liefert.
-        private static $dynamicComponentTypes = ['boolean', 'number', 'enum', 'text', 'presencezone', 'camerazone'];
+        private function requestComponentsPage($offset)
+        {
+            $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
+            $Payload['id'] = 1;
+            //Die Instanz-ID in der Quelle macht das Antwort-Topic pro Instanz eindeutig: mehrere Instanzen desselben Geräts
+            //(z.B. eine je Komponente) fragen sonst gleichzeitig dieselbe Quelle ab und vermischen die Seiten.
+            $Payload['src'] = $this->ReadPropertyString('MQTTTopic') . '/getComponents/' . $this->InstanceID;
+            $Payload['method'] = 'Shelly.GetComponents';
+            //"config" zusätzlich zu "status": liefert u.a. den vom Nutzer auf dem Gerät vergebenen
+            //Namen pro Kanal (z.B. "Waschmaschine" bei switch:0), bei dynamischen Komponenten Optionen/
+            //Min/Max - siehe getComponentConfigs()/getPhysicalComponentName()/getDynamicComponentMetadata().
+            $Payload['params'] = ['include' => ['status', 'config'], 'offset' => $offset];
+            $this->sendMQTT($Topic, json_encode($Payload, JSON_UNESCAPED_SLASHES));
+        }
 
         private function getDynamicComponentMetadata($component, $channel)
         {

@@ -13,6 +13,13 @@ trait CameraStream
     //Stream 0 = Hauptstream, Stream 1 = zweiter (kleinerer) Stream der Kamera.
     private static $cameraStreamNumbers = [0, 1];
 
+    //Button im Formular ("Stream-Objekte aktualisieren"): z.B. nach geänderten Zugangsdaten. Liefert den
+    //Hinweistext zurück (der Button gibt ihn per echo als Meldung aus).
+    public function CreateCameraStreams(): string
+    {
+        return $this->maintainCameraStreams();
+    }
+
     //AutoCreateStreams: Stream-Objekte automatisch anlegen. StreamUser/StreamPassword: optional, nur nötig, wenn am
     //Gerät die Authentifizierung aktiv ist (Benutzer ist laut Weboberfläche der Kamera "admin").
     protected function registerCameraStreamProperties()
@@ -44,13 +51,6 @@ trait CameraStream
         if (@$this->ReadPropertyBoolean('AutoCreateStreams') && $this->hasCameraComponent() && $this->GetBuffer('deviceIP') != '') {
             $this->maintainCameraStreams();
         }
-    }
-
-    //Button im Formular ("Stream-Objekte aktualisieren"): z.B. nach geänderten Zugangsdaten. Liefert den
-    //Hinweistext zurück (der Button gibt ihn per echo als Meldung aus).
-    public function CreateCameraStreams(): string
-    {
-        return $this->maintainCameraStreams();
     }
 
     //Legt die Stream-Objekte an bzw. aktualisiert ihre Adresse. Die IP-Adresse stammt aus dem Status des Geräts

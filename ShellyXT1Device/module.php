@@ -21,26 +21,26 @@ class ShellyXT1Device extends IPSModuleStrict
             'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
             'OPTIONS'         => json_encode(
                 [
-                [
-                    'Value'              => true,
-                    'Caption'            => 'Online',
-                    'IconActive'         => false,
-                    'IconValue'          => 'Information',
-                    'ColorActive'        => true,
-                    'ColorValue'         => 65280,
-                    'ContentColorActive' => false,
-                    'ContentColorValue'  => -1
-                ],
-                [
-                    'Value'              => false,
-                    'Caption'            => 'Offline',
-                    'IconActive'         => false,
-                    'IconValue'          => 'Information',
-                    'ColorActive'        => true,
-                    'ColorValue'         => 16711680,
-                    'ContentColorActive' => false,
-                    'ContentColorValue'  => -1
-                ],
+                    [
+                        'Value'              => true,
+                        'Caption'            => 'Online',
+                        'IconActive'         => false,
+                        'IconValue'          => 'Information',
+                        'ColorActive'        => true,
+                        'ColorValue'         => 65280,
+                        'ContentColorActive' => false,
+                        'ContentColorValue'  => -1
+                    ],
+                    [
+                        'Value'              => false,
+                        'Caption'            => 'Offline',
+                        'IconActive'         => false,
+                        'IconValue'          => 'Information',
+                        'ColorActive'        => true,
+                        'ColorValue'         => 16711680,
+                        'ContentColorActive' => false,
+                        'ContentColorValue'  => -1
+                    ],
                 ]
             )
         ], 99);
@@ -158,24 +158,6 @@ class ShellyXT1Device extends IPSModuleStrict
         return '';
     }
 
-private function getValueToKeyPath($array, $keyPath)
-{
-    $value = $array;
-    if (is_array($value) && $keyPath) {
-        $keys = explode(':', $keyPath);
-        $result = $value;
-        foreach ($keys as $k) {
-            $result = $result[$k] ?? null;
-            if ($result === null) {
-                break;
-            }
-        }
-    } else {
-        $result = $value;
-    }
-    return $result;
-}
-
     public function callRPCFunction(string $method, array $params): void
     {
         $Topic = $this->ReadPropertyString('MQTTTopic') . '/rpc';
@@ -186,6 +168,24 @@ private function getValueToKeyPath($array, $keyPath)
         $Payload['params'] = $params;
 
         $this->sendMQTT($Topic, json_encode($Payload));
+    }
+
+    private function getValueToKeyPath($array, $keyPath)
+    {
+        $value = $array;
+        if (is_array($value) && $keyPath) {
+            $keys = explode(':', $keyPath);
+            $result = $value;
+            foreach ($keys as $k) {
+                $result = $result[$k] ?? null;
+                if ($result === null) {
+                    break;
+                }
+            }
+        } else {
+            $result = $value;
+        }
+        return $result;
     }
 
     //Liefert ALLE Idents, deren 'receive' zum gesuchten Event-Key passt (nicht nur den ersten

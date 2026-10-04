@@ -284,29 +284,29 @@ trait XMODServices
                 'name'         => 'State',
                 'type'         => VARIABLETYPE_BOOLEAN,
                 'action'       => true,
-                 'presentation' => [
+                'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                     'ICON'         => 'Valve',
                     'OPTIONS'      => [
                         [
-                            "Value" => true,
-                            "Caption" => "Open",
-                            "IconActive" => false,
-                            "IconValue" => "",
-                            "ColorActive" => true,
-                            "ColorValue" => 65280,
-                            "ContentColorActive" => false,
-                            "ContentColorValue" => -1
+                            'Value'              => true,
+                            'Caption'            => 'Open',
+                            'IconActive'         => false,
+                            'IconValue'          => '',
+                            'ColorActive'        => true,
+                            'ColorValue'         => 65280,
+                            'ContentColorActive' => false,
+                            'ContentColorValue'  => -1
                         ],
                         [
-                            "Value" => false,
-                            "Caption" => "Closed",
-                            "IconActive" => false,
-                            "IconValue" => "",
-                            "ColorActive" => true,
-                            "ColorValue" => 16711680,
-                            "ContentColorActive" => false,
-                            "ContentColorValue" => -1
+                            'Value'              => false,
+                            'Caption'            => 'Closed',
+                            'IconActive'         => false,
+                            'IconValue'          => '',
+                            'ColorActive'        => true,
+                            'ColorValue'         => 16711680,
+                            'ContentColorActive' => false,
+                            'ContentColorValue'  => -1
                         ]
                     ],
                 ],
@@ -327,7 +327,7 @@ trait XMODServices
                 ],
                 'receive' => 'number:200'
             ],
-                'water_pressure' => [
+            'water_pressure' => [
                 'name'         => 'Water Pressure',
                 'type'         => VARIABLETYPE_FLOAT,
                 'action'       => false,
@@ -340,7 +340,7 @@ trait XMODServices
                 ],
                 'receive' => 'number:201'
             ],
-                'water_temperature' => [
+            'water_temperature' => [
                 'name'         => 'Water temperature',
                 'type'         => VARIABLETYPE_FLOAT,
                 'action'       => false,
@@ -353,7 +353,7 @@ trait XMODServices
                 ],
                 'receive' => 'number:202'
             ],
-                'water_consumption' => [
+            'water_consumption' => [
                 'name'         => 'Water consumption',
                 'type'         => VARIABLETYPE_FLOAT,
                 'action'       => false,
@@ -362,7 +362,7 @@ trait XMODServices
                     'SUFFIX'       => ' m3',
                     'ICON'         => 'water'
                 ],
-                'receive' => 'object:200',
+                'receive'     => 'object:200',
                 'objectValue' => 'counter:total'
             ],
 

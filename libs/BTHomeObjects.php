@@ -19,32 +19,32 @@ trait BTHomeObjects
 
     //obj_id => [Name, Einheit] - Rückfall für Zahlenwerte (Quelle: BTHome v2 Spezifikation, bthome.io/format)
     private static $bthomeFallbackObjects = [
-        1  => ['battery', '%'],
-        2  => ['temperature', '°C'],
-        3  => ['humidity', '%'],
-        4  => ['pressure', 'hPa'],
-        5  => ['illuminance', 'lx'],
-        8  => ['dewpoint', '°C'],
-        9  => ['count', ''],
-        10 => ['energy', 'kWh'],
-        11 => ['power', 'W'],
-        12 => ['voltage', 'V'],
-        14 => ['pm10', 'µg/m³'],
-        13 => ['pm2.5', 'µg/m³'],
-        18 => ['co2', 'ppm'],
-        19 => ['tvoc', 'µg/m³'],
-        20 => ['moisture', '%'],
-        46 => ['humidity', '%'],
-        47 => ['moisture', '%'],
-        63 => ['rotation', '°'],
-        64 => ['distance', 'mm'],
-        67 => ['current', 'A'],
-        68 => ['speed', 'm/s'],
-        69 => ['temperature', '°C'],
-        70 => ['uv index', ''],
-        94 => ['direction', '°'],
-        95 => ['precipitation', 'mm'],
-        96 => ['channel', ''],
+        1   => ['battery', '%'],
+        2   => ['temperature', '°C'],
+        3   => ['humidity', '%'],
+        4   => ['pressure', 'hPa'],
+        5   => ['illuminance', 'lx'],
+        8   => ['dewpoint', '°C'],
+        9   => ['count', ''],
+        10  => ['energy', 'kWh'],
+        11  => ['power', 'W'],
+        12  => ['voltage', 'V'],
+        14  => ['pm10', 'µg/m³'],
+        13  => ['pm2.5', 'µg/m³'],
+        18  => ['co2', 'ppm'],
+        19  => ['tvoc', 'µg/m³'],
+        20  => ['moisture', '%'],
+        46  => ['humidity', '%'],
+        47  => ['moisture', '%'],
+        63  => ['rotation', '°'],
+        64  => ['distance', 'mm'],
+        67  => ['current', 'A'],
+        68  => ['speed', 'm/s'],
+        69  => ['temperature', '°C'],
+        70  => ['uv index', ''],
+        94  => ['direction', '°'],
+        95  => ['precipitation', 'mm'],
+        96  => ['channel', ''],
         100 => ['light level', ''],
     ];
 
@@ -98,6 +98,41 @@ trait BTHomeObjects
         45 => ['window', 'Open', 'Closed'],
     ];
 
+    //Fragt Name/Typ/Einheit der vorkommenden obj_ids beim Gerät ab (BTHome.GetObjectInfos). Wird per
+    //RegisterOnceTimer aus ReceiveData() heraus aufgerufen (SendDataToParent() direkt aus ReceiveData() hat den
+    //Datenfluss schon einmal blockiert). Die Antwort kommt auf <topic>/getObjectInfos/<InstanzID>/rpc.
+    public function RequestBTHomeObjectInfos(): void
+    {
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        $objIds = [];
+        foreach (is_array($configs) ? $configs : [] as $key => $config) {
+            if (strpos((string) $key, 'bthomesensor:') === 0 && isset($config['obj_id'])) {
+                $objIds[(int) $config['obj_id']] = true;
+            }
+        }
+        if (count($objIds) == 0) {
+            return;
+        }
+        $topic = $this->ReadPropertyString('MQTTTopic');
+        $payload = [
+            'id'     => 1,
+            'src'    => $topic . '/getObjectInfos/' . $this->InstanceID,
+            'method' => 'BTHome.GetObjectInfos',
+            'params' => ['obj_ids' => array_keys($objIds)],
+        ];
+        $this->sendMQTT($topic . '/rpc', json_encode($payload, JSON_UNESCAPED_SLASHES));
+    }
+
+    //Öffentlicher Einstiegspunkt für den Timer: Status der vorgemerkten BLU-Geräte abfragen (Shelly.GetComponents mit "keys").
+    public function RefreshBTHomeDevice(): void
+    {
+        $keys = json_decode($this->GetBuffer('bthomeRefreshKeys'), true);
+        $this->SetBuffer('bthomeRefreshKeys', '[]');
+        if (is_array($keys) && count($keys) > 0) {
+            $this->requestBTHomeDeviceStatus($this->ReadPropertyString('MQTTTopic'), $keys);
+        }
+    }
+
     //Typ der "value"-Werte je Komponenten-Key (boolean/string/float), aus dem Status der Antwort - der Wert eines
     //Sensors kann je nach obj_id Zahl, Text oder Boolean sein, die Definition in components.php ist nur der Standard.
     protected function collectBTHomeValueTypes(array $statusDict)
@@ -126,31 +161,6 @@ trait BTHomeObjects
             }
         }
         return false;
-    }
-
-    //Fragt Name/Typ/Einheit der vorkommenden obj_ids beim Gerät ab (BTHome.GetObjectInfos). Wird per
-    //RegisterOnceTimer aus ReceiveData() heraus aufgerufen (SendDataToParent() direkt aus ReceiveData() hat den
-    //Datenfluss schon einmal blockiert). Die Antwort kommt auf <topic>/getObjectInfos/<InstanzID>/rpc.
-    public function RequestBTHomeObjectInfos(): void
-    {
-        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
-        $objIds = [];
-        foreach (is_array($configs) ? $configs : [] as $key => $config) {
-            if (strpos((string) $key, 'bthomesensor:') === 0 && isset($config['obj_id'])) {
-                $objIds[(int) $config['obj_id']] = true;
-            }
-        }
-        if (count($objIds) == 0) {
-            return;
-        }
-        $topic = $this->ReadPropertyString('MQTTTopic');
-        $payload = [
-            'id'     => 1,
-            'src'    => $topic . '/getObjectInfos/' . $this->InstanceID,
-            'method' => 'BTHome.GetObjectInfos',
-            'params' => ['obj_ids' => array_keys($objIds)],
-        ];
-        $this->sendMQTT($topic . '/rpc', json_encode($payload, JSON_UNESCAPED_SLASHES));
     }
 
     //Antwort von BTHome.GetObjectInfos in den Buffer übernehmen (obj_id => [name, type, unit]). Gibt true zurück,
@@ -422,16 +432,6 @@ trait BTHomeObjects
             $this->SetBuffer('bthomeRefreshKeys', json_encode($keys));
         }
         $this->RegisterOnceTimer('BTHomeRefresh', 'SHY_RefreshBTHomeDevice($_IPS["TARGET"]);');
-    }
-
-    //Öffentlicher Einstiegspunkt für den Timer: Status der vorgemerkten BLU-Geräte abfragen (Shelly.GetComponents mit "keys").
-    public function RefreshBTHomeDevice(): void
-    {
-        $keys = json_decode($this->GetBuffer('bthomeRefreshKeys'), true);
-        $this->SetBuffer('bthomeRefreshKeys', '[]');
-        if (is_array($keys) && count($keys) > 0) {
-            $this->requestBTHomeDeviceStatus($this->ReadPropertyString('MQTTTopic'), $keys);
-        }
     }
 
     //Status einzelner Komponenten abfragen; die Antwort kommt auf <topic>/getBTHomeStatus/<InstanceID>/rpc.

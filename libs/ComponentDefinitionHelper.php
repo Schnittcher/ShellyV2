@@ -121,24 +121,6 @@ trait ComponentDefinitionHelper
         return $result;
     }
 
-    private function collectAlwaysCreatedLeafPaths(array $node, string $path, array &$result, string $flag = 'alwaysCreate')
-    {
-        foreach ($node as $name => $child) {
-            if (!is_array($child)) {
-                continue;
-            }
-            if (array_key_exists('type', $child)) {
-                //Blatt-Definition einer Variable
-                if (!empty($child[$flag])) {
-                    $result[] = $path . '.' . $name;
-                }
-            } else {
-                //Zwischenelement der Definition (z.B. slots, left, vial) - weiter absteigen
-                $this->collectAlwaysCreatedLeafPaths($child, $path . '.' . $name, $result, $flag);
-            }
-        }
-    }
-
     //Spiegelt Werte, die nicht im Status, sondern in der Geräte-Config stehen, in das Status-Dict (siehe
     //'configPath' in components.php, z.B. camera rtsp.enable). Dadurch laufen sie durch dieselbe Pipeline wie
     //alle anderen Werte (Variablenliste, Anlegen, SetValue). Der Wert landet an der Stelle der Definition
@@ -172,22 +154,6 @@ trait ComponentDefinitionHelper
             }
         }
         return $statusDict;
-    }
-
-    private function collectConfigBackedDefinitions(array $node, array $path, array &$found)
-    {
-        foreach ($node as $name => $child) {
-            if (!is_array($child)) {
-                continue;
-            }
-            if (array_key_exists('type', $child)) {
-                if (isset($child['configPath'])) {
-                    $found[] = [array_merge($path, [$name]), $child['configPath']];
-                }
-            } else {
-                $this->collectConfigBackedDefinitions($child, array_merge($path, [$name]), $found);
-            }
-        }
     }
 
     protected function convertIdentToKeyPath($input)
@@ -350,6 +316,40 @@ trait ComponentDefinitionHelper
             }
         }
         return $configs;
+    }
+
+    private function collectAlwaysCreatedLeafPaths(array $node, string $path, array &$result, string $flag = 'alwaysCreate')
+    {
+        foreach ($node as $name => $child) {
+            if (!is_array($child)) {
+                continue;
+            }
+            if (array_key_exists('type', $child)) {
+                //Blatt-Definition einer Variable
+                if (!empty($child[$flag])) {
+                    $result[] = $path . '.' . $name;
+                }
+            } else {
+                //Zwischenelement der Definition (z.B. slots, left, vial) - weiter absteigen
+                $this->collectAlwaysCreatedLeafPaths($child, $path . '.' . $name, $result, $flag);
+            }
+        }
+    }
+
+    private function collectConfigBackedDefinitions(array $node, array $path, array &$found)
+    {
+        foreach ($node as $name => $child) {
+            if (!is_array($child)) {
+                continue;
+            }
+            if (array_key_exists('type', $child)) {
+                if (isset($child['configPath'])) {
+                    $found[] = [array_merge($path, [$name]), $child['configPath']];
+                }
+            } else {
+                $this->collectConfigBackedDefinitions($child, array_merge($path, [$name]), $found);
+            }
+        }
     }
     // ### ENDE TEST / EXPERIMENTELL ###
 }

@@ -382,6 +382,130 @@ class ShellyConfigurator extends IPSModuleStrict
         return json_encode($Form);
     }
 
+    public function getShellies(): void
+    {
+        $Shellies = (json_decode((string) $this->ReadAttributeString('Shellies'), true) ?: []);
+
+        foreach ($Shellies as $key => $Shelly) {
+            if ($Shelly['LastActivity'] + 86400 < time()) {
+                unset($Shellies[$key]);
+                $Shellies = array_values($Shellies);
+            }
+
+            $this->WriteAttributeString('Shellies', json_encode($Shellies));
+        }
+
+        if ($this->HasActiveParent()) {
+            $this->sendMQTT('shellies/command', 'announce');
+        }
+    }
+
+    public function ReceiveData(string $JSONString): string
+    {
+        $this->SendDebug('JSONString', $JSONString, 0);
+        $Buffer = json_decode($JSONString, true);
+        $this->SendDebug('JSON', $Buffer, 0);
+
+        //IPSModuleStrict: "Payload" ist HEX-kodiert (siehe MQTTHelper::decodeMQTTPayload()).
+        $Buffer['Payload'] = $this->decodeMQTTPayload($Buffer);
+        $Shellies = (json_decode((string) $this->ReadAttributeString('Shellies'), true) ?: []);
+
+        if (array_key_exists('Topic', $Buffer)) {
+            //Die Shelly-ID steckt als mittleres Topic-Segment drin (aus dem "src" der Anfrage),
+            //damit Antworten mehrerer parallel angefragter Geräte unterscheidbar sind.
+            if (preg_match('#^shellies/getComponentsConfigurator/(dyn/)?([^/]+)/rpc$#', $Buffer['Topic'], $matches)) {
+                $this->SetBuffer('LastComponentResponse' . ($matches[1] != '' ? 'Dynamic' : '') . '_' . $matches[2], $Buffer['Payload']);
+            }
+
+            if (strpos($Buffer['Topic'], '/announce') !== false) {
+                $Shelly = [];
+
+                $parts = explode('/announce', $Buffer['Topic'], 2);
+                $MQTTTopic = $parts[0];
+                if ($MQTTTopic == 'shellies') {
+                    return '';
+                }
+
+                $Payload = json_decode($Buffer['Payload'], true);
+
+                if (array_key_exists('gen', $Payload)) {
+                    if ($Payload['gen'] >= 2) {
+                        $foundedKey = array_search($MQTTTopic, array_column($Shellies, 'ID'));
+                        if ($foundedKey !== false) {
+                            $Shellies[$foundedKey]['LastActivity'] = time();
+                            $Shellies[$foundedKey]['Model'] = (array_key_exists('model', $Payload)) ? ($Payload['model']) : '';
+                            $Shellies[$foundedKey]['MAC'] = $Payload['mac'];
+                            if (array_key_exists('gen', $Payload)) {
+                                $Shellies[$foundedKey]['Name'] = $Payload['name'];
+                                $Shellies[$foundedKey]['Firmware'] = $Payload['fw_id'];
+                                $Shellies[$foundedKey]['App'] = $Payload['app'];
+                            } else {
+                                $Shellies[$foundedKey]['Firmware'] = $Payload['fw_ver'];
+                                $Shellies[$foundedKey]['IP'] = $Payload['ip'];
+                                $Shellies[$foundedKey]['App'] = '';
+                            }
+                            $this->WriteAttributeString('Shellies', json_encode($Shellies));
+                            return '';
+                        }
+                        $Shelly = [];
+                        $Shelly['Name'] = '-';
+                        $Shelly['ID'] = $MQTTTopic; //$Payload['id'];
+                        //$Shelly['Model'] = $Payload['model'];
+                        $Shelly['Model'] = (array_key_exists('model', $Payload)) ? ($Payload['model']) : '';
+                        $Shelly['MAC'] = $Payload['mac'];
+                        $Shelly['IP'] = '-';
+                        $Shelly['Gen'] = 'gen1';
+                        $Shelly['LastActivity'] = time();
+
+                        if (array_key_exists('gen', $Payload)) {
+                            $Shelly['Name'] = $Payload['name'];
+                            $Shelly['Firmware'] = $Payload['fw_id'];
+                            $Shelly['Gen'] = $Payload['gen'];
+                        } else {
+                            $Shelly['Firmware'] = $Payload['fw_ver'];
+                            $Shelly['IP'] = $Payload['ip'];
+                        }
+                        array_push($Shellies, $Shelly);
+                    }
+                }
+            }
+            $this->WriteAttributeString('Shellies', json_encode($Shellies));
+        }
+        return '';
+    }
+
+    public function setMQTTSettings(string $selectedValue, string $broker, int $port, string $username, string $password): void
+    {
+        $selectedValue = json_decode($selectedValue, true);
+        //IPS_LogMessage('SelectedValue', print_r($selectedValue, true));
+
+        //IP-Adresse wird erst hier bei Bedarf per mDNS aufgelöst, statt beim Formular-Öffnen für jedes
+        //gefundene Gerät (siehe mdnsSearch()/getFormForMdnsDevices()).
+        $IPAddress = $this->resolveMdnsIPAddress($selectedValue['name']);
+        if ($IPAddress == null) {
+            $this->LogMessage('Shelly device with hostname: ' . $selectedValue['name'] . ' could not be resolved via mDNS.', KL_ERROR);
+            return;
+        }
+
+        $method = 'MQTT.SetConfig';
+        $params = [
+            'config' => [
+                'enable'   => true,
+                'server'   => $broker,
+                'port'     => $port,
+                'user'     => $username,
+                'pass'     => $password,
+            ]
+        ];
+        $result = $this->ShellyRPCviaHTTP($IPAddress, $method, $params, $timeout = 5);
+
+        if ($result['result']['restart_required'] == true) {
+            $this->LogMessage('Shelly device with IP: ' . $IPAddress . ' will restart to apply MQTT settings.', KL_NOTIFY);
+            $result = $this->ShellyRPCviaHTTP($IPAddress, 'Shelly.Reboot', [], $timeout = 5);
+            $this->UpdateFormField('ShellyMQTTSettingsInfo', 'visible', true);
+        }
+    }
+
     //Vorhandene BLU-Geräte-Instanz (ShellyBLUDevice) für diese MAC-Adresse am selben MQTT-Server/-Client, sonst 0.
     private function getBLUDeviceInstance(string $mac)
     {
@@ -521,130 +645,6 @@ class ShellyConfigurator extends IPSModuleStrict
         } while ((microtime(true) - $start) < $maxWaitSeconds);
 
         return $responses;
-    }
-
-    public function getShellies(): void
-    {
-        $Shellies = (json_decode((string) $this->ReadAttributeString('Shellies'), true) ?: []);
-
-        foreach ($Shellies as $key => $Shelly) {
-            if ($Shelly['LastActivity'] + 86400 < time()) {
-                unset($Shellies[$key]);
-                $Shellies = array_values($Shellies);
-            }
-
-            $this->WriteAttributeString('Shellies', json_encode($Shellies));
-        }
-
-        if ($this->HasActiveParent()) {
-            $this->sendMQTT('shellies/command', 'announce');
-        }
-    }
-
-    public function ReceiveData(string $JSONString): string
-    {
-        $this->SendDebug('JSONString', $JSONString, 0);
-        $Buffer = json_decode($JSONString, true);
-        $this->SendDebug('JSON', $Buffer, 0);
-
-        //IPSModuleStrict: "Payload" ist HEX-kodiert (siehe MQTTHelper::decodeMQTTPayload()).
-        $Buffer['Payload'] = $this->decodeMQTTPayload($Buffer);
-        $Shellies = (json_decode((string) $this->ReadAttributeString('Shellies'), true) ?: []);
-
-        if (array_key_exists('Topic', $Buffer)) {
-            //Die Shelly-ID steckt als mittleres Topic-Segment drin (aus dem "src" der Anfrage),
-            //damit Antworten mehrerer parallel angefragter Geräte unterscheidbar sind.
-            if (preg_match('#^shellies/getComponentsConfigurator/(dyn/)?([^/]+)/rpc$#', $Buffer['Topic'], $matches)) {
-                $this->SetBuffer('LastComponentResponse' . ($matches[1] != '' ? 'Dynamic' : '') . '_' . $matches[2], $Buffer['Payload']);
-            }
-
-            if (strpos($Buffer['Topic'], '/announce') !== false) {
-                $Shelly = [];
-
-                $parts = explode('/announce', $Buffer['Topic'], 2);
-                $MQTTTopic = $parts[0];
-                if ($MQTTTopic == 'shellies') {
-                    return '';
-                }
-
-                $Payload = json_decode($Buffer['Payload'], true);
-
-                if (array_key_exists('gen', $Payload)) {
-                    if ($Payload['gen'] >= 2) {
-                        $foundedKey = array_search($MQTTTopic, array_column($Shellies, 'ID'));
-                        if ($foundedKey !== false) {
-                            $Shellies[$foundedKey]['LastActivity'] = time();
-                            $Shellies[$foundedKey]['Model'] = (array_key_exists('model', $Payload)) ? ($Payload['model']) : '';
-                            $Shellies[$foundedKey]['MAC'] = $Payload['mac'];
-                            if (array_key_exists('gen', $Payload)) {
-                                $Shellies[$foundedKey]['Name'] = $Payload['name'];
-                                $Shellies[$foundedKey]['Firmware'] = $Payload['fw_id'];
-                                $Shellies[$foundedKey]['App'] = $Payload['app'];
-                            } else {
-                                $Shellies[$foundedKey]['Firmware'] = $Payload['fw_ver'];
-                                $Shellies[$foundedKey]['IP'] = $Payload['ip'];
-                                $Shellies[$foundedKey]['App'] = '';
-                            }
-                            $this->WriteAttributeString('Shellies', json_encode($Shellies));
-                            return '';
-                        }
-                        $Shelly = [];
-                        $Shelly['Name'] = '-';
-                        $Shelly['ID'] = $MQTTTopic; //$Payload['id'];
-                        //$Shelly['Model'] = $Payload['model'];
-                        $Shelly['Model'] = (array_key_exists('model', $Payload)) ? ($Payload['model']) : '';
-                        $Shelly['MAC'] = $Payload['mac'];
-                        $Shelly['IP'] = '-';
-                        $Shelly['Gen'] = 'gen1';
-                        $Shelly['LastActivity'] = time();
-
-                        if (array_key_exists('gen', $Payload)) {
-                            $Shelly['Name'] = $Payload['name'];
-                            $Shelly['Firmware'] = $Payload['fw_id'];
-                            $Shelly['Gen'] = $Payload['gen'];
-                        } else {
-                            $Shelly['Firmware'] = $Payload['fw_ver'];
-                            $Shelly['IP'] = $Payload['ip'];
-                        }
-                        array_push($Shellies, $Shelly);
-                    }
-                }
-            }
-            $this->WriteAttributeString('Shellies', json_encode($Shellies));
-        }
-        return '';
-    }
-
-    public function setMQTTSettings(string $selectedValue, string $broker, int $port, string $username, string $password): void
-    {
-        $selectedValue = json_decode($selectedValue, true);
-        //IPS_LogMessage('SelectedValue', print_r($selectedValue, true));
-
-        //IP-Adresse wird erst hier bei Bedarf per mDNS aufgelöst, statt beim Formular-Öffnen für jedes
-        //gefundene Gerät (siehe mdnsSearch()/getFormForMdnsDevices()).
-        $IPAddress = $this->resolveMdnsIPAddress($selectedValue['name']);
-        if ($IPAddress == null) {
-            $this->LogMessage('Shelly device with hostname: ' . $selectedValue['name'] . ' could not be resolved via mDNS.', KL_ERROR);
-            return;
-        }
-
-        $method = 'MQTT.SetConfig';
-        $params = [
-            'config' => [
-                'enable'   => true,
-                'server'   => $broker,
-                'port'     => $port,
-                'user'     => $username,
-                'pass'     => $password,
-            ]
-        ];
-        $result = $this->ShellyRPCviaHTTP($IPAddress, $method, $params, $timeout = 5);
-
-        if ($result['result']['restart_required'] == true) {
-            $this->LogMessage('Shelly device with IP: ' . $IPAddress . ' will restart to apply MQTT settings.', KL_NOTIFY);
-            $result = $this->ShellyRPCviaHTTP($IPAddress, 'Shelly.Reboot', [], $timeout = 5);
-            $this->UpdateFormField('ShellyMQTTSettingsInfo', 'visible', true);
-        }
     }
     private function getShellyInstances($ShellyID, $App)
     {
