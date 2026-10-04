@@ -11,8 +11,12 @@ declare(strict_types=1);
 //umgerechnet an (22.1 statt 221, Batterie 100), BTHome.GetObjectInfos liefert type "sensor" bzw. "button" und
 //Einheiten wie "° C". Tasten (obj_id 58, type "button") haben keinen "value", nur den Zeitstempel.
 //NOCH OFFEN: der Typ "binary..." für Boolean ist angenommen (am Gateway sind aktuell keine binären Sensoren).
+require_once __DIR__ . '/BTHomeModels.php';
+
 trait BTHomeObjects
 {
+    use BTHomeModels;
+
     //obj_id => [Name, Einheit] - Rückfall für Zahlenwerte (Quelle: BTHome v2 Spezifikation, bthome.io/format)
     private static $bthomeFallbackObjects = [
         1  => ['battery', '%'],
@@ -35,17 +39,23 @@ trait BTHomeObjects
         63 => ['rotation', '°'],
         64 => ['distance', 'mm'],
         67 => ['current', 'A'],
+        68 => ['speed', 'm/s'],
         69 => ['temperature', '°C'],
+        70 => ['uv index', ''],
+        94 => ['direction', '°'],
+        95 => ['precipitation', 'mm'],
+        96 => ['channel', ''],
+        100 => ['light level', ''],
+    ];
+
+    //obj_id => [Wert => Anzeigetext] - Sensoren mit wenigen festen Stufen (Variable vom Typ Integer mit Aufzählung)
+    private static $bthomeEnumObjects = [
+        100 => [0 => 'Dark', 1 => 'Twilight', 2 => 'Bright'],
     ];
 
     //Taster (BTHome-Objekt 58 "button event", Typ "button"): haben keinen Status-Wert, ein Tastendruck kommt als Ereignis
     //(NotifyEvent mit component bthomedevice:N und event z.B. single_push). Die Variable zeigt den letzten Tastendruck.
     private static $bthomeButtonObjectIds = [58];
-
-    //BTHome-Geräte (attrs.model_id aus Shelly.GetComponents), von denen bekannt ist, dass sie eine Taste haben, ohne dass das
-    //aus den Sensoren hervorgeht: 23 = Shelly BLU Button Tough 1 ZB. Weitere Geräte bekommen die Variable beim ersten
-    //Tastendruck.
-    private static $bthomeButtonModelIds = [23];
 
     //Ereignisname => Anzeigetext der Tasten-Variable
     private static $bthomeButtonEvents = [
@@ -98,9 +108,24 @@ trait BTHomeObjects
                 continue;
             }
             $value = $status['value'];
+            if ($value === null) {
+                continue;
+            }
             $types[$key] = is_bool($value) ? 'boolean' : (is_string($value) ? 'string' : 'float');
         }
         return $types;
+    }
+
+    //Gibt es BTHome-Sensoren (auch Platzhalter für noch nie gemeldete Sensoren eines bekannten Modells)?
+    protected function bthomeHasSensorConfigs()
+    {
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        foreach (is_array($configs) ? array_keys($configs) : [] as $key) {
+            if (strpos((string) $key, 'bthomesensor:') === 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     //Fragt Name/Typ/Einheit der vorkommenden obj_ids beim Gerät ab (BTHome.GetObjectInfos). Wird per
@@ -308,14 +333,30 @@ trait BTHomeObjects
         if (strpos($component, 'bthomedevice:') !== 0 || $eventName == '') {
             return;
         }
-        $ident = 'bthomedevice_' . substr($component, strlen('bthomedevice:')) . '_button';
-        //Erster Tastendruck dieses Geräts: ab jetzt gehört die Tasten-Variable dazu (legt die Variable an, sofern diese
-        //Instanz das Gerät enthält).
+        //Drehrad: rotate_left/rotate_right mit "steps" - eigene Variablen, nicht die Taste.
+        if (strpos($eventName, 'rotate_') === 0) {
+            $this->setBTHomeDialEvent($component, $eventName, $event);
+            return;
+        }
+        //Tastennummer: "idx" im Ereignis (0 = Taste 1). Mehr als vier Tasten kennt kein BLU-Gerät.
+        $idx = (int) ($event['idx'] ?? 0);
+        if ($idx < 0 || $idx > 3) {
+            return;
+        }
+        $ident = 'bthomedevice_' . substr($component, strlen('bthomedevice:')) . '_button' . ($idx > 0 ? (string) ($idx + 1) : '');
+        //Erster Tastendruck dieses Geräts bzw. dieser Taste: ab jetzt gehört die Tasten-Variable dazu (legt die Variable an, sofern
+        //diese Instanz das Gerät enthält).
         $seen = json_decode($this->GetBuffer('bthomeButtonDevices'), true);
         $seen = is_array($seen) ? $seen : [];
-        if (!in_array($component, $seen, true)) {
-            $seen[] = $component;
+        $counts = json_decode($this->GetBuffer('bthomeButtonCounts'), true);
+        $counts = is_array($counts) ? $counts : [];
+        if (!in_array($component, $seen, true) || ($counts[$component] ?? 0) < $idx + 1) {
+            if (!in_array($component, $seen, true)) {
+                $seen[] = $component;
+            }
+            $counts[$component] = max((int) ($counts[$component] ?? 0), $idx + 1);
             $this->SetBuffer('bthomeButtonDevices', json_encode($seen));
+            $this->SetBuffer('bthomeButtonCounts', json_encode($counts));
             if (!@$this->GetIDForIdent($ident)) {
                 $this->rebuildVariables();
             }
@@ -412,6 +453,86 @@ trait BTHomeObjects
         return $params;
     }
 
+    //Drehrad eines BLU-Geräts (Remote Control ZB): Richtung in "Rad" (links herum = hoch, rechts herum = runter, so nennt es die Fernbedienung), Schritte (runter negativ) in "Rad Schritte". Das Gerät sendet
+    //während einer Drehung mehrere Pakete, manche mit steps 0 (Beginn) - die Schritte werden nur bei steps > 0 übernommen.
+    protected function setBTHomeDialEvent(string $component, string $eventName, array $event)
+    {
+        $base = 'bthomedevice_' . substr($component, strlen('bthomedevice:'));
+        $seen = json_decode($this->GetBuffer('bthomeDialDevices'), true);
+        $seen = is_array($seen) ? $seen : [];
+        if (!in_array($component, $seen, true)) {
+            $seen[] = $component;
+            $this->SetBuffer('bthomeDialDevices', json_encode($seen));
+            if (!@$this->GetIDForIdent($base . '_dial')) {
+                $this->rebuildVariables();
+            }
+        }
+        $this->SetValue($base . '_dial', $eventName);
+        $steps = (int) ($event['steps'] ?? 0);
+        if ($steps > 0) {
+            $this->SetValue($base . '_dialsteps', $eventName == 'rotate_left' ? $steps : -$steps);
+        }
+        $this->applyBTHomeEventSensors($component, $event);
+    }
+
+    //Darstellung der Variable "Rad" (bthomedevice.dial): Drehrichtung.
+    protected function bthomeDialPresentation()
+    {
+        $options = [];
+        foreach (['rotate_left' => 'Turned up', 'rotate_right' => 'Turned down'] as $value => $caption) {
+            $options[] = ['Value' => $value, 'Caption' => $this->Translate($caption), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1];
+        }
+        return ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'OPTIONS' => json_encode($options)];
+    }
+
+    //Hat das BLU-Gerät ein Drehrad? Laut Modelltabelle oder weil schon eine Drehung eingetroffen ist.
+    protected function bthomeDeviceHasDial(string $deviceKey)
+    {
+        $seen = json_decode($this->GetBuffer('bthomeDialDevices'), true);
+        if (is_array($seen) && in_array($deviceKey, $seen, true)) {
+            return true;
+        }
+        $models = json_decode($this->GetBuffer('bthomeDeviceModels'), true);
+        return is_array($models) && isset($models[$deviceKey]) && $this->bthomeModelHasDial((int) $models[$deviceKey]);
+    }
+
+    //Anzahl der Tasten-Variablen eines BLU-Geräts (bthomedevice:N): das Maximum aus Modell (Tabelle), Taster-Sensoren am Gerät
+    //(ein Sensor je Taste) und den bisher eingetroffenen Tastennummern. 0 = keine Taste bekannt (sie entsteht dann beim ersten
+    //Tastendruck).
+    protected function bthomeDeviceButtonCount(string $deviceKey)
+    {
+        $count = 0;
+        $models = json_decode($this->GetBuffer('bthomeDeviceModels'), true);
+        if (is_array($models) && isset($models[$deviceKey])) {
+            $count = $this->bthomeModelButtons((int) $models[$deviceKey]);
+        }
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        $sensors = 0;
+        foreach (is_array($configs) ? array_keys($configs) : [] as $key) {
+            if (strpos((string) $key, 'bthomesensor:') === 0 && $this->isBTHomeButtonSensorKey((string) $key) && $this->bthomeComponentBelongsToDevice((string) $key, $deviceKey)) {
+                $sensors++;
+            }
+        }
+        $counts = json_decode($this->GetBuffer('bthomeButtonCounts'), true);
+        $seen = json_decode($this->GetBuffer('bthomeButtonDevices'), true);
+        $count = max($count, $sensors, is_array($counts) ? (int) ($counts[$deviceKey] ?? 0) : 0, is_array($seen) && in_array($deviceKey, $seen, true) ? 1 : 0);
+        return min($count, 4);
+    }
+
+    //Blattpfade der Tasten-Variablen eines BLU-Geräts: bthomedevice:N.button, .button2, ... (Anzahl siehe bthomeDeviceButtonCount()).
+    protected function bthomeButtonLeafPaths(string $deviceKey)
+    {
+        $paths = [];
+        for ($i = 1; $i <= $this->bthomeDeviceButtonCount($deviceKey); $i++) {
+            $paths[] = $deviceKey . '.button' . ($i > 1 ? (string) $i : '');
+        }
+        if ($this->bthomeDeviceHasDial($deviceKey)) {
+            $paths[] = $deviceKey . '.dial';
+            $paths[] = $deviceKey . '.dialsteps';
+        }
+        return $paths;
+    }
+
     //Soll das BLU-Gerät (bthomedevice:N) die Tasten-Variable bekommen? Ja, wenn es einen Taster-Sensor hat (z.B. der
     //Thermostat), von seinem Modell bekannt ist, dass es eine Taste hat, oder schon ein Tastendruck eingetroffen ist.
     protected function bthomeDeviceShowsButton(string $deviceKey)
@@ -421,7 +542,7 @@ trait BTHomeObjects
             return true;
         }
         $models = json_decode($this->GetBuffer('bthomeDeviceModels'), true);
-        if (is_array($models) && isset($models[$deviceKey]) && in_array((int) $models[$deviceKey], self::$bthomeButtonModelIds, true)) {
+        if (is_array($models) && isset($models[$deviceKey]) && $this->bthomeModelHasButton((int) $models[$deviceKey])) {
             return true;
         }
         $configs = json_decode($this->GetBuffer('componentConfigs'), true);
@@ -443,6 +564,22 @@ trait BTHomeObjects
             }
         }
         return $models;
+    }
+
+    //Name des Sensors laut Modelltabelle: das Modell stammt vom bthomedevice mit gleicher MAC-Adresse.
+    protected function bthomeSensorModelLabel(array $configs, array $config)
+    {
+        $addr = (string) ($config['addr'] ?? '');
+        $models = json_decode($this->GetBuffer('bthomeDeviceModels'), true);
+        if ($addr == '' || !is_array($models)) {
+            return '';
+        }
+        foreach ($configs as $deviceKey => $deviceConfig) {
+            if (strpos((string) $deviceKey, 'bthomedevice:') === 0 && strcasecmp((string) ($deviceConfig['addr'] ?? ''), $addr) == 0 && isset($models[$deviceKey])) {
+                return $this->bthomeModelObjectLabel((int) $models[$deviceKey], (int) ($config['obj_id'] ?? -1), (int) ($config['idx'] ?? 0));
+            }
+        }
+        return '';
     }
 
     //Typ, Name und Darstellung der Variable "value" eines bthomesensor:N. Rückgabe:
@@ -473,9 +610,20 @@ trait BTHomeObjects
         } else {
             $type = VARIABLETYPE_FLOAT;
         }
+        $enum = self::$bthomeEnumObjects[$objId] ?? null;
+        if ($enum !== null) {
+            $type = VARIABLETYPE_INTEGER;
+        }
 
-        //Name: vom Nutzer vergebener Name, sonst Name des BTHome-Objekts (Gerät, sonst Rückfall-Tabelle).
+        //Name: vom Nutzer vergebener Name, sonst Name laut Modelltabelle (z.B. "Rotation 1"), sonst Name des BTHome-Objekts (Gerät,
+        //sonst Rückfall-Tabelle).
         $name = trim((string) ($config['name'] ?? ''));
+        if ($name == '') {
+            $name = $this->bthomeSensorModelLabel($configs, $config);
+            if ($name != '') {
+                $name = $this->Translate($name);
+            }
+        }
         if ($name == '') {
             $objectName = trim((string) ($info['name'] ?? ''));
             if ($objectName == '') {
@@ -498,6 +646,12 @@ trait BTHomeObjects
                 ['Value' => true, 'Caption' => $this->Translate($trueCaption), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1],
                 ['Value' => false, 'Caption' => $this->Translate($falseCaption), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1],
             ]);
+        } elseif ($type == VARIABLETYPE_INTEGER && $enum !== null) {
+            $options = [];
+            foreach ($enum as $value => $caption) {
+                $options[] = ['Value' => $value, 'Caption' => $this->Translate($caption), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1];
+            }
+            $presentation['OPTIONS'] = json_encode($options);
         } elseif ($type == VARIABLETYPE_FLOAT) {
             //Einheit: vom Gerät, sonst Rückfall-Tabelle ("° C" -> "°C").
             $unit = trim((string) ($info['unit'] ?? ''));

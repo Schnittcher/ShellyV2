@@ -388,7 +388,28 @@
             "act_power": "Wirkleistung",
             "aprt_power": "Scheinleistung",
             "aprtpower": "Scheinleistung",
-            "voltmeter_id": "Spannungsmesser"
+            "voltmeter_id": "Spannungsmesser",
+            "Model ID": "Modell-ID",
+            "Light level": "Helligkeitsstufe",
+            "Twilight": "Dämmerung",
+            "Bright": "Hell",
+            "Uv index": "UV-Index",
+            "Direction": "Richtung",
+            "Precipitation": "Niederschlag",
+            "Distance": "Abstand",
+            "Light": "Hell",
+            "OK": "OK",
+            "Count": "Anzahl",
+            "Button 2": "Taste 2",
+            "Button 3": "Taste 3",
+            "Button 4": "Taste 4",
+            "Dial": "Rad",
+            "Dial steps": "Rad Schritte",
+            "Turned down": "Runter gedreht",
+            "Turned up": "Hoch gedreht",
+            "Rotation 1": "Drehung 1",
+            "Rotation 2": "Drehung 2",
+            "Rotation 3": "Drehung 3"
         }
     }
 }

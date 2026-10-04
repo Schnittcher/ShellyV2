@@ -285,7 +285,7 @@ require_once __DIR__ . '/BTHomeObjects.php';
 
             //BTHome: Name/Typ/Einheit der Messwerte beim Gerät erfragen - entkoppelt per Timer, weil
             //SendDataToParent() direkt aus ReceiveData() heraus den Datenfluss blockieren kann.
-            if (count(json_decode($this->GetBuffer('bthomeValueTypes'), true) ?: []) > 0) {
+            if (count(json_decode($this->GetBuffer('bthomeValueTypes'), true) ?: []) > 0 || $this->bthomeHasSensorConfigs()) {
                 $this->RegisterOnceTimer('BTHomeObjectInfos', 'SHY_RequestBTHomeObjectInfos($_IPS["TARGET"]);');
             }
 
@@ -688,8 +688,10 @@ require_once __DIR__ . '/BTHomeObjects.php';
                         $variableType = $sensorVariable['type'];
                         $presentation = $sensorVariable['presentation'];
                         $name = $sensorVariable['name'];
-                    } elseif ($variable['CleanKeyPath'] == 'bthomedevice.button') {
+                    } elseif (in_array($variable['CleanKeyPath'], ['bthomedevice.button', 'bthomedevice.button2', 'bthomedevice.button3', 'bthomedevice.button4'], true)) {
                         $presentation = $this->bthomeButtonPresentation();
+                    } elseif ($variable['CleanKeyPath'] == 'bthomedevice.dial') {
+                        $presentation = $this->bthomeDialPresentation();
                     } elseif ($variable['CleanKeyPath'] == 'bthomesensor.last_updated_ts') {
                         //Zeitstempel eines Sensors: Sensorname voranstellen statt der Kanalnummer
                         $name = $this->getBTHomeSensorVariable('bthomesensor:' . $variable['Channel'])['name'] . ' - ' . $this->Translate($tmpComponent['name']);
@@ -763,6 +765,10 @@ require_once __DIR__ . '/BTHomeObjects.php';
                     $physicalName = $this->getPhysicalComponentName($base, $variable['Channel']);
                     if ($physicalName != null) {
                         $name = $physicalName . ' - ' . $this->Translate($tmpComponent['name']);
+                    }
+                    //Gerät mit mehreren Tasten: die erste heißt "Taste 1".
+                    if ($variable['CleanKeyPath'] == 'bthomedevice.button' && $this->bthomeDeviceButtonCount('bthomedevice:' . $variable['Channel']) > 1) {
+                        $name = ($physicalName != null ? $physicalName . ' - ' : '') . $this->Translate('Button') . ' 1';
                     }
                     // ### ENDE TEST / EXPERIMENTELL ###
 
@@ -895,10 +901,11 @@ require_once __DIR__ . '/BTHomeObjects.php';
 
             //BTHome: Tasten-Variable nur für BLU-Geräte, bei denen eine Taste bekannt ist (siehe bthomeDeviceShowsButton()).
             foreach ($allComponentsFromShelly as $entry) {
-                if (preg_match('/^(bthomedevice:\d+)\./', $entry, $deviceMatch) && $this->bthomeDeviceShowsButton($deviceMatch[1])) {
-                    $buttonPath = $deviceMatch[1] . '.button';
-                    if (!in_array($buttonPath, $allComponentsFromShelly, true)) {
-                        $allComponentsFromShelly[] = $buttonPath;
+                if (preg_match('/^(bthomedevice:\d+)\./', $entry, $deviceMatch)) {
+                    foreach ($this->bthomeButtonLeafPaths($deviceMatch[1]) as $buttonPath) {
+                        if (!in_array($buttonPath, $allComponentsFromShelly, true)) {
+                            $allComponentsFromShelly[] = $buttonPath;
+                        }
                     }
                 }
             }

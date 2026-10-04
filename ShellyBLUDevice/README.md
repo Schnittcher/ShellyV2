@@ -9,9 +9,10 @@ Idealerweise wird die Instanz über den Konfigurator angelegt (Gruppe "BLU-Gerä
   - [Inhaltverzeichnis](#inhaltverzeichnis)
   - [1. Konfiguration](#1-konfiguration)
   - [2. Variablen](#2-variablen)
-  - [3. Funktionen](#3-funktionen)
-  - [4. Spenden](#4-spenden)
-  - [5. Lizenz](#5-lizenz)
+  - [3. Modelle](#3-modelle)
+  - [4. Funktionen](#4-funktionen)
+  - [5. Spenden](#5-spenden)
+  - [6. Lizenz](#6-lizenz)
 
 ## 1. Konfiguration
 
@@ -38,15 +39,18 @@ Zusätzlich je Gateway:
 * `Letzte Aktualisierung (<Gateway>)`: wann dieses Gateway das Gerät zuletzt gehört hat.
 * `Stärkstes Gateway`: das Gateway mit dem stärksten Signal (nur Gateways, die das Gerät innerhalb des maximalen Alters gehört haben) - z. B. für die Raumerkennung.
 
-## 3. Funktionen
+## 3. Modelle
+Welches BLU-Gerät es ist, steht in der Modell-ID (attrs.model_id der Komponente am Gateway). Die Liste der bekannten Modelle steht in libs/BTHomeModels.php (Name, Taste, Thermostat und die BTHome-Objekte, die das Modell sendet). Für diese Modelle gibt es die Sensor-Variablen (Fenster, Luftfeuchtigkeit, Temperatur, ...) sofort beim Anlegen der Instanz, auch wenn das Gateway sie noch nicht gemeldet hat; die Variablen füllen sich beim ersten Paket des Geräts. Unbekannte Modelle funktionieren weiter, aber nur mit den Sensoren, die das Gateway meldet. Ein neues Modell trägt man in der Liste ein.
+
+## 4. Funktionen
 
 `void SHY_requestComponentsStatus(integer $InstanzID);`
 Ruft die Komponenten aller Gateways ab und legt die Variablen an, wird automatisch beim Speichern der Instanz aufgerufen.
 
-## 4. Spenden
+## 5. Spenden
 Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:
 
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=EK4JRP87XLSHW" target="_blank"><img src="https://www.paypalobjects.com/de_DE/DE/i/btn/btn_donate_LG.gif" border="0" /></a> <a href="https://www.amazon.de/hz/wishlist/ls/3JVWED9SZMDPK?ref_=wl_share" target="_blank">Amazon Wunschzettel</a>
 
-## 5. Lizenz
+## 6. Lizenz
 

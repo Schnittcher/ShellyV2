@@ -2358,6 +2358,45 @@ trait Components
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
+            //Geräte mit mehreren Tasten (z.B. BLU RC Button 4, Wall Switch 4): das Ereignis liefert die Tastennummer in "idx"
+            //(0 = Taste 1, 1 = Taste 2, ...). Taste 1 ist 'button', die weiteren sind button2 bis button4.
+            'button2' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Button 2',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'button3' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Button 3',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'button4' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Button 4',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Rad (z.B. BLU Remote Control ZB): Drehrichtung und Schritte kommen nur als Ereignis (event rotate_left/rotate_right mit
+            //"steps"), nicht im Status. 'dial' zeigt die letzte Drehrichtung, 'dialsteps' die Schritte der letzten Drehung (runter negativ).
+            'dial' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Dial',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            'dialsteps' => [
+                'type'         => VARIABLETYPE_INTEGER,
+                'name'         => 'Dial steps',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
             'fw_ver' => [
                 'type'         => VARIABLETYPE_STRING,
                 'name'         => 'Firmware version',

@@ -8,6 +8,7 @@ require_once __DIR__ . '/../libs/ShellyModels.php';
 require_once __DIR__ . '/../libs/DebugHelperStrict.php';
 require_once __DIR__ . '/../libs/components.php';
 require_once __DIR__ . '/../libs/ComponentDefinitionHelper.php';
+require_once __DIR__ . '/../libs/BTHomeModels.php';
 const GUID_SHELLY_DEVICE = '{86104D43-1A2F-EFA8-CB86-EBE8979F8D1A}';
 const GUID_SHELLY_XT1DEVICE = '{88774A56-2453-2EEC-24F5-BBC37D63B506}';
 const GUID_SHELLY_COMOPONENT_DEVICE = '{50980B9E-BB37-7C7A-FDBD-A823BC53C8EF}';
@@ -19,6 +20,7 @@ class ShellyConfigurator extends IPSModuleStrict
     use ComponentDefinitionHelper;
     use MQTTHelper;
     use ShellyModels;
+    use BTHomeModels;
     use StrictDebugHelper;
     use ShellyRPCHelper;
 
@@ -104,7 +106,7 @@ class ShellyConfigurator extends IPSModuleStrict
                     }
                 }
                 foreach ($dynamicComponentLists[$shellyID] ?? [] as $entry) {
-                    if (!isset($entry['key']) || strpos($entry['key'], 'bthomedevice:') !== 0 || in_array($entry['key'], $trvDeviceKeys, true) || ($entry['attrs']['model_id'] ?? 0) == 8) {
+                    if (!isset($entry['key']) || strpos($entry['key'], 'bthomedevice:') !== 0 || in_array($entry['key'], $trvDeviceKeys, true) || $this->bthomeModelIsTrv((int) ($entry['attrs']['model_id'] ?? 0))) {
                         continue;
                     }
                     $mac = strtolower((string) ($entry['config']['addr'] ?? ''));
@@ -112,6 +114,9 @@ class ShellyConfigurator extends IPSModuleStrict
                         continue;
                     }
                     $bluDevices[$mac]['gateways'][] = $shellyID;
+                    if (empty($bluDevices[$mac]['model'])) {
+                        $bluDevices[$mac]['model'] = (int) ($entry['attrs']['model_id'] ?? 0);
+                    }
                     if (trim((string) ($entry['config']['name'] ?? '')) != '' && empty($bluDevices[$mac]['name'])) {
                         $bluDevices[$mac]['name'] = trim((string) $entry['config']['name']);
                     }
@@ -244,9 +249,11 @@ class ShellyConfigurator extends IPSModuleStrict
                         }
                         //Name und MAC-Adresse der BLU-Geräte und Thermostate (Config), für die Anzeige ohne eigenen Namen.
                         $bthomeDeviceConfigs = [];
+                        $bthomeModelIDs = [];
                         foreach ($dynamicComponentLists[$Shelly['ID']] ?? [] as $shellyComponent) {
                             if (isset($shellyComponent['key'], $shellyComponent['config']) && preg_match('/^(bthomedevice|blutrv):/', $shellyComponent['key'])) {
                                 $bthomeDeviceConfigs[$shellyComponent['key']] = $shellyComponent['config'];
+                                $bthomeModelIDs[$shellyComponent['key']] = (int) ($shellyComponent['attrs']['model_id'] ?? 0);
                             }
                         }
 
@@ -274,24 +281,31 @@ class ShellyConfigurator extends IPSModuleStrict
                             $componentInstanceID = $this->getShellyComponentInstances($Shelly['ID'], $component, $componentChannel);
 
                             $displayName = $key;
+                            $instanceDisplayName = $key;
                             $componentName = $dynamicComponentNames[$key]['name'] ?? '';
+                            $instanceComponentName = '';
                             //BLU-Gerät oder Thermostat: Name aus der Config, ohne Namen die MAC-Adresse.
                             if ($component == 'bthomedevice' || $component == 'blutrv') {
                                 $componentName = trim((string) ($bthomeDeviceConfigs[$key]['name'] ?? ''));
                                 if ($componentName == '') {
+                                    //Ohne Namen: In der Liste steht nur die MAC-Adresse, der Name der neuen Instanz bekommt den Gerätetyp vor die MAC
+                                    //(bei unbekanntem Modell ebenfalls nur die MAC).
                                     $componentName = (string) ($bthomeDeviceConfigs[$key]['addr'] ?? '');
+                                    $bthomeType = $this->bthomeModelName($bthomeModelIDs[$key] ?? 0);
+                                    $instanceComponentName = ($bthomeType != '' ? $bthomeType . ' - ' : '') . $componentName;
                                 }
                             }
                             if ($componentName != '') {
                                 $displayName = $key . ' (' . $componentName . ')';
                             }
+                            $instanceDisplayName = $instanceComponentName != '' ? $key . ' (' . $instanceComponentName . ')' : $displayName;
 
                             $Values[] = [
                                 'parent'                    => $idCount,
-                                'name'                      => $displayName,
+                                'name'                      => $instanceDisplayName,
                                 'MQTTTopic'                 => $displayName,
                                 'InstanceName'              => $this->getInstanceName($componentInstanceID),
-                                'DeviceType'                => '',
+                                'DeviceType'                => in_array($component, ['bthomedevice', 'blutrv'], true) ? $this->bthomeModelLabel($bthomeModelIDs[$key] ?? 0) : '',
                                 'IPAddress'                 => '',
                                 'App'                       => '',
                                 'Firmware'                  => '',
@@ -328,7 +342,13 @@ class ShellyConfigurator extends IPSModuleStrict
                 ];
                 foreach ($bluDevices as $mac => $bluDevice) {
                     $gateways = array_values(array_unique($bluDevice['gateways']));
-                    $label = ($bluDevice['name'] ?? '') != '' ? $bluDevice['name'] . ' (' . $mac . ')' : $mac;
+                    //In der Liste steht nur die MAC-Adresse (der Typ steht in der Spalte Gerätetyp), der Name der neuen Instanz bekommt den
+                    //Gerätetyp vor die MAC ("Shelly BLU Button Tough 1 ZB - f8:44:..."), bei unbekanntem Modell nur die MAC; hat das Gerät einen
+                    //eigenen Namen, steht er davor.
+                    $bluType = $this->bthomeModelName((int) ($bluDevice['model'] ?? 0));
+                    $identity = ($bluType != '' ? $bluType . ' - ' : '') . $mac;
+                    $label = ($bluDevice['name'] ?? '') != '' ? $bluDevice['name'] . ' (' . $identity . ')' : $identity;
+                    $shownLabel = ($bluDevice['name'] ?? '') != '' ? $bluDevice['name'] . ' (' . $mac . ')' : $mac;
                     $additionalGateways = [];
                     foreach (array_slice($gateways, 1) as $gateway) {
                         $additionalGateways[] = ['MQTTTopic' => $gateway];
@@ -337,9 +357,9 @@ class ShellyConfigurator extends IPSModuleStrict
                     $Values[] = [
                         'parent'                => $groupID,
                         'name'                  => $label,
-                        'MQTTTopic'             => $label . ' - ' . implode(', ', $gateways),
+                        'MQTTTopic'             => $shownLabel . ' - ' . implode(', ', $gateways),
                         'InstanceName'          => $this->getInstanceName($bluInstanceID),
-                        'DeviceType'            => '',
+                        'DeviceType'            => $this->bthomeModelLabel((int) ($bluDevice['model'] ?? 0)),
                         'IPAddress'             => '',
                         'App'                   => '',
                         'Firmware'              => '',

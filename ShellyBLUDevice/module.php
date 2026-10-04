@@ -286,36 +286,77 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
             }
             $this->SetBuffer('bluGwState', json_encode($state));
 
+            //Gerät: Nummer vom Haupt-Gateway, Status vom Gateway mit dem neuesten Zeitstempel (RSSI vom stärksten Gateway).
             $merged = [];
             $keyMap = [];
             $lastTs = [];
-            foreach ($mainEntries as $entry) {
-                $key = (string) $entry['key'];
-                $isDevice = strpos($key, 'bthomedevice:') === 0;
-                $index = ((int) ($entry['config']['obj_id'] ?? -1)) . '_' . ((int) ($entry['config']['idx'] ?? 0));
-                $best = $entry;
-                $keyMap[$main][$key] = $key;
+            $deviceKey = (string) $mainDevice['key'];
+            $modelId = (int) ($mainDevice['attrs']['model_id'] ?? 0);
+            $best = $mainDevice;
+            $keyMap[$main][$deviceKey] = $deviceKey;
+            foreach ($gateways as $gateway) {
+                if ($gateway === $main || !isset($deviceOf[$gateway])) {
+                    continue;
+                }
+                $keyMap[$gateway][(string) $deviceOf[$gateway]['key']] = $deviceKey;
+                $modelId = $modelId > 0 ? $modelId : (int) ($deviceOf[$gateway]['attrs']['model_id'] ?? 0);
+                if ((int) ($deviceOf[$gateway]['status']['last_updated_ts'] ?? 0) > (int) ($best['status']['last_updated_ts'] ?? 0)) {
+                    $best = $deviceOf[$gateway];
+                }
+            }
+            $deviceEntry = $mainDevice;
+            $deviceEntry['status'] = $best['status'] ?? [];
+            $nearest = $this->nearestGateway($state);
+            if ($nearest !== '') {
+                $deviceEntry['status']['rssi'] = $state[$nearest]['rssi'];
+            }
+            $lastTs[$deviceKey] = (int) ($deviceEntry['status']['last_updated_ts'] ?? 0);
+            $merged[] = $deviceEntry;
+
+            //Sensoren: je (obj_id, idx) der neueste Status aller Gateways. Die Nummern der Sensoren sind je Gateway verschieden,
+            //deshalb bekommen sie feste Schlüssel aus obj_id und idx (bthomesensor:<obj_id * 100 + idx>) - dadurch bleiben die Idents
+            //der Variablen stabil. Dazu Platzhalter für die Sensoren, die das Modell laut Tabelle (libs/BTHomeModels.php) sendet,
+            //auch wenn noch kein Gateway sie gemeldet hat: die Variablen gibt es von Anfang an (z.B. Fenster, Luftfeuchtigkeit).
+            $candidates = [];
+            foreach ($gateways as $gateway) {
+                foreach ($sensorsOf[$gateway] ?? [] as $index => $entry) {
+                    $candidates[$index][$gateway] = $entry;
+                }
+            }
+            foreach ($this->bthomeModelObjects($modelId) as [$objId, $idx]) {
+                if (!isset($candidates[$objId . '_' . $idx])) {
+                    $candidates[$objId . '_' . $idx] = [];
+                }
+            }
+            ksort($candidates);
+            foreach ($candidates as $index => $byGateway) {
+                [$objId, $idx] = array_map('intval', explode('_', (string) $index));
+                $code = $objId * 100 + $idx;
+                $sensorKey = 'bthomesensor:' . $code;
+                $best = null;
                 foreach ($gateways as $gateway) {
-                    if ($gateway === $main) {
-                        continue;
-                    }
-                    $candidate = $isDevice ? ($deviceOf[$gateway] ?? null) : ($sensorsOf[$gateway][$index] ?? null);
+                    $candidate = $byGateway[$gateway] ?? null;
                     if ($candidate === null) {
                         continue;
                     }
-                    $keyMap[$gateway][(string) $candidate['key']] = $key;
-                    if ((int) ($candidate['status']['last_updated_ts'] ?? 0) > (int) ($best['status']['last_updated_ts'] ?? 0)) {
+                    $keyMap[$gateway][(string) $candidate['key']] = $sensorKey;
+                    if ($best === null || (int) ($candidate['status']['last_updated_ts'] ?? 0) > (int) ($best['status']['last_updated_ts'] ?? 0)) {
                         $best = $candidate;
                     }
                 }
-                $entry['status'] = $best['status'] ?? [];
-                if ($isDevice) {
-                    $nearest = $this->nearestGateway($state);
-                    if ($nearest !== '') {
-                        $entry['status']['rssi'] = $state[$nearest]['rssi'];
-                    }
+                if ($best === null) {
+                    $entry = [
+                        'key'    => $sensorKey,
+                        'status' => ['id' => $code, 'value' => null, 'last_updated_ts' => 0],
+                        'config' => ['id' => $code, 'addr' => $this->bluAddress(), 'name' => null, 'meta' => null, 'obj_id' => $objId, 'idx' => $idx],
+                    ];
+                } else {
+                    $entry = $best;
+                    $entry['key'] = $sensorKey;
+                    $entry['status']['id'] = $code;
+                    $entry['config']['id'] = $code;
                 }
-                $lastTs[$key] = (int) ($entry['status']['last_updated_ts'] ?? 0);
+                $lastTs[$sensorKey] = (int) ($entry['status']['last_updated_ts'] ?? 0);
                 $merged[] = $entry;
             }
             $this->SetBuffer('bluKeyMap', json_encode($keyMap));
@@ -415,7 +456,7 @@ require_once __DIR__ . '/../libs/ShellyModuleBase.php';
                     continue;
                 }
                 $ts = isset($event['ts']) ? (float) $event['ts'] : microtime(true);
-                if ($this->isDuplicateButtonEvent($gateway, (string) ($event['event'] ?? ''), $ts)) {
+                if ($this->isDuplicateButtonEvent($gateway, (int) ($event['idx'] ?? 0) . ':' . (string) ($event['event'] ?? '') . ':' . (int) ($event['steps'] ?? 0), $ts)) {
                     continue;
                 }
                 $event['component'] = $keyMap[(string) $event['component']];
