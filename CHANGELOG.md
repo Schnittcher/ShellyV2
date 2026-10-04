@@ -1,5 +1,6 @@
 04.10.2026 - Version 1.1.1 (Beta Version)
 Neu: BTHome (Shelly BLU-Geräte an einem Gateway): Eine Instanz für ein BLU-Gerät (bthomedevice) legt auch alle seine Sensoren an, jeder Messwert als eigene Variable (Zahl, Ja/Nein oder Text) mit Name und Einheit vom Gerät (BTHome.GetObjectInfos) und dem Gerätenamen als Präfix. Dazu Batterie, Empfang, Kopplung, Verschlüsselungs-Status, Firmware und der letzte Tastendruck (single_push, double_push, triple_push, ...), der bei Geräten mit erkennbarer Taste von Anfang an und sonst ab dem ersten Tastendruck angelegt wird. Bei einem BLU TRV (Thermostat) enthält die Instanz zusätzlich die bedienbaren Variablen Zieltemperatur, Position und externe Temperatur. Im Konfigurator erscheinen die Sensoren nicht mehr einzeln.
+Neu: BLU-Geräte und BLU TRVs ohne eigenen Namen werden im Konfigurator und als Präfix der Variablennamen mit ihrer MAC-Adresse angezeigt.
 Fix: Mehrere Instanzen desselben Geräts (z.B. eine je Komponente) stören sich beim Auslesen der Komponenten nicht mehr gegenseitig, und ein zweiter, gleichzeitig angestoßener Abruf überschreibt das fertige Ergebnis nicht mehr (dadurch fehlten bei Geräten mit vielen Komponenten teils Variablen).
 
 04.10.2026 - Version 1.1 (Beta Version)
