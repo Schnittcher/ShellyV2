@@ -84,6 +84,23 @@ trait BTHomeModels
         return (int) (self::$bthomeModels[$modelId]['buttons'] ?? 0);
     }
 
+    //Eigener Name des Sensors (obj_id, idx) laut Modelltabelle, sonst leer.
+    protected function bthomeModelObjectLabel(int $modelId, int $objId, int $idx): string
+    {
+        foreach (self::$bthomeModels[$modelId]['objects'] ?? [] as $object) {
+            if ($object[0] == $objId && $object[1] == $idx && isset($object[2])) {
+                return (string) $object[2];
+            }
+        }
+        return '';
+    }
+
+    //Hat das Modell ein Drehrad (Ereignisse rotate_left/rotate_right)?
+    protected function bthomeModelHasDial(int $modelId): bool
+    {
+        return !empty(self::$bthomeModels[$modelId]['dial']);
+    }
+
     protected function bthomeModelIsTrv(int $modelId): bool
     {
         return !empty(self::$bthomeModels[$modelId]['trv']);
