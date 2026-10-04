@@ -550,6 +550,19 @@ trait BTHomeObjects
         return $models;
     }
 
+    //Anzeigetext der Stufe eines Aufzählungs-Sensors (z.B. Helligkeitsstufe 0/1/2 = Dunkel/Dämmerung/Hell), sonst null (kein
+    //Aufzählungs-Sensor). Unbekannte Stufen bleiben als Zahl stehen.
+    protected function bthomeSensorEnumCaption(string $sensorKey, $value)
+    {
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        $objId = is_array($configs) ? (int) ($configs[$sensorKey]['obj_id'] ?? -1) : -1;
+        if (!isset(self::$bthomeEnumObjects[$objId]) || !is_numeric($value)) {
+            return null;
+        }
+        $enum = self::$bthomeEnumObjects[$objId];
+        return isset($enum[(int) $value]) ? $this->Translate($enum[(int) $value]) : (string) $value;
+    }
+
     //Name des Sensors laut Modelltabelle: das Modell stammt vom bthomedevice mit gleicher MAC-Adresse.
     protected function bthomeSensorModelLabel(array $configs, array $config)
     {
@@ -594,9 +607,10 @@ trait BTHomeObjects
         } else {
             $type = VARIABLETYPE_FLOAT;
         }
-        $enum = self::$bthomeEnumObjects[$objId] ?? null;
-        if ($enum !== null) {
-            $type = VARIABLETYPE_INTEGER;
+        //Aufzählung (z.B. Helligkeitsstufe): als Text mit dem Anzeigetext der Stufe (eine Ganzzahl-Variable mit Optionen erlaubt Symcon in
+        //der Darstellung "Wert" nicht), die Umwandlung macht bthomeSensorEnumCaption().
+        if (isset(self::$bthomeEnumObjects[$objId])) {
+            $type = VARIABLETYPE_STRING;
         }
 
         //Name: vom Nutzer vergebener Name, sonst Name laut Modelltabelle (z.B. "Rotation 1"), sonst Name des BTHome-Objekts (Gerät,
@@ -630,12 +644,6 @@ trait BTHomeObjects
                 ['Value' => true, 'Caption' => $this->Translate($trueCaption), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1],
                 ['Value' => false, 'Caption' => $this->Translate($falseCaption), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1],
             ]);
-        } elseif ($type == VARIABLETYPE_INTEGER && $enum !== null) {
-            $options = [];
-            foreach ($enum as $value => $caption) {
-                $options[] = ['Value' => $value, 'Caption' => $this->Translate($caption), 'IconActive' => false, 'IconValue' => '', 'ColorActive' => false, 'ColorValue' => -1, 'ContentColorActive' => false, 'ContentColorValue' => -1];
-            }
-            $presentation['OPTIONS'] = json_encode($options);
         } elseif ($type == VARIABLETYPE_FLOAT) {
             //Einheit: vom Gerät, sonst Rückfall-Tabelle ("° C" -> "°C").
             $unit = trim((string) ($info['unit'] ?? ''));

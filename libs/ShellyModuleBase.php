@@ -545,6 +545,13 @@ require_once __DIR__ . '/ShellyKVS.php';
                     $this->SetValue(substr($componentsFromShellyResult['ident'], 0, -6) . 'fault', count($value) > 0);
                     continue;
                 }
+                //BTHome: Aufzählungs-Sensor (z.B. Helligkeitsstufe) als Anzeigetext der Stufe.
+                if ($componentsFromShellyResult['clean'] == 'bthomesensor.value') {
+                    $caption = $this->bthomeSensorEnumCaption('bthomesensor:' . $componentsFromShellyResult['number'], $value);
+                    if ($caption !== null) {
+                        $value = $caption;
+                    }
+                }
                 //ggf. umrechnung druchführen
                 if ($tmpComponent != null) {
                     if (array_key_exists('factor', $tmpComponent)) {
