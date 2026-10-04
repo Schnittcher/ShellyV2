@@ -199,7 +199,7 @@ class ShellyConfigurator extends IPSModuleStrict
                                     'XMODServiceType' => 'shelly-ev-charger'
                                 ]
                             ],
-                            //TEST/EXPERIMENTELL: XT1-Geräte zusätzlich auch als generisches
+                            //XT1-Geräte zusätzlich auch als generisches
                             //ShellyDevice anbieten (nicht nur mit XMODServiceType) - seit der
                             //Migration auf Shelly.GetComponents (siehe TODO/ROADMAP in
                             //ShellyModuleBase.php) funktioniert der generische Pfad auch für XT1-Geräte

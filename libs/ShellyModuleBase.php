@@ -18,50 +18,46 @@ require_once __DIR__ . '/BTHomeObjects.php';
         use CameraStream;
         use BTHomeObjects;
 
-        // ############################################################
-        // ### IDEE / TODO - Presets-Zuordnungstabelle für ALLE        ###
-        // ### Komponenten (noch NICHT umgesetzt, kein akuter Bedarf,  ###
-        // ### nur damit die Idee nicht verloren geht):                ###
-        // ### getDynamicComponentMetadata() unten liefert pro         ###
-        // ### Instanz schon Name/Optionen/Min-Max/Access direkt vom   ###
-        // ### Gerät - aber nur für Felder, die der Shelly selbst      ###
-        // ### kennt UND nur für die dynamischen Typen. Für rein       ###
-        // ### Symcon-seitige Darstellung (z.B. ein Icon) oder Werte,  ###
-        // ### die der Shelly nicht/nicht konsistent mitliefert (z.B.  ###
-        // ### unterschiedliche Kelvin-Bereiche bei CCT-Lampen je nach ###
-        // ### Modell), könnte man zusätzlich eine GLOBALE             ###
-        // ### Presets-Tabelle bauen, keyed auf ModelID + Komponenten- ###
-        // ### Typ (Bevorzugte Variante, siehe Chat) - ähnlich wie     ###
-        // ### XMODServices.php es für LinkedGo/BLU-Geräte schon       ###
-        // ### macht, nur eben als Ergänzung zu components.php statt   ###
-        // ### Ersatz. components.php selbst eignet sich dafür NICHT   ###
-        // ### (global, kennt keine Geräte-/Instanz-Zugehörigkeit,     ###
-        // ### würde bei unterschiedlicher Nutzung z.B. von            ###
-        // ### boolean:200 auf verschiedenen Geräten kollidieren).     ###
-        // ### WICHTIG: Bewusst generisch für JEDEN Komponententyp     ###
-        // ### bauen (auch cover/light, nicht nur number/CCT) - auch   ###
-        // ### wenn z.B. cover.current_pos (0-100%) ein fester         ###
-        // ### Shelly-Protokollwert ist und aktuell KEIN konkreter     ###
-        // ### Bedarf für eine Override dort besteht, soll der         ###
-        // ### Mechanismus nicht künstlich auf bestimmte Typen         ###
-        // ### beschränkt sein, falls doch mal ein Sonderfall auftaucht.###
-        // ### Fallback für Fälle außerhalb der Presets-Tabelle:       ###
-        // ### manuelles Override-Feld in der VariableList-Property    ###
-        // ### (schon heute pro Instanz/pro Variable, siehe            ###
-        // ### Selected/Zeroing).                                      ###
-        // ############################################################
+        // IDEE / TODO - Presets-Zuordnungstabelle für ALLE
+        // Komponenten (noch NICHT umgesetzt, kein akuter Bedarf,
+        // nur damit die Idee nicht verloren geht):
+        // getDynamicComponentMetadata() unten liefert pro
+        // Instanz schon Name/Optionen/Min-Max/Access direkt vom
+        // Gerät - aber nur für Felder, die der Shelly selbst
+        // kennt UND nur für die dynamischen Typen. Für rein
+        // Symcon-seitige Darstellung (z.B. ein Icon) oder Werte,
+        // die der Shelly nicht/nicht konsistent mitliefert (z.B.
+        // unterschiedliche Kelvin-Bereiche bei CCT-Lampen je nach
+        // Modell), könnte man zusätzlich eine GLOBALE
+        // Presets-Tabelle bauen, keyed auf ModelID + Komponenten-
+        // Typ (Bevorzugte Variante, siehe Chat) - ähnlich wie
+        // XMODServices.php es für LinkedGo/BLU-Geräte schon
+        // macht, nur eben als Ergänzung zu components.php statt
+        // Ersatz. components.php selbst eignet sich dafür NICHT
+        // (global, kennt keine Geräte-/Instanz-Zugehörigkeit,
+        // würde bei unterschiedlicher Nutzung z.B. von
+        // boolean:200 auf verschiedenen Geräten kollidieren).
+        // WICHTIG: Bewusst generisch für JEDEN Komponententyp
+        // bauen (auch cover/light, nicht nur number/CCT) - auch
+        // wenn z.B. cover.current_pos (0-100%) ein fester
+        // Shelly-Protokollwert ist und aktuell KEIN konkreter
+        // Bedarf für eine Override dort besteht, soll der
+        // Mechanismus nicht künstlich auf bestimmte Typen
+        // beschränkt sein, falls doch mal ein Sonderfall auftaucht.
+        // Fallback für Fälle außerhalb der Presets-Tabelle:
+        // manuelles Override-Feld in der VariableList-Property
+        // (schon heute pro Instanz/pro Variable, siehe
+        // Selected/Zeroing).
 
-        // ############################################################
-        // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
-        // ### Liefert den vom Nutzer auf dem Gerät hinterlegten     ###
-        // ### Konfigurations-Eintrag (u.a. "name", bei Enum         ###
-        // ### "options") für z.B. component='boolean', channel=200 ###
-        // ### -> sucht "boolean:200" in 'componentConfigs' (volle   ###
-        // ### Config je Komponente aus Shelly.GetComponents, siehe  ###
-        // ### getComponentConfigs()). Liefert null, falls           ###
-        // ### (noch) keine Metadaten vorliegen oder der Eintrag     ###
-        // ### nicht existiert.                                      ###
-        // ############################################################
+        // Dynamisch angelegte Komponenten
+        // Liefert den vom Nutzer auf dem Gerät hinterlegten
+        // Konfigurations-Eintrag (u.a. "name", bei Enum
+        // "options") für z.B. component='boolean', channel=200
+        // -> sucht "boolean:200" in 'componentConfigs' (volle
+        // Config je Komponente aus Shelly.GetComponents, siehe
+        // getComponentConfigs()). Liefert null, falls
+        // (noch) keine Metadaten vorliegen oder der Eintrag
+        // nicht existiert.
         // Nur diese Basis-Typen werden per Shelly.GetComponents auf Name/Optionen/Min-Max/Access
         // geprüft - Boolean/Number/Enum/Text (Shelly "User-defined components") und presencezone
         // (physischer Sensor, aber ebenfalls nur über Shelly.GetComponents mit "name" pro Zone
@@ -569,24 +565,21 @@ require_once __DIR__ . '/BTHomeObjects.php';
 
                 $this->SetValue($componentsFromShellyResult['ident'], $value);
 
-                // ############################################################
-                // ### TEST / EXPERIMENTELL - cover.current_pos spiegeln    ###
-                // ### Damit die Shutter-Kachel (Position State /           ###
-                // ### _ExtraAction) auch die Live-Position anzeigt, nicht  ###
-                // ### nur die reine "Current Position"-Anzeige-Variable.   ###
-                // ### Nur für cover.current_pos, da Basis- und Extra-      ###
-                // ### Variable hier gleicher Typ (INTEGER) und gleiche     ###
-                // ### Bedeutung (Position in %) haben - bei anderen        ###
-                // ### actionWithExtraVariable-Komponenten (z.B. Brightness ###
-                // ### Action, Cover Action State) wäre das NICHT korrekt!  ###
-                // ### => Bei Problemen (z.B. Widget "zuckt" beim Ziehen    ###
-                // ###    während der Rollladen fährt) diesen Block wieder  ###
-                // ###    entfernen.                                       ###
-                // ############################################################
+                // cover.current_pos spiegeln
+                // Damit die Shutter-Kachel (Position State /
+                // _ExtraAction) auch die Live-Position anzeigt, nicht
+                // nur die reine "Current Position"-Anzeige-Variable.
+                // Nur für cover.current_pos, da Basis- und Extra-
+                // Variable hier gleicher Typ (INTEGER) und gleiche
+                // Bedeutung (Position in %) haben - bei anderen
+                // actionWithExtraVariable-Komponenten (z.B. Brightness
+                // Action, Cover Action State) wäre das NICHT korrekt!
+                // => Bei Problemen (z.B. Widget "zuckt" beim Ziehen
+                // während der Rollladen fährt) diesen Block wieder
+                // entfernen.
                 if ($componentsFromShellyResult['clean'] == 'cover.current_pos') {
                     $this->SetValue($componentsFromShellyResult['ident'] . '_ExtraAction', $value);
                 }
-                // ### ENDE TEST / EXPERIMENTELL ###############################
             }
         }
 
@@ -615,7 +608,7 @@ require_once __DIR__ . '/BTHomeObjects.php';
             return is_array($entry) ? $entry : null;
         }
 
-        // ### TEST / EXPERIMENTELL - Gerätename als Präfix für physische Komponenten ###
+        // Gerätename als Präfix für physische Komponenten
         // Anders als getDynamicComponentMetadata() (Name ERSETZT den generischen Namen komplett, nur
         // für boolean/number/enum/text/presencezone) wird der Gerätename hier nur als PRÄFIX vor den
         // generischen Feldnamen gesetzt (z.B. "Waschmaschine - Active power" statt nur "Active power")
@@ -652,7 +645,6 @@ require_once __DIR__ . '/BTHomeObjects.php';
             $key = $component . ':' . $channel;
             return $configs[$key][$configKey] ?? null;
         }
-        // ### ENDE TEST / EXPERIMENTELL ###############################
 
         private function registerComponentVariables()
         {
@@ -706,7 +698,7 @@ require_once __DIR__ . '/BTHomeObjects.php';
                     $isWritable = true;
                     $dynamicEnumOptions = null;
 
-                    // ### TEST / EXPERIMENTELL - dynamisch angelegte Komponenten: Name/Optionen/Min-Max-Einheit/Schreibschutz vom Gerät übernehmen ###
+                    // dynamisch angelegte Komponenten: Name/Optionen/Min-Max-Einheit/Schreibschutz vom Gerät übernehmen
                     $componentMetadata = $this->getDynamicComponentMetadata($base, $variable['Channel']);
                     if ($componentMetadata != null) {
                         if (array_key_exists('name', $componentMetadata) && $componentMetadata['name'] != '') {
@@ -766,9 +758,8 @@ require_once __DIR__ . '/BTHomeObjects.php';
                             $isWritable = false;
                         }
                     }
-                    // ### ENDE TEST / EXPERIMENTELL ###
 
-                    // ### TEST / EXPERIMENTELL - Gerätename als Präfix für physische Komponenten ###
+                    // Gerätename als Präfix für physische Komponenten
                     $physicalName = $this->getPhysicalComponentName($base, $variable['Channel']);
                     if ($physicalName != null) {
                         $name = $physicalName . ' - ' . $this->Translate($tmpComponent['name']);
@@ -777,9 +768,8 @@ require_once __DIR__ . '/BTHomeObjects.php';
                     if ($variable['CleanKeyPath'] == 'bthomedevice.button' && $this->bthomeDeviceButtonCount('bthomedevice:' . $variable['Channel']) > 1) {
                         $name = ($physicalName != null ? $physicalName . ' - ' : '') . $this->Translate('Button') . ' 1';
                     }
-                    // ### ENDE TEST / EXPERIMENTELL ###
 
-                    // ### TEST / EXPERIMENTELL - CCT-Farbtemperaturbereich vom Gerät übernehmen ###
+                    // CCT-Farbtemperaturbereich vom Gerät übernehmen
                     // Shelly meldet den unterstützten Kelvin-Bereich direkt in der Komponenten-Config
                     // ("ct_range": [min, max]) - anders als bei Cover/Light/RGB-Brightness (immer fest
                     // 0-100%, laut API-Doku geprüft) ist das bei CCT tatsächlich geräteabhängig. Nur
@@ -792,9 +782,8 @@ require_once __DIR__ . '/BTHomeObjects.php';
                             $presentation['MAX'] = $ctRange[1];
                         }
                     }
-                    // ### ENDE TEST / EXPERIMENTELL ###
 
-                    // ### TEST / EXPERIMENTELL - BLU TRV Zieltemperaturbereich vom Gerät übernehmen ###
+                    // BLU TRV Zieltemperaturbereich vom Gerät übernehmen
                     // Shelly meldet min/max Zieltemperatur direkt in der Komponenten-Config
                     // ("min_target_C"/"max_target_C", Doku-Default 5-35°C) - der bisher hartkodierte
                     // Bereich in components.php (5-30) war laut Doku ungenau (30 statt 35). Nur das
@@ -809,7 +798,6 @@ require_once __DIR__ . '/BTHomeObjects.php';
                             $presentation['MAX'] = $maxTargetC;
                         }
                     }
-                    // ### ENDE TEST / EXPERIMENTELL ###
 
                     //Schreibfähige Präsentationen (Slider/Switch/Enumeration/Value Input) verlangen
                     //laut Symcon zwingend eine konfigurierte Variablenaktion - ohne EnableAction()
@@ -853,7 +841,6 @@ require_once __DIR__ . '/BTHomeObjects.php';
                         }
                         $presentation['OPTIONS'] = json_encode($options);
                     }
-                    // ### ENDE TEST / EXPERIMENTELL ###
 
                     //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
                     $this->MaintainVariable($variable['Ident'], $name, $variableType, $presentation, 0, $variable['Selected']);
@@ -965,7 +952,7 @@ require_once __DIR__ . '/BTHomeObjects.php';
                         $name = $this->Translate($tmpComponent['name']) . ' ' . $componentsFromShellyResult['number'];
                     }
 
-                    // ### TEST / EXPERIMENTELL - dynamisch angelegte Komponenten: Name vom Gerät übernehmen ###
+                    // dynamisch angelegte Komponenten: Name vom Gerät übernehmen
                     $componentMetadata = $this->getDynamicComponentMetadata($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
                     if ($componentMetadata != null && array_key_exists('name', $componentMetadata) && $componentMetadata['name'] != '') {
                         //presencezone hat pro Zone mehrere Felder (value/num_objects), aber nur
@@ -977,7 +964,6 @@ require_once __DIR__ . '/BTHomeObjects.php';
                             $name = $componentMetadata['name'];
                         }
                     }
-                    // ### ENDE TEST / EXPERIMENTELL ###
 
                     //BTHome-Sensorwert: Name wie bei der Variable (Gerät/MAC - Objektname)
                     if ($componentsFromShellyResult['clean'] == 'bthomesensor.value') {
@@ -986,12 +972,11 @@ require_once __DIR__ . '/BTHomeObjects.php';
                         $name = $this->getBTHomeSensorVariable('bthomesensor:' . $componentsFromShellyResult['number'])['name'] . ' - ' . $this->Translate($tmpComponent['name']);
                     }
 
-                    // ### TEST / EXPERIMENTELL - Gerätename als Präfix für physische Komponenten ###
+                    // Gerätename als Präfix für physische Komponenten
                     $physicalName = $this->getPhysicalComponentName($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
                     if ($physicalName != null) {
                         $name = $physicalName . ' - ' . $this->Translate($tmpComponent['name']);
                     }
-                    // ### ENDE TEST / EXPERIMENTELL ###
 
                     //BTHome: Taster-Sensoren (ohne Status-Wert) bekommen keine Variablen - der Tastendruck steht in der Variable
                     //des BLU-Geräts (bthomedevice.button).

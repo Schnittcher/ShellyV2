@@ -2941,9 +2941,7 @@ trait Components
                 ],
             ],
         ],
-        // ############################################################
-        // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
-        // ############################################################
+        // Dynamisch angelegte Komponenten
         // Shelly "User-defined components" (in der Shelly-Weboberfläche unter "User-defined
         // components" anlegbar, z.B. ein Boolean-Toggle oder ein Number-Wert). Werden je nach
         // Typ mit fortlaufender ID ab 200 erzeugt (z.B. "boolean:200", "number:201", ...).
@@ -3152,6 +3150,5 @@ trait Components
                 ],
             ],
         ],
-        // ### ENDE TEST / EXPERIMENTELL ###############################
     ];
 }

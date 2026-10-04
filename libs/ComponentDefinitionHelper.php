@@ -227,7 +227,7 @@ trait ComponentDefinitionHelper
             'ident'    => $ident
         ];
     }
-    // ### TEST / EXPERIMENTELL - Dynamisch angelegte Komponenten ###
+    // Dynamisch angelegte Komponenten
     // Extrahiert Komponenten aus dem Shelly.GetComponents-Ergebnis, die per RPC dynamisch
     // hinzugefügt werden (ID-Raum ab 200) und deshalb weder in Shelly.GetStatus noch in
     // Shelly.GetConfig auftauchen, sondern nur hier: Boolean/Number/Enum/Text (Shelly "User-defined
@@ -271,7 +271,6 @@ trait ComponentDefinitionHelper
         }
         return ['status' => $status, 'config' => $config];
     }
-    // ### ENDE TEST / EXPERIMENTELL ###
 
     // Baut - anders als getDynamicallyAddedComponents(), das nach Präfix filtert - das GESAMTE
     // Shelly.GetComponents-Ergebnis in ein flaches {"switch:0":{...},"sys":{...},...}-Dict um (die Form,
@@ -294,7 +293,7 @@ trait ComponentDefinitionHelper
         return $status;
     }
 
-    // ### TEST / EXPERIMENTELL - Vereinheitlichte Config-Quelle für ALLE Komponenten ###
+    // Vereinheitlichte Config-Quelle für ALLE Komponenten
     // Liefert {"switch:0": {...volle config...}, "boolean:200": {...volle config...}, ...} aus dem
     // GESAMTEN Shelly.GetComponents-Ergebnis - für JEDEN Komponententyp, nicht nur die dynamischen
     // (anders als getDynamicallyAddedComponents(), das nach Präfix filtert). Einzige Config-Quelle der
@@ -351,5 +350,4 @@ trait ComponentDefinitionHelper
             }
         }
     }
-    // ### ENDE TEST / EXPERIMENTELL ###
 }
