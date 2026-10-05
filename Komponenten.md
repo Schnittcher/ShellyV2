@@ -89,13 +89,14 @@ Wifi IP-Adresse | `wifi_sta_ip` | Text |  |
 Wifi SSID | `wifi_ssid` | Text |  | 
 
 ## Eingang
-Digitaler Eingang (Taster/Schalter am Gerät).
+Eingang am Gerät (Taster, Schalter, Analog- oder Zähleingang). Welche Variablen es gibt, hängt vom Eingangstyp ab: "Eingangsstatus" nur bei einem Schalter (ein Taster hat keinen Status), "Taste" nur bei einem Taster (zeigt den letzten Tastendruck: einfach, doppelt, dreifach oder lang gedrückt), "Eingang (Prozent)" nur bei einem Analogeingang, "Total Counts" und "Frequency" nur bei einem Zähleingang. Der Typ ist am Gerät eingestellt.
 
 Komponente `input`
 
 Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 Eingangsstatus | `input_<Kanal>_state` | Ja/Nein |  | 
+Taste | `input_<Kanal>_button` | Text |  | 
 Eingang (Porzent) | `input_<Kanal>_percent` | Ganzzahl | % | 
 Total Counts | `input_<Kanal>_counts_total` | Ganzzahl |  | 
 Frequency | `input_<Kanal>_freq` | Zahl | Hz | 

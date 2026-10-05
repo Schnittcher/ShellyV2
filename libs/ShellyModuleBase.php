@@ -299,6 +299,7 @@ class ShellyModuleBase extends IPSModuleStrict
                 foreach (is_array($Payload['params']['events'] ?? null) ? $Payload['params']['events'] : [] as $event) {
                     if (is_array($event)) {
                         $this->setBTHomeButtonEvent($event);
+                        $this->setInputButtonEvent($event);
                     }
                 }
             }
@@ -452,6 +453,57 @@ class ShellyModuleBase extends IPSModuleStrict
     protected function componentChannel()
     {
         return @$this->ReadPropertyInteger('Channel');
+    }
+
+    //Typ des Eingangs (Input.GetConfig, Feld "type": "switch", "button", "analog", "count") aus der beim Auslesen gemerkten Config;
+    //'' = unbekannt.
+    protected function inputType(string $key): string
+    {
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        return is_array($configs) ? (string) ($configs[$key]['type'] ?? '') : '';
+    }
+
+    //Passt die Blattpfade (z.B. "input:0.state") an den Typ der Eingänge an: Ein Taster ("button") meldet keinen Status (state ist
+    //null), sein Druck kommt nur als Ereignis - dafür gibt es statt "state" den (virtuellen) Pfad "input:N.button". Bei allen anderen
+    //Typen und bei unbekanntem Typ bleibt alles wie vom Gerät gemeldet.
+    protected function adjustInputLeafPaths(array $paths): array
+    {
+        $result = [];
+        $inputs = [];
+        foreach ($paths as $path) {
+            if (preg_match('/^(input:\d+)\./', $path, $match)) {
+                $inputs[$match[1]] = true;
+                if (substr($path, -6) == '.state' && $this->inputType($match[1]) === 'button') {
+                    continue;
+                }
+            }
+            $result[] = $path;
+        }
+        foreach (array_keys($inputs) as $key) {
+            if ($this->inputType($key) === 'button' && !in_array($key . '.button', $result, true)) {
+                $result[] = $key . '.button';
+            }
+        }
+        return $result;
+    }
+
+    //Tastendruck an einem Eingang vom Typ "button": NotifyEvent mit component "input:N" und event single_push, double_push,
+    //triple_push oder long_push in die Variable input_N_button schreiben. btn_down und btn_up kommen bei jedem Druck zusätzlich und
+    //werden ignoriert, damit sich die Variable je Druck nur einmal aktualisiert. Gibt es die Variable nicht (kein Taster, abgewählt
+    //oder anderer Kanal bei ShellyComponent), passiert nichts.
+    protected function setInputButtonEvent(array $event): void
+    {
+        if (!preg_match('/^input:(\d+)$/', (string) ($event['component'] ?? ''), $match)) {
+            return;
+        }
+        $eventName = (string) ($event['event'] ?? '');
+        if (!in_array($eventName, ['single_push', 'double_push', 'triple_push', 'long_push'], true)) {
+            return;
+        }
+        $ident = 'input_' . $match[1] . '_button';
+        if (@$this->GetIDForIdent($ident)) {
+            $this->SetValue($ident, $eventName);
+        }
     }
 
     //Legt die Variablen aus den bereits gespeicherten Komponentendaten neu an (ohne neue Abfrage beim Gerät) -
@@ -917,6 +969,9 @@ class ShellyModuleBase extends IPSModuleStrict
                 }
             }
         }
+
+        //Eingänge vom Typ "button": keine Variable "Eingangsstatus", dafür die Tasten-Variable (siehe adjustInputLeafPaths()).
+        $allComponentsFromShelly = $this->adjustInputLeafPaths($allComponentsFromShelly);
 
         //Mit 'alwaysCreate' markierte Definitionen auch anlegen, wenn die Antwort das Feld nicht enthält
         //(z.B. Cury mit leerem Fach: "left": null) - siehe getAlwaysCreatedLeafPaths().

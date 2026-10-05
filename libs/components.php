@@ -72,6 +72,57 @@ trait Components
                     'PRESENTATION' => VARIABLE_PRESENTATION_SWITCH,
                 ],
             ],
+            //Taste eines Eingangs vom Typ "button": Das Gerät meldet für Taster keinen Status (state ist null), der Druck kommt nur als
+            //Ereignis (NotifyEvent, siehe setInputButtonEvent()). Die Variable wird nur für solche Eingänge angelegt (adjustInputLeafPaths()).
+            'button' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Button',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'OPTIONS'      => '[
+                        {
+                            "Value": "single_push",
+                            "Caption": "Single press",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": false,
+                            "ColorValue": -1,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        },
+                        {
+                            "Value": "double_push",
+                            "Caption": "Double press",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": false,
+                            "ColorValue": -1,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        },
+                        {
+                            "Value": "triple_push",
+                            "Caption": "Triple press",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": false,
+                            "ColorValue": -1,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        },
+                        {
+                            "Value": "long_push",
+                            "Caption": "Long press",
+                            "IconActive": false,
+                            "IconValue": "",
+                            "ColorActive": false,
+                            "ColorValue": -1,
+                            "ContentColorActive": false,
+                            "ContentColorValue": -1
+                        }
+                    ]',
+                ],
+            ],
             'percent' => [
                 'type'         => VARIABLETYPE_INTEGER,
                 'name'         => 'Input (Percent)',
