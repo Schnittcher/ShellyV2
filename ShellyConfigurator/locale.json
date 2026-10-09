@@ -19,6 +19,7 @@
             "Please press OK!": "Bitte drücken Sie OK!",
             "Save": "Speichern",
             "This feature is experimental and allows you to adjust the Shellie's MQTT settings.": "Diese Funktion ist experimentell und ermöglicht es Ihnen, die MQTT-Einstellungen des Shelly anzupassen.",
+            "Battery-powered devices are asleep most of the time and are therefore often not found. Create them manually: add a \"ShellyDevice\" instance and enter the MQTT topic of the device and its model.": "Batteriebetriebene Geräte schlafen die meiste Zeit und werden deshalb oft nicht gefunden. Diese bitte von Hand anlegen: eine Instanz \"ShellyDevice\" hinzufügen und das MQTT-Topic des Geräts sowie das Modell eintragen.",
             "BLU devices": "BLU-Geräte",
             "Model ID": "Modell-ID"
         }

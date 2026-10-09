@@ -64,16 +64,19 @@ class ShellyConfigurator extends IPSModuleStrict
         if (floatval(IPS_GetKernelVersion()) < 5.3) {
             return json_encode($Form);
         }
-        $Form['actions'][2]['values'] = $this->getFormForMdnsDevices();
+        //Position der Formularelemente über ihren Namen (nicht über feste Zahlen, damit ein neues Element im Formular nichts verschiebt).
+        $position = [];
+        foreach ($Form['actions'] as $index => $element) {
+            if (isset($element['name'])) {
+                $position[$element['name']] = $index;
+            }
+        }
+        $Form['actions'][$position['mDNSConfigurator']]['values'] = $this->getFormForMdnsDevices();
 
         $Shellies = (json_decode((string) $this->ReadAttributeString('Shellies'), true) ?: []); //$this->findShellysOnNetwork();
         $Values = [];
 
-        if (count($Shellies) == 0) {
-            $Form['actions'][3]['visible'] = true;
-        } else {
-            $Form['actions'][3]['visible'] = false;
-        }
+        $Form['actions'][$position['DiscoverInfo']]['visible'] = count($Shellies) == 0;
 
         //Eindeutige ID je Gerätezeile - die Komponenten verweisen darüber per "parent" auf ihr Gerät.
         $idCount = 0;
@@ -377,7 +380,7 @@ class ShellyConfigurator extends IPSModuleStrict
                     ];
                 }
             }
-            $Form['actions'][0]['values'] = $Values;
+            $Form['actions'][$position['Configurator']]['values'] = $Values;
         }
         return json_encode($Form);
     }

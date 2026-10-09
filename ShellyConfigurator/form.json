@@ -54,6 +54,10 @@
         },
         {
             "type": "Label",
+            "caption": "Battery-powered devices are asleep most of the time and are therefore often not found. Create them manually: add a \"ShellyDevice\" instance and enter the MQTT topic of the device and its model."
+        },
+        {
+            "type": "Label",
             "caption": "This feature is experimental and allows you to adjust the Shellie's MQTT settings."
         },
         {
