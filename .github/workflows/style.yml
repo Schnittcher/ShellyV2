@@ -3,18 +3,6 @@ name: Check Style
 on: [push, pull_request]
 
 jobs:
-
   style:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout module
-      uses: actions/checkout@v4
-      with:
-        submodules: true
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.3'
-        tools: php-cs-fixer:3
-    - name: Check style
-      run: php-cs-fixer fix --config=.style/.php-cs-fixer.php -v --dry-run --allow-risky=yes --diff
+    # Zentrale Stilprüfung aus dem Repository Symcon_CI. v1 wird dort bewusst weitergeschoben.
+    uses: Schnittcher/Symcon_CI/.github/workflows/style.yml@v1
