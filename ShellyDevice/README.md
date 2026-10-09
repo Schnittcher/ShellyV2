@@ -6,9 +6,10 @@ Diese Instanz legt alle passenden Variablen für das Shelly an.
 - [ShellyDevice](#shellydevice)
     - [Inhaltsverzeichnis](#inhaltsverzeichnis)
   - [1. Konfiguration](#1-konfiguration)
-  - [2. Funktionen](#2-funktionen)
-  - [3. Spenden](#3-spenden)
-  - [4. Lizenz](#4-lizenz)
+  - [2. Variablen](#2-variablen)
+  - [3. Funktionen](#3-funktionen)
+  - [4. Spenden](#4-spenden)
+  - [5. Lizenz](#5-lizenz)
 
 
 ## 1. Konfiguration
@@ -23,7 +24,21 @@ Stream-Objekte automatisch anlegen | Nur bei einer Shelly Camera: Legt die Strea
 Stream-Benutzer | Nur bei einer Shelly Camera, nur nötig, wenn am Gerät die Authentifizierung aktiv ist (der Benutzer ist laut Weboberfläche der Kamera "admin").
 Stream-Passwort | Das zugehörige Passwort, wird in die Adresse der Stream-Objekte übernommen.
 
-## 2. Funktionen
+## 2. Variablen
+
+Welche Variablen eine Instanz anlegt, hängt von den Komponenten des Geräts ab (Switch, Cover, Eingänge, Messwerte und so weiter). Das Modul liest sie beim Auslesen vom Gerät. Eine Übersicht je Komponente mit Name, Ident, Typ, Einheit und Aktion steht in [Komponenten.md](../Komponenten.md).
+
+* Der Ident einer Variable ist `<Komponente>_<Kanal>_<Feld>`, zum Beispiel `switch_0_output` (Kanal 0 des Switch, Feld `output`).
+* In der Liste "Variablen" der Instanz kann man einzelne Variablen abwählen.
+* Fast alle Komponenten, die Fehler melden, haben zusätzlich "Fehler" (die Fehlercodes als Text) und "Störung" (Ja/Nein).
+
+Variable | Ident | Typ | Beschreibung
+------------ | ------------ | ------------ | ----------------
+Erreichbar | `Reachable` | Ja/Nein | Ist das Gerät erreichbar (online/offline).
+Ereigniskomponente | `events_0_component` | Text | Komponente des zuletzt gemeldeten Ereignisses, zum Beispiel `input:0`.
+Ereignis | `events_0_event` | Text | Zuletzt gemeldetes Ereignis, zum Beispiel `single_push`.
+
+## 3. Funktionen
 
 `RequestAction($VariablenID, $Value);`
 Mit dieser Funktion können alle Aktionen einer Variable ausgelöst werden.
@@ -85,11 +100,11 @@ $alle = json_decode(SHY_KVSGetMany(12345, '*'), true);
 SHY_KVSDelete(12345, 'sollwert');
 ```
 
-## 3. Spenden
+## 4. Spenden
 Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:    
 
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=EK4JRP87XLSHW" target="_blank"><img src="https://www.paypalobjects.com/de_DE/DE/i/btn/btn_donate_LG.gif" border="0" /></a> <a href="https://www.amazon.de/hz/wishlist/ls/3JVWED9SZMDPK?ref_=wl_share" target="_blank">Amazon Wunschzettel</a>
 
-## 4. Lizenz
+## 5. Lizenz
 
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)

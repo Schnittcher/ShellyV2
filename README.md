@@ -1,3 +1,8 @@
+[![Version](https://img.shields.io/badge/Symcon-PHPModul-red.svg)](https://www.symcon.de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/)
+![Version](https://img.shields.io/badge/Symcon%20Version-8.1%20%3E-blue.svg)
+[![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![Check Style](https://github.com/Schnittcher/ShellyV2/actions/workflows/style.yml/badge.svg)](https://github.com/Schnittcher/ShellyV2/actions/workflows/style.yml)
+
 # Shelly Gen2+
 Mit diesem Modul können alle Shellies ab Generation 2 in Symcon eingebunden werden.
 
@@ -48,10 +53,15 @@ Shelly BLU-Geräte (Bluetooth) sprechen nicht selbst mit IP-Symcon, sondern übe
 ## 3. Enthaltene Module
 
 * [ShellyBLUDevice](ShellyBLUDevice/README.md)
+  * Ein Shelly BLU-Gerät (z. B. Button, Door/Window, Motion), das an einem oder mehreren Gateways angelernt ist, mit Messwerten, Tasten und dem Empfang je Gateway.
 * [ShellyComponent](ShellyComponent/README.md)
+  * Eine einzelne Komponente eines Shellys (z. B. switch:0) als eigene Instanz.
 * [ShellyConfigurator](ShellyConfigurator/README.md)
+  * Findet die Shellies per MQTT im Netzwerk und legt sie als komplettes Gerät oder als einzelne Komponenten an.
 * [ShellyDevice](ShellyDevice/README.md)
+  * Legt alle passenden Variablen eines Shellys an.
 * [ShellyXT1Device](ShellyXT1Device/README.md)
+  * Bindet "Powered by Shelly" Geräte ein.
 
 ## 4. Installation
 Installation über den IP-Symcon Module Store.

@@ -23,14 +23,14 @@ Idealerweise wird die Instanz über den Konfigurator angelegt (Gruppe "BLU-Gerä
 Feld | Beschreibung
 ------------ | ----------------
 Haupt-Gateway (MQTT Topic) | Das Topic des Gateways, von dem die Nummerierung der Variablen stammt. Das Gerät muss an diesem Gateway angelernt sein.
-MAC-Adresse des BLU-Geräts | MAC-Adresse des BLU-Geräts, z. B. `f8:44:77:43:0d:86` (Groß-/Kleinschreibung egal).
+MAC-Adresse des BLU-Geräts | MAC-Adresse des BLU-Geräts, z. B. `aa:bb:cc:dd:ee:ff` (Groß-/Kleinschreibung egal).
 Weitere Gateways | Alle weiteren Gateways (MQTT Topics), an denen dasselbe Gerät angelernt ist. Alle Gateways müssen mit demselben MQTT Server/Client verbunden sein.
 Stärkstes Gateway: maximales Alter | Ein Gateway zählt für "Stärkstes Gateway" nur, wenn es das Gerät in dieser Zeit (Sekunden) gehört hat.
 Debug: Fehlende Idents | Zusätzliche Debug-Ausgaben, falls Variablen fehlen.
 Variablen | Auswahl der Variablen, ebenfalls die Funktion "Zeroing" (Variable wird zurückgesetzt, wenn alle Gateways offline sind).
 
 ## 2. Variablen
-Alle Variablen einer Instanz. Die Namen der Variablen des Geräts beginnen mit dem Namen des Geräts, den man am Gateway vergeben hat, sonst mit der MAC-Adresse (z. B. `f8:44:77:43:0d:86 - Battery`). In der Liste "Variablen" der Instanz kann man einzelne abwählen.
+Alle Variablen einer Instanz. Die Namen der Variablen des Geräts beginnen mit dem Namen des Geräts, den man am Gateway vergeben hat, sonst mit der MAC-Adresse (z. B. `aa:bb:cc:dd:ee:ff - Battery`). In der Liste "Variablen" der Instanz kann man einzelne abwählen.
 
 ### 2.1 Variablen des Geräts
 Der Ident beginnt mit `bthomedevice_<N>_`, `<N>` ist die Nummer des Geräts am Haupt-Gateway.
