@@ -449,6 +449,31 @@ class ShellyModuleBase extends IPSModuleStrict
         return ['PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION, 'OPTIONS' => json_encode($options)];
     }
 
+    //Benennt eine Fehler-/Störungs-Variable um, die noch den früheren Standardnamen trägt ("Errors"/"Fault" ohne Komponente, ggf. mit
+    //Kanalnummer oder dem Namen des Kanals davor). Hat der Nutzer den Namen geändert, bleibt er. Wiederholbar: Nach der Umbenennung
+    //passt der Name nicht mehr zum alten Standardnamen.
+    protected function renameOldErrorVariable(string $ident, $channel, $physicalName, string $newName): void
+    {
+        if (substr($ident, -7) == '_errors') {
+            $oldBase = $this->Translate('Errors');
+        } elseif (substr($ident, -6) == '_fault') {
+            $oldBase = $this->Translate('Fault');
+        } else {
+            return;
+        }
+        $variableID = @$this->GetIDForIdent($ident);
+        if (!$variableID || IPS_GetName($variableID) === $newName) {
+            return;
+        }
+        $oldNames = [$oldBase . ($channel > 0 ? ' ' . $channel : '')];
+        if ($physicalName != null) {
+            $oldNames[] = $physicalName . ' - ' . $oldBase;
+        }
+        if (in_array(IPS_GetName($variableID), $oldNames, true)) {
+            IPS_SetName($variableID, $newName);
+        }
+    }
+
     //Kanal der Komponente, für die diese Instanz gilt (Property "Channel", bei ShellyDevice 0). ShellyBLUDevice überschreibt das:
     //dort ergibt sich der Kanal aus der MAC-Adresse des BLU-Geräts am Haupt-Gateway.
     protected function componentChannel()
@@ -911,6 +936,9 @@ class ShellyModuleBase extends IPSModuleStrict
 
                 //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
                 $this->MaintainVariable($variable['Ident'], $name, $variableType, $presentation, 0, $variable['Selected']);
+                //Fehler/Störung: frühere Versionen nannten sie bei jeder Komponente gleich ("Fehler", "Störung"), jetzt steht die
+                //Komponente im Namen. MaintainVariable() setzt den Namen nur beim Anlegen, deshalb den alten Standardnamen umbenennen.
+                $this->renameOldErrorVariable((string) $variable['Ident'], $variable['Channel'], $physicalName, $name);
                 //BTHome-Sensorvariablen: automatisch vergebenen Namen merken, damit er später (wenn die Objektinfos
                 //eintreffen) nur umbenannt wird, solange der Nutzer ihn nicht geändert hat.
                 if (strpos($variable['Ident'], 'bthomesensor_') === 0) {
@@ -992,6 +1020,18 @@ class ShellyModuleBase extends IPSModuleStrict
         foreach ($allComponentsFromShelly as $entry) {
             $componentsFromShellyResult = $this->cleanComponentPath($entry);
 
+            //BLU-Geräte (bthomedevice) und ihre Sensoren (bthomesensor) gehören in die Instanz ShellyBLUDevice, nicht in das
+            //komplette Gerät (Gateway, Component leer). Der Thermostat (blutrv) bleibt.
+            if ($component == '' && in_array($componentsFromShellyResult['base'], ['bthomedevice', 'bthomesensor'], true)) {
+                continue;
+            }
+
+            //Standardwerte für jeden Eintrag neu setzen: "Selected" an, "Zeroing" aus. Ein Eintrag, der in der gespeicherten Liste
+            //fehlt (z.B. nach einem Update neu dazugekommen), darf nicht den Zustand des vorherigen übernehmen - sonst würden
+            //nach einer abgewählten Variable alle folgenden Variablen abgewählt und von MaintainVariable() gelöscht.
+            $selected = true;
+            $zeroing = false;
+
             // Überprüfen, ob der Ident in der alten Liste vorhanden ist
             if (!empty($componentsFromShellyResult['ident']) && isset($oldMap[$componentsFromShellyResult['ident']])) {
                 // Falls der Ident in der alten Liste existiert, den "Selected"-Wert übernehmen
@@ -1020,18 +1060,6 @@ class ShellyModuleBase extends IPSModuleStrict
                 // dynamisch angelegte Komponenten: Name vom Gerät übernehmen
                 $componentMetadata = $this->getDynamicComponentMetadata($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
                 if ($componentMetadata != null && array_key_exists('name', $componentMetadata) && $componentMetadata['name'] != '') {
-            //BLU-Geräte (bthomedevice) und ihre Sensoren (bthomesensor) gehören in die Instanz ShellyBLUDevice, nicht in das
-            //komplette Gerät (Gateway, Component leer). Der Thermostat (blutrv) bleibt.
-            if ($component == '' && in_array($componentsFromShellyResult['base'], ['bthomedevice', 'bthomesensor'], true)) {
-                continue;
-            }
-
-            //Standardwerte für jeden Eintrag neu setzen: "Selected" an, "Zeroing" aus. Ein Eintrag, der in der gespeicherten Liste
-            //fehlt (z.B. nach einem Update neu dazugekommen), darf nicht den Zustand des vorherigen übernehmen - sonst würden
-            //nach einer abgewählten Variable alle folgenden Variablen abgewählt und von MaintainVariable() gelöscht.
-            $selected = true;
-            $zeroing = false;
-
                     //presencezone hat pro Zone mehrere Felder (value/num_objects), aber nur
                     //EINEN Zonennamen - Namen kombinieren statt ersetzen, sonst heißen
                     //"Zone Presence" und "Objects in Zone" beide nur noch z.B. "Room".
