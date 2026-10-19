@@ -21,7 +21,10 @@
             "This feature is experimental and allows you to adjust the Shellie's MQTT settings.": "Diese Funktion ist experimentell und ermöglicht es Ihnen, die MQTT-Einstellungen des Shelly anzupassen.",
             "Battery-powered devices are asleep most of the time and are therefore often not found. Create them manually: add a \"ShellyDevice\" instance and enter the MQTT topic of the device and its model.": "Batteriebetriebene Geräte schlafen die meiste Zeit und werden deshalb oft nicht gefunden. Diese bitte von Hand anlegen: eine Instanz \"ShellyDevice\" hinzufügen und das MQTT-Topic des Geräts sowie das Modell eintragen.",
             "BLU devices": "BLU-Geräte",
-            "Model ID": "Modell-ID"
+            "Model ID": "Modell-ID",
+            "Donations": "Spenden / Schenkung",
+            "This module is free for non-commercial use. Donations to support the author are accepted here:    ": "Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:    ",
+            "Unknown": "Unbekannt"
         }
     }
 }
