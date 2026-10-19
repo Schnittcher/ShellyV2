@@ -17,7 +17,7 @@ Feld | Beschreibung
 MQTT Topic | Hier wird das Topic des Geräts hinterlegt.
 Debug: Fehlende Idents     | Mit diesem Schalter können im Debug mehr Daten angezeigt werden, dies kann nützlich sein, wenn Variablen fehlen und das Debug im Forum gepostet werden soll.
 Variablen | In dieser Liste kann ausgewählt werden, ob die Variablen angezeigt werden sollen, ebenfalls gibt es die Möglichkeit die Funktion "Zeroing" zu aktivieren. Durch das Aktivieren der Funktion wird die Variable zurückgesetzt, wenn das Gerät offline ist. Welche Variablen es je Komponente gibt (Name, Ident, Typ, Einheit, bedienbar), steht in [Komponenten.md](../Komponenten.md). Komponenten, die Fehler melden, haben zusätzlich die Variablen "Fehler" (die Fehlercodes als Text) und "Störung" (Ja/Nein, true sobald ein Fehler vorliegt).
-Shelly Model | Hier wird das Model des Shellies eingetragen. Wird unteranderem dazu genutzt um ggf. Ausnahmen zu behandeln, zum Beispiel bei "Powered by Shelly" Geräten.
+Shelly Modell | Hier wird das Modell des Shellies eingetragen. Wird unteranderem dazu genutzt um ggf. Ausnahmen zu behandeln, zum Beispiel bei "Powered by Shelly" Geräten.
 Stream-Objekte automatisch anlegen | Nur bei einer Shelly Camera: Legt die Stream-Objekte (RTSP, Hauptstream und zweiter Stream) automatisch an, sobald die IP-Adresse des Geräts bekannt ist.
 Stream-Benutzer | Nur bei einer Shelly Camera, nur nötig, wenn am Gerät die Authentifizierung aktiv ist (der Benutzer ist laut Weboberfläche der Kamera "admin").
 Stream-Passwort | Das zugehörige Passwort, wird in die Adresse der Stream-Objekte übernommen.

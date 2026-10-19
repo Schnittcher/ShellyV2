@@ -13,7 +13,7 @@ Dieses Modul findet alle Shelly Gen2+ Geräte per MQTT und kann diese als komple
 
 Feld | Beschreibung
 ------------ | ----------------
-Shelly Configurator (Tabelle) | Die gefundenen Shellies mit MQTT Topic, Instanzname, Gerätetyp, App und Firmware. Hier werden die Instanzen angelegt, als komplettes Gerät oder als einzelne Komponenten. Die Spalten "Name" und "IP-Adresse" lassen sich einblenden.
+Shelly Konfigurator (Tabelle) | Die gefundenen Shellies mit MQTT Topic, Instanzname, Gerätetyp, App und Firmware. Hier werden die Instanzen angelegt, als komplettes Gerät oder als einzelne Komponenten. Die Spalten "Name" und "IP-Adresse" lassen sich einblenden.
 MQTT-Einstellungen setzen (Liste) | Experimentell: Die im Netzwerk per mDNS gefundenen Shellies. Hier wird das Gerät ausgewählt, dessen MQTT-Einstellungen geändert werden sollen.
 Broker | Adresse des MQTT Servers, die in das Gerät geschrieben wird.
 Port | Port des MQTT Servers.

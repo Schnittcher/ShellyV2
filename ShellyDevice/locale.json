@@ -455,7 +455,15 @@
             "Stop": "Stopp",
             "Close": "Schließen",
             "No smoke": "Kein Rauch",
-            "Unknown": "Unbekannt"
+            "Unknown": "Unbekannt",
+            "Variables": "Variablen",
+            "Name": "Name",
+            "Ident": "Ident",
+            "CleanKeyPath": "CleanKeyPath",
+            "ActionWithExtraVariable": "Aktion mit Zusatzvariable",
+            "Select": "Auswählen",
+            "Zeroing": "Zeroing",
+            "Shelly Model": "Shelly Modell"
         }
     }
 }

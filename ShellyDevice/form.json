@@ -13,7 +13,7 @@
         {
             "type": "List",
             "name": "VariableList",
-            "caption": "Variablen",
+            "caption": "Variables",
             "rowCount": 10,
             "add": false,
             "delete": false,
@@ -54,7 +54,7 @@
                     "save": true
                 },
                 {
-                    "caption": "Auswählen",
+                    "caption": "Select",
                     "name": "Selected",
                     "width": "100px",
                     "add": true,
