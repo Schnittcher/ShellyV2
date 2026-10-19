@@ -98,10 +98,10 @@ Variable | Ident | Typ | Einheit | Aktion
 Eingangsstatus | `input_<Kanal>_state` | Ja/Nein |  | 
 Taste | `input_<Kanal>_button` | Text |  | 
 Eingang (Porzent) | `input_<Kanal>_percent` | Ganzzahl | % | 
-Total Counts | `input_<Kanal>_counts_total` | Ganzzahl |  | 
-Frequency | `input_<Kanal>_freq` | Zahl | Hz | 
-Fehler | `input_<Kanal>_errors` | Text |  | 
-Störung | `input_<Kanal>_fault` | Ja/Nein |  | 
+Impulse gesamt | `input_<Kanal>_counts_total` | Ganzzahl |  | 
+Frequenz | `input_<Kanal>_freq` | Zahl | Hz | 
+Eingang Fehler | `input_<Kanal>_errors` | Text |  | 
+Eingang Störung | `input_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Spannungsmesser
 Messung einer externen Spannung (z. B. Add-on).
@@ -111,9 +111,9 @@ Komponente `voltmeter`
 Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 Spannung | `voltmeter_<Kanal>_voltage` | Zahl | V | 
-Xvoltage | `voltmeter_<Kanal>_xvoltage` | Zahl | V | 
-Fehler | `voltmeter_<Kanal>_errors` | Text |  | 
-Störung | `voltmeter_<Kanal>_fault` | Ja/Nein |  | 
+Spannung (umgerechnet) | `voltmeter_<Kanal>_xvoltage` | Zahl | V | 
+Spannungsmesser Fehler | `voltmeter_<Kanal>_errors` | Text |  | 
+Spannungsmesser Störung | `voltmeter_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Flutsensor
 Wassersensor (Alarm, Stummschaltung, Fehler).
@@ -124,8 +124,8 @@ Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 Alarm | `flood_<Kanal>_alarm` | Ja/Nein |  | 
 Stumm | `flood_<Kanal>_mute` | Ja/Nein |  | 
-Fehler | `flood_<Kanal>_errors` | Text |  | 
-Störung | `flood_<Kanal>_fault` | Ja/Nein |  | 
+Flutsensor Fehler | `flood_<Kanal>_errors` | Text |  | 
+Flutsensor Störung | `flood_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Energiedaten (EM)
 Energiezähler der 3-Phasen-Messung (Wirk- und Rückspeiseenergie, je Phase und gesamt).
@@ -142,8 +142,8 @@ Phase C Gesamtwirkenergie | `emdata_<Kanal>_c_total_act_energy` | Zahl | kWh |
 Phase C Gesamtwirkenergie Einspeisung | `emdata_<Kanal>_c_total_act_ret_energy` | Zahl | kWh | 
 Gesamtwirkenergie | `emdata_<Kanal>_total_act` | Zahl | kWh | 
 Gesamtwirkenergie Einspeisung | `emdata_<Kanal>_total_act_ret` | Zahl | kWh | 
-Fehler | `emdata_<Kanal>_errors` | Text |  | 
-Störung | `emdata_<Kanal>_fault` | Ja/Nein |  | 
+EM-Daten Fehler | `emdata_<Kanal>_errors` | Text |  | 
+EM-Daten Störung | `emdata_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Energiedaten (EM1)
 Energiezähler der einphasigen Messung.
@@ -154,8 +154,8 @@ Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 Gesamtwirkenergie | `em1data_<Kanal>_total_act_energy` | Zahl | kWh | 
 Gesamtwirkenergie Einspeisung | `em1data_<Kanal>_total_act_ret_energy` | Zahl | kWh | 
-Fehler | `em1data_<Kanal>_errors` | Text |  | 
-Störung | `em1data_<Kanal>_fault` | Ja/Nein |  | 
+EM1-Daten Fehler | `em1data_<Kanal>_errors` | Text |  | 
+EM1-Daten Störung | `em1data_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Energiemessung 3 Phasen (EM)
 Momentanwerte einer 3-Phasen-Messung (z. B. Shelly Pro 3EM): Spannung, Strom, Leistung, Frequenz, je Phase und gesamt.
@@ -186,8 +186,8 @@ Neutral Stromstärke | `em_<Kanal>_n_current` | Zahl | A |
 Stromstärke auf allen Phasen | `em_<Kanal>_total_current` | Zahl | A | 
 Wirkleistung auf allen Phasen | `em_<Kanal>_total_act_power` | Zahl | W | 
 Scheinleistung auf allen Phasen | `em_<Kanal>_total_aprt_power` | Zahl | VA | 
-Fehler | `em_<Kanal>_errors` | Text |  | 
-Störung | `em_<Kanal>_fault` | Ja/Nein |  | 
+EM Fehler | `em_<Kanal>_errors` | Text |  | 
+EM Störung | `em_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Temperatur
 Temperatursensor (Add-on, Pill, Geräte-Temperatur).
@@ -197,8 +197,8 @@ Komponente `temperature`
 Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 Temperatur | `temperature_<Kanal>_tC` | Zahl | °C | 
-Fehler | `temperature_<Kanal>_errors` | Text |  | 
-Störung | `temperature_<Kanal>_fault` | Ja/Nein |  | 
+Temperatur Fehler | `temperature_<Kanal>_errors` | Text |  | 
+Temperatur Störung | `temperature_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Luftfeuchtigkeit
 Luftfeuchtigkeitssensor.
@@ -208,8 +208,8 @@ Komponente `humidity`
 Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 Luftfeuchte | `humidity_<Kanal>_rh` | Zahl | % | 
-Fehler | `humidity_<Kanal>_errors` | Text |  | 
-Störung | `humidity_<Kanal>_fault` | Ja/Nein |  | 
+Luftfeuchtigkeit Fehler | `humidity_<Kanal>_errors` | Text |  | 
+Luftfeuchtigkeit Störung | `humidity_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Licht / Dimmer (Light)
 Ein/Aus und Helligkeit, dazu Messwerte.
@@ -224,8 +224,8 @@ Wirkleistung | `light_<Kanal>_apower` | Zahl | W |
 Spannung | `light_<Kanal>_voltage` | Zahl | V | 
 Stromstärke | `light_<Kanal>_current` | Zahl | A | 
 Gesamtverbrauch | `light_<Kanal>_aenergy_total` | Zahl | kWh | 
-Fehler | `light_<Kanal>_errors` | Text |  | 
-Störung | `light_<Kanal>_fault` | Ja/Nein |  | 
+Licht Fehler | `light_<Kanal>_errors` | Text |  | 
+Licht Störung | `light_<Kanal>_fault` | Ja/Nein |  | 
 
 ## RGBW
 RGB-Leuchte mit zusätzlichem Weißkanal.
@@ -237,14 +237,14 @@ Variable | Ident | Typ | Einheit | Aktion
 RGBW Status | `rgbw_<Kanal>_output` | Ja/Nein |  | ja
 RGB | `rgbw_<Kanal>_rgb` | Text |  | ja
 RGBW Helligkeit | `rgbw_<Kanal>_brightness` | Ganzzahl | % | ja (Zusatzvariable "RGBW Helligkeit Aktion")
-RGBW White | `rgbw_<Kanal>_white` | Ganzzahl | % | ja
+RGBW Weiß | `rgbw_<Kanal>_white` | Ganzzahl | % | ja
 RGBW Wirkleistung | `rgbw_<Kanal>_apower` | Zahl | W | 
 RGBW Spannung | `rgbw_<Kanal>_voltage` | Zahl | V | 
 RGBW Stromstärke | `rgbw_<Kanal>_current` | Zahl | A | 
 RGBW Gesamtverbrauch | `rgbw_<Kanal>_aenergy_total` | Zahl | kWh | 
 Temperatur | `rgbw_<Kanal>_temperature_tC` | Zahl | °C | 
-Fehler | `rgbw_<Kanal>_errors` | Text |  | 
-Störung | `rgbw_<Kanal>_fault` | Ja/Nein |  | 
+RGBW Fehler | `rgbw_<Kanal>_errors` | Text |  | 
+RGBW Störung | `rgbw_<Kanal>_fault` | Ja/Nein |  | 
 
 ## RGB
 RGB-Leuchte mit Farbe und Helligkeit.
@@ -261,8 +261,8 @@ RGB Wirkleistung | `rgb_<Kanal>_apower` | Zahl | W |
 RGB Spannung | `rgb_<Kanal>_voltage` | Zahl | V | 
 RGB Stromstärke | `rgb_<Kanal>_current` | Zahl | A | 
 RGB Gesamtverbrauch | `rgb_<Kanal>_aenergy_total` | Zahl | kWh | 
-Fehler | `rgb_<Kanal>_errors` | Text |  | 
-Störung | `rgb_<Kanal>_fault` | Ja/Nein |  | 
+RGB Fehler | `rgb_<Kanal>_errors` | Text |  | 
+RGB Störung | `rgb_<Kanal>_fault` | Ja/Nein |  | 
 
 ## CCT
 Leuchte mit einstellbarer Farbtemperatur.
@@ -278,8 +278,8 @@ CCT Wirkleistung | `cct_<Kanal>_apower` | Zahl | W |
 CCT Spannung | `cct_<Kanal>_voltage` | Zahl | V | 
 CCT Stromstärke | `cct_<Kanal>_current` | Zahl | A | 
 CCT Temperatur | `cct_<Kanal>_temperature_tC` | Zahl | °C | 
-Fehler | `cct_<Kanal>_errors` | Text |  | 
-Störung | `cct_<Kanal>_fault` | Ja/Nein |  | 
+CCT Fehler | `cct_<Kanal>_errors` | Text |  | 
+CCT Störung | `cct_<Kanal>_fault` | Ja/Nein |  | 
 
 ## RGBCCT
 Leuchte mit Farbe, Farbtemperatur und Helligkeit.
@@ -307,7 +307,7 @@ Externe Temperatur | `blutrv_<Kanal>_current_C` | Zahl | °C | ja
 Zieltemperatur | `blutrv_<Kanal>_target_C` | Zahl | °C | ja
 Position | `blutrv_<Kanal>_pos` | Ganzzahl | % | ja
 RSSI | `blutrv_<Kanal>_rssi` | Ganzzahl |  | 
-Battery | `blutrv_<Kanal>_battery` | Ganzzahl | % | 
+Batterie | `blutrv_<Kanal>_battery` | Ganzzahl | % | 
 
 ## Schalter (Switch)
 Relais mit Schaltzustand und (je nach Gerät) Leistungsmessung und Temperatur.
@@ -325,8 +325,8 @@ Netzfrequenz | `switch_<Kanal>_freq` | Zahl | Hz |
 Gesamtverbrauch | `switch_<Kanal>_aenergy_total` | Zahl | kWh | 
 Gesamteinspeisung | `switch_<Kanal>_ret_aenergy_total` | Zahl | kWh | 
 Temperatur | `switch_<Kanal>_temperature_tC` | Zahl | °C | 
-Fehler | `switch_<Kanal>_errors` | Text |  | 
-Störung | `switch_<Kanal>_fault` | Ja/Nein |  | 
+Schalter Fehler | `switch_<Kanal>_errors` | Text |  | 
+Schalter Störung | `switch_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Leitungsschutzschalter (CB)
 Shelly Pro 3CB: Schutzschalter, Messwerte und Fehler.
@@ -339,8 +339,8 @@ Schutzschalter Status | `cb_<Kanal>_output` | Ja/Nein |  | ja
 Sicherheitsschalter | `cb_<Kanal>_safety` | Ja/Nein |  | 
 Auslösungen gesamt | `cb_<Kanal>_total_cycles` | Ganzzahl |  | 
 Temperatur | `cb_<Kanal>_temperature_tC` | Zahl | °C | 
-Fehler | `cb_<Kanal>_errors` | Text |  | 
-Störung | `cb_<Kanal>_fault` | Ja/Nein |  | 
+Leitungsschutzschalter Fehler | `cb_<Kanal>_errors` | Text |  | 
+Leitungsschutzschalter Störung | `cb_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Shelly Cury
 Duftspender mit Raummodus, Abwesenheitsmodus und zwei Fächern.
@@ -361,8 +361,8 @@ Rechtes Fach Intensität | `cury_<Kanal>_slots_right_intensity` | Ganzzahl | % |
 Rechtes Fläschchen Füllstand | `cury_<Kanal>_slots_right_vial_level` | Ganzzahl | % | 
 Rechtes Fläschchen Name | `cury_<Kanal>_slots_right_vial_name` | Text |  | 
 Rechtes Fläschchen Seriennummer | `cury_<Kanal>_slots_right_vial_serial` | Text |  | 
-Fehler | `cury_<Kanal>_errors` | Text |  | 
-Störung | `cury_<Kanal>_fault` | Ja/Nein |  | 
+Cury Fehler | `cury_<Kanal>_errors` | Text |  | 
+Cury Störung | `cury_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Shelly Camera
 Kamera: scharf, Privatsphäre, Bewegung, Aktionen und Geräteeinstellungen.
@@ -383,8 +383,8 @@ Kamera Töne | `camera_<Kanal>_sounds_enable` | Ja/Nein |  | ja, Einstellung am 
 Kamera Aufnahme bei Bewegung | `camera_<Kanal>_motionrecording_enable` | Ja/Nein |  | ja, Einstellung am Gerät
 Kamera Bewegungsempfindlichkeit | `camera_<Kanal>_sensitivity_level` | Text |  | ja, Einstellung am Gerät
 Kamera Nachtsicht | `camera_<Kanal>_nightvision_mode` | Text |  | ja, Einstellung am Gerät
-Fehler | `camera_<Kanal>_errors` | Text |  | 
-Störung | `camera_<Kanal>_fault` | Ja/Nein |  | 
+Kamera Fehler | `camera_<Kanal>_errors` | Text |  | 
+Kamera Störung | `camera_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Kamera-Bewegungszone
 Zone der Kamera mit Bewegungsstatus.
@@ -404,18 +404,18 @@ Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 DALI Vorschaltgeräte | `dali_cg_count` | Ganzzahl |  | ja (Zusatzvariable "DALI Aktion")
 DALI Scan gefundene Vorschaltgeräte | `dali_scan_cg_count` | Ganzzahl |  | 
-Fehler | `dali_errors` | Text |  | 
-Störung | `dali_fault` | Ja/Nein |  | 
+DALI Fehler | `dali_errors` | Text |  | 
+DALI Störung | `dali_fault` | Ja/Nein |  | 
 
 ## BLU-Gerät (BTHome)
-Allgemeine Variablen eines BLU-Geräts am Gateway (siehe auch ShellyBLUDevice).
+Allgemeine Variablen eines BLU-Geräts am Gateway. Nur in der Instanz ShellyBLUDevice, nicht im kompletten Gerät (ShellyDevice).
 
 Komponente `bthomedevice`
 
 Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 RSSI | `bthomedevice_<Kanal>_rssi` | Ganzzahl | dBm | 
-Battery | `bthomedevice_<Kanal>_battery` | Ganzzahl | % | 
+Batterie | `bthomedevice_<Kanal>_battery` | Ganzzahl | % | 
 Letzte Aktualisierung | `bthomedevice_<Kanal>_last_updated_ts` | Ganzzahl | Datum/Uhrzeit | 
 Gekoppelt | `bthomedevice_<Kanal>_paired` | Ja/Nein |  | 
 Schlüssel hinterlegt | `bthomedevice_<Kanal>_key` | Ja/Nein |  | 
@@ -426,11 +426,11 @@ Taste 4 | `bthomedevice_<Kanal>_button4` | Text |  |
 Rad | `bthomedevice_<Kanal>_dial` | Text |  | 
 Rad Schritte | `bthomedevice_<Kanal>_dialsteps` | Ganzzahl |  | 
 Firmware-Version | `bthomedevice_<Kanal>_fw_ver` | Text |  | 
-Fehler | `bthomedevice_<Kanal>_errors` | Text |  | 
-Störung | `bthomedevice_<Kanal>_fault` | Ja/Nein |  | 
+BLU-Gerät Fehler | `bthomedevice_<Kanal>_errors` | Text |  | 
+BLU-Gerät Störung | `bthomedevice_<Kanal>_fault` | Ja/Nein |  | 
 
 ## BLU-Sensor (BTHome)
-Messwert eines Sensors eines BLU-Geräts (Typ, Name und Einheit je Sensor).
+Messwert eines Sensors eines BLU-Geräts (Typ, Name und Einheit je Sensor). Nur in der Instanz ShellyBLUDevice, nicht im kompletten Gerät (ShellyDevice).
 
 Komponente `bthomesensor`
 
@@ -454,8 +454,8 @@ Leistungsfaktor | `pm1_<Kanal>_pf` | Zahl |  |
 Netzfrequenz | `pm1_<Kanal>_freq` | Zahl | Hz | 
 Gesamtverbrauch | `pm1_<Kanal>_aenergy_total` | Zahl | kWh | 
 Gesamteinspeisung | `pm1_<Kanal>_ret_aenergy_total` | Zahl | kWh | 
-Fehler | `pm1_<Kanal>_errors` | Text |  | 
-Störung | `pm1_<Kanal>_fault` | Ja/Nein |  | 
+PM1 Fehler | `pm1_<Kanal>_errors` | Text |  | 
+PM1 Störung | `pm1_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Energiemessung 1 Phase (EM1)
 Momentanwerte einer einphasigen Messung.
@@ -470,8 +470,8 @@ Wirkleistung | `em1_<Kanal>_act_power` | Zahl | W |
 Scheinleistung | `em1_<Kanal>_aprt_power` | Zahl | VA | 
 Leistungsfaktor | `em1_<Kanal>_pf` | Zahl |  | 
 Netzfrequenz | `em1_<Kanal>_freq` | Zahl | Hz | 
-Fehler | `em1_<Kanal>_errors` | Text |  | 
-Störung | `em1_<Kanal>_fault` | Ja/Nein |  | 
+EM1 Fehler | `em1_<Kanal>_errors` | Text |  | 
+EM1 Störung | `em1_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Rollladen / Abdeckung (Cover)
 Auf/Zu/Stopp und Position, dazu Messwerte.
@@ -481,7 +481,7 @@ Komponente `cover`
 Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 Status | `cover_<Kanal>_state` | Text |  | ja (Zusatzvariable "Aktion Status")
-Current Position | `cover_<Kanal>_current_pos` | Ganzzahl | % | ja (Zusatzvariable "Position State")
+Aktuelle Position | `cover_<Kanal>_current_pos` | Ganzzahl | % | ja (Zusatzvariable "Aktion Position")
 Wirkleistung | `cover_<Kanal>_apower` | Zahl | W | 
 Spannung | `cover_<Kanal>_voltage` | Zahl | V | 
 Stromstärke | `cover_<Kanal>_current` | Zahl | A | 
@@ -489,8 +489,8 @@ Leistungsfaktor | `cover_<Kanal>_pf` | Zahl |  |
 Netzfrequenz | `cover_<Kanal>_freq` | Zahl | Hz | 
 Gesamtverbrauch | `cover_<Kanal>_aenergy_total` | Zahl | kWh | 
 Temperatur | `cover_<Kanal>_temperature_tC` | Zahl | °C | 
-Fehler | `cover_<Kanal>_errors` | Text |  | 
-Störung | `cover_<Kanal>_fault` | Ja/Nein |  | 
+Rollladen Fehler | `cover_<Kanal>_errors` | Text |  | 
+Rollladen Störung | `cover_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Rauchmelder
 Rauchalarm.
@@ -512,8 +512,8 @@ Variable | Ident | Typ | Einheit | Aktion
 Batteriespannung | `devicepower_<Kanal>_battery_V` | Zahl | V | 
 Batteriesstatus | `devicepower_<Kanal>_battery_percent` | Ganzzahl | % | 
 Externe Stromquelle | `devicepower_<Kanal>_external_present` | Ja/Nein |  | 
-Fehler | `devicepower_<Kanal>_errors` | Text |  | 
-Störung | `devicepower_<Kanal>_fault` | Ja/Nein |  | 
+Stromversorgung Fehler | `devicepower_<Kanal>_errors` | Text |  | 
+Stromversorgung Störung | `devicepower_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Beleuchtungsstärke
 Helligkeitssensor.
@@ -524,8 +524,8 @@ Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
 Beleuchtungsstärke | `illuminance_<Kanal>_lux` | Zahl | lx | 
 Beleuchtungsstufe | `illuminance_<Kanal>_illumination` | Text |  | 
-Fehler | `illuminance_<Kanal>_errors` | Text |  | 
-Störung | `illuminance_<Kanal>_fault` | Ja/Nein |  | 
+Beleuchtungsstärke Fehler | `illuminance_<Kanal>_errors` | Text |  | 
+Beleuchtungsstärke Störung | `illuminance_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Präsenzzone
 Zone eines Shelly Presence (Anwesenheit, Anzahl Objekte).

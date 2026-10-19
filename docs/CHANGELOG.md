@@ -9,6 +9,10 @@
 - Der Konfigurator weist darauf hin, dass batteriebetriebene Geräte oft nicht gefunden werden und dann von Hand angelegt werden müssen.
 
 ### Fixes
+- Fehler und Störung nennen jetzt die Komponente im Namen (z. B. "Schalter Fehler 1", "Eingang Störung"), damit man sie unterscheiden kann. Bei bestehenden Instanzen werden die bisherigen Standardnamen "Fehler" und "Störung" beim nächsten Auslesen umbenannt, selbst vergebene Namen bleiben.
+- Beim kompletten Gerät (z. B. einem BLU Gateway) entstehen keine Variablen der angelernten BLU-Geräte mehr, die gibt es nur in der Instanz ShellyBLUDevice. Der Thermostat (BLU TRV) bleibt.
+- Achtung: Bei bestehenden Instanzen bleiben die bisherigen BLU-Variablen des Gateways stehen, werden aber nicht mehr aktualisiert und können gelöscht werden.
+- Wählt man in der Liste "Variablen" einzelne Variablen ab, verschwinden dadurch keine weiteren Variablen mehr.
 - Fehlende deutsche Übersetzungen ergänzt, z. B. Aktuelle Position, Batterie, Impulse gesamt, Dimmen, Aufnahme und die Räume des Shelly Cury.
 
 04.10.2026 - Version 1.1.1 (Beta Version)
