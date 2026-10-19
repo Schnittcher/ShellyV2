@@ -394,7 +394,8 @@ class ShellyModuleBase extends IPSModuleStrict
 
         //BTHome: Name/Typ/Einheit der Messwerte beim Gerät erfragen - entkoppelt per Timer, weil
         //SendDataToParent() direkt aus ReceiveData() heraus den Datenfluss blockieren kann.
-        if (count(json_decode($this->GetBuffer('bthomeValueTypes'), true) ?: []) > 0 || $this->bthomeHasSensorConfigs()) {
+        //Nicht beim kompletten Gerät: Dort gibt es keine BLU-Variablen (siehe createVariableListForForm()).
+        if ($propertyComponent !== '' && (count(json_decode($this->GetBuffer('bthomeValueTypes'), true) ?: []) > 0 || $this->bthomeHasSensorConfigs())) {
             $this->RegisterOnceTimer('BTHomeObjectInfos', 'SHY_RequestBTHomeObjectInfos($_IPS["TARGET"]);');
         }
 
@@ -951,11 +952,6 @@ class ShellyModuleBase extends IPSModuleStrict
             }
         }
 
-        //Standardwert für "Selected"
-        $selected = true;
-        //Standardwert für "Zeroing"
-        $zeroing = false;
-
         //Immer die Event Komponenten hinzufügen!
         array_push($allComponentsFromShelly, 'events:0.component', 'events:0.event');
 
@@ -1024,6 +1020,18 @@ class ShellyModuleBase extends IPSModuleStrict
                 // dynamisch angelegte Komponenten: Name vom Gerät übernehmen
                 $componentMetadata = $this->getDynamicComponentMetadata($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
                 if ($componentMetadata != null && array_key_exists('name', $componentMetadata) && $componentMetadata['name'] != '') {
+            //BLU-Geräte (bthomedevice) und ihre Sensoren (bthomesensor) gehören in die Instanz ShellyBLUDevice, nicht in das
+            //komplette Gerät (Gateway, Component leer). Der Thermostat (blutrv) bleibt.
+            if ($component == '' && in_array($componentsFromShellyResult['base'], ['bthomedevice', 'bthomesensor'], true)) {
+                continue;
+            }
+
+            //Standardwerte für jeden Eintrag neu setzen: "Selected" an, "Zeroing" aus. Ein Eintrag, der in der gespeicherten Liste
+            //fehlt (z.B. nach einem Update neu dazugekommen), darf nicht den Zustand des vorherigen übernehmen - sonst würden
+            //nach einer abgewählten Variable alle folgenden Variablen abgewählt und von MaintainVariable() gelöscht.
+            $selected = true;
+            $zeroing = false;
+
                     //presencezone hat pro Zone mehrere Felder (value/num_objects), aber nur
                     //EINEN Zonennamen - Namen kombinieren statt ersetzen, sonst heißen
                     //"Zone Presence" und "Objects in Zone" beide nur noch z.B. "Room".

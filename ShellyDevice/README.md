@@ -28,6 +28,7 @@ Welche Variablen eine Instanz anlegt, hängt von den Komponenten des Geräts ab 
 
 * Der Ident einer Variable ist `<Komponente>_<Kanal>_<Feld>`, zum Beispiel `switch_0_output` (Kanal 0 des Switch, Feld `output`).
 * In der Liste "Variablen" der Instanz kann man einzelne Variablen abwählen.
+* Die Variablen angelernter BLU-Geräte legt das komplette Gerät (z. B. ein BLU Gateway) nicht an, sie gibt es in der Instanz ShellyBLUDevice. Ein BLU TRV (Thermostat) bleibt als Komponente beim Gateway.
 * Fast alle Komponenten, die Fehler melden, haben zusätzlich "Fehler" (die Fehlercodes als Text) und "Störung" (Ja/Nein).
 
 Variable | Ident | Typ | Beschreibung
