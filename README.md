@@ -8,16 +8,16 @@ Mit diesem Modul können alle Shellies ab Generation 2 in Symcon eingebunden wer
 
 ## Inhaltsverzeichnis
 - [Shelly Gen2+](#shelly-gen2)
-	- [Inhaltsverzeichnis](#inhaltsverzeichnis)
-	- [1. Voraussetzungen](#1-voraussetzungen)
-		- [1.1 Aktiviertes MQTT-Protokoll](#11-aktiviertes-mqtt-protokoll)
-		- [1.2 Shelly BLU-Geräte](#12-shelly-blu-geräte)
-	- [2. Funktionsumfang](#2-funktionsumfang)
-	- [3. Enthaltene Module](#3-enthaltene-module)
-	- [4. Installation](#4-installation)
-	- [5. Konfiguration in IP-Symcon](#5-konfiguration-in-ip-symcon)
-	- [6. Spenden](#6-spenden)
-	- [7. Lizenz](#7-lizenz)
+  - [Inhaltsverzeichnis](#inhaltsverzeichnis)
+  - [1. Voraussetzungen](#1-voraussetzungen)
+    - [1.1 Aktiviertes MQTT-Protokoll](#11-aktiviertes-mqtt-protokoll)
+    - [1.2 Shelly BLU-Geräte](#12-shelly-blu-geräte)
+  - [2. Funktionsumfang](#2-funktionsumfang)
+  - [3. Enthaltene Module](#3-enthaltene-module)
+  - [4. Installation](#4-installation)
+  - [5. Konfiguration in IP-Symcon](#5-konfiguration-in-ip-symcon)
+  - [6. Spenden](#6-spenden)
+  - [7. Lizenz](#7-lizenz)
 
 ## 1. Voraussetzungen
 
@@ -50,6 +50,8 @@ Shelly BLU-Geräte (Bluetooth) sprechen nicht selbst mit IP-Symcon, sondern übe
 * Funktionen für Skripte: Aktionen über die Variablen, beliebige RPC-Aufrufe und der Key-Value-Store der Geräte (KVS).
 * Der Konfigurator findet die Shellies im Netzwerk und legt die Instanzen mit der richtigen Konfiguration an.
 
+Die einzelnen Funktionen stehen bei den Instanzen unter "Enthaltene Module" und in der README des jeweiligen Moduls.
+
 ## 3. Enthaltene Module
 
 * [ShellyBLUDevice](ShellyBLUDevice/README.md)
@@ -64,16 +66,16 @@ Shelly BLU-Geräte (Bluetooth) sprechen nicht selbst mit IP-Symcon, sondern übe
   * Bindet "Powered by Shelly" Geräte ein.
 
 ## 4. Installation
-Installation über den IP-Symcon Module Store.
+Die Installation erfolgt über den IP-Symcon Module Store.
 
 ## 5. Konfiguration in IP-Symcon
 Nach erfolgreicher Installation über den Module Store muss der Konfigurator angelegt werden, ggf. muss hier das Gateway (MQTT Server oder MQTT Client) angepasst werden.
 Danach sollten die Shellies direkt im Konfigurator gefunden werden.
 
 ## 6. Spenden
-Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:    
+Dieses Modul ist für die nicht kommerzielle Nutzung kostenlos, Schenkungen als Unterstützung für den Autor werden hier akzeptiert:
 
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=EK4JRP87XLSHW" target="_blank"><img src="https://www.paypalobjects.com/de_DE/DE/i/btn/btn_donate_LG.gif" border="0" /></a> <a href="https://www.amazon.de/hz/wishlist/ls/3JVWED9SZMDPK?ref_=wl_share" target="_blank">Amazon Wunschzettel</a>
+[![PayPal](https://img.shields.io/badge/PayPal-Spenden-00457C?logo=paypal&logoColor=white&style=for-the-badge)](https://www.paypal.com/donate?hosted_button_id=EK4JRP87XLSHW) [![Amazon Wunschzettel](https://img.shields.io/badge/Amazon-Wunschzettel-FF9900?logo=amazon&logoColor=white&style=for-the-badge)](https://www.amazon.de/hz/wishlist/ls/3JVWED9SZMDPK?ref_=wl_share)
 
 ## 7. Lizenz
 
