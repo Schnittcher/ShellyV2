@@ -19,6 +19,9 @@ class ShellyBLUDevice extends ShellyModuleBase
         $this->RegisterPropertyString('BLUAddress', '');
         $this->RegisterPropertyString('AdditionalGateways', '[]');
         $this->RegisterPropertyInteger('NearestMaxAge', 900);
+        //Zuordnung der Komponenten (je Gateway) und Kanal des Geräts vom letzten Abruf: Buffer überleben keinen Neustart von Symcon,
+        //ein Attribut schon. Damit kann die Instanz nach dem Start sofort Meldungen der Gateways verarbeiten (siehe ApplyChanges()).
+        $this->RegisterAttributeString('BluState', '{}');
     }
 
     public function GetConfigurationForm(): string
@@ -48,6 +51,20 @@ class ShellyBLUDevice extends ShellyModuleBase
             $this->SetBuffer('bluData', json_encode(array_intersect_key($data, array_flip($topics))));
         }
         $this->maintainGatewayVariables($topics);
+
+        //Nach einem Neustart von Symcon sind die Buffer leer: Zuordnung und Kanal aus dem Attribut wiederherstellen, aber nur für dasselbe
+        //Gerät und die eingetragenen Gateways. Den aktuellen Stand ruft die Instanz beim ersten Ereignis ab (siehe handleEvents()).
+        if ($this->GetBuffer('bluKeyMap') === '') {
+            $saved = json_decode($this->ReadAttributeString('BluState'), true);
+            if (is_array($saved) && ($saved['address'] ?? '') === $this->bluAddress() && is_array($saved['keyMap'] ?? null)) {
+                $keyMap = array_intersect_key($saved['keyMap'], array_flip($topics));
+                if (count($keyMap) > 0) {
+                    $this->SetBuffer('bluKeyMap', json_encode($keyMap));
+                    $this->SetBuffer('bluChannel', (string) ($saved['channel'] ?? ''));
+                    $this->SetBuffer('bluRestored', '1');
+                }
+            }
+        }
 
         if ($this->HasActiveParent() && count($topics) > 0 && $this->bluAddress() != '') {
             $this->requestComponentsStatus();
@@ -371,6 +388,12 @@ class ShellyBLUDevice extends ShellyModuleBase
         }
         $this->SetBuffer('bluKeyMap', json_encode($keyMap));
         $this->SetBuffer('bluLastTs', json_encode($lastTs));
+        $this->SetBuffer('bluRestored', '0');
+        //Für den Start nach einem Neustart merken (nur schreiben, wenn sich etwas geändert hat).
+        $savedState = json_encode(['address' => $this->bluAddress(), 'channel' => $this->GetBuffer('bluChannel'), 'keyMap' => $keyMap]);
+        if ($savedState !== $this->ReadAttributeString('BluState')) {
+            $this->WriteAttributeString('BluState', $savedState);
+        }
 
         $this->applyComponentsResult($merged);
         $this->updateGatewayVariables($state);
@@ -387,7 +410,19 @@ class ShellyBLUDevice extends ShellyModuleBase
         $keyMap = json_decode($this->GetBuffer('bluKeyMap'), true);
         $keyMap = is_array($keyMap) ? ($keyMap[$gateway] ?? []) : [];
         if (count($keyMap) == 0) {
+            //Die Zuordnung der Komponenten ist leer: Buffer überleben keinen Neustart von Symcon, und der Abruf beim Start läuft nur,
+            //wenn der Parent in ApplyChanges() schon aktiv war. Ohne Zuordnung würden alle Meldungen verworfen, deshalb die
+            //Komponenten jetzt abrufen. Entkoppelt per Timer, weil SendDataToParent() nicht direkt aus ReceiveData() heraus
+            //aufgerufen werden soll; requestComponentsStatus() verhindert einen zweiten Abruf innerhalb von 15 Sekunden.
+            $this->RegisterOnceTimer('BLUComponentsRead', 'SHY_requestComponentsStatus($_IPS["TARGET"]);');
             return;
+        }
+        //Die Zuordnung kommt aus dem gespeicherten Stand (nach einem Neustart): Die Meldung wird damit verarbeitet, zusätzlich den
+        //aktuellen Stand abrufen (Typen, Namen und Variablenliste der Instanz sind nach dem Start noch leer, und das Gerät könnte
+        //am Gateway in der Zwischenzeit neu angelernt worden sein).
+        if ($this->GetBuffer('bluRestored') === '1') {
+            $this->SetBuffer('bluRestored', '0');
+            $this->RegisterOnceTimer('BLUComponentsRead', 'SHY_requestComponentsStatus($_IPS["TARGET"]);');
         }
         $lastTs = json_decode($this->GetBuffer('bluLastTs'), true);
         $lastTs = is_array($lastTs) ? $lastTs : [];
