@@ -93,7 +93,7 @@ Stärkstes Gateway | `NearestGateway` | Text | Das Gateway mit dem stärksten Si
 ## 3. Funktionen
 
 `void SHY_requestComponentsStatus(integer $InstanzID);`
-Ruft die Komponenten aller Gateways ab und legt die Variablen an, wird automatisch beim Speichern der Instanz aufgerufen.
+Ruft die Komponenten aller Gateways ab und legt die Variablen an. Die Funktion wird automatisch beim Anlegen der Instanz, nach Änderungen an der Konfiguration und nach einem Update des Moduls aufgerufen. Beim Start von IP-Symcon ruft die Instanz nichts ab: Die Zuordnung zu den Gateways wird gespeichert, und die Gateways melden laufend.
 
 ## 4. Modelle
 Welches BLU-Gerät es ist, steht in der Modell-ID (attrs.model_id der Komponente am Gateway). Die Liste der bekannten Modelle ist im Modul hinterlegt (Name, Taste, Thermostat und die BTHome-Objekte, die das Modell sendet). Für diese Modelle gibt es die Sensor-Variablen (Fenster, Luftfeuchtigkeit, Temperatur, ...) sofort beim Anlegen der Instanz, auch wenn das Gateway sie noch nicht gemeldet hat; die Variablen füllen sich beim ersten Paket des Geräts. Unbekannte Modelle funktionieren weiter, aber nur mit den Sensoren, die das Gateway meldet.

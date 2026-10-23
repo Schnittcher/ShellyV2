@@ -62,7 +62,7 @@ SHY_callRPCFunction(integer 12345, string 'Switch.Set', $params);
 ```
 
 `void SHY_requestComponentsStatus(integer $InstanzID);`
-Liest alle Komponenten und Dienste des Geräts mit Status und Konfiguration (`Shelly.GetComponents`, seitenweise), legt die Variablen an und aktualisiert die Werte. Die Funktion wird automatisch beim Speichern der Instanz und beim Verbinden mit dem MQTT-Server/-Client aufgerufen, im Formular gibt es dafür den Button "Komponenten auslesen". Sie kann auch genutzt werden, um alle Werte manuell abzufragen, z. B. nach Änderungen am Gerät.
+Liest alle Komponenten und Dienste des Geräts mit Status und Konfiguration (`Shelly.GetComponents`, seitenweise), legt die Variablen an und aktualisiert die Werte. Die Funktion wird automatisch beim Anlegen der Instanz, nach Änderungen an der Konfiguration und nach einem Update des Moduls aufgerufen, im Formular gibt es dafür den Button "Komponenten auslesen". Beim Start von IP-Symcon fragt die Instanz nur den aktuellen Status ihrer eigenen Komponenten ab, damit Geräte mit vielen Instanzen nicht überlastet werden. Sie kann auch genutzt werden, um alle Werte manuell abzufragen, z. B. nach Änderungen am Gerät.
 
 Beispiel:
 `SHY_requestComponentsStatus(12345);`

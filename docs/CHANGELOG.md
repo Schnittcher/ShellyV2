@@ -1,5 +1,11 @@
 # Changelog
 
+## 23.10.2026 - Version 1.1.4 (Beta Version)
+
+### Fixes
+- Beim Start von IP-Symcon fragen die Instanzen den Shelly deutlich weniger ab: BLU-Instanzen gar nicht mehr, die übrigen nur noch den Status ihrer eigenen Komponenten. Das vermeidet Überlast bei Geräten mit vielen BLU-Geräten (z. B. Shelly Strip), die dabei neu starteten.
+- Nach einem Update liest jede Instanz einmal vollständig, zeitlich verteilt statt gleichzeitig. Änderungen an der Konfiguration einer Instanz lesen sofort.
+
 ## 22.10.2026 - Version 1.1.3 (Beta Version)
 
 ### Fixes
