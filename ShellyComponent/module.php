@@ -28,12 +28,8 @@ class ShellyComponent extends ShellyModuleBase
     {
         //Never delete this line!
         parent::ApplyChanges();
-        $MQTTTopic = $this->ReadPropertyString('MQTTTopic');
-        if ($MQTTTopic != '') {
-            if ($this->HasActiveParent()) {
-                $this->requestComponentsStatus();
-            }
-        }
+        //Beim Anlegen, nach Änderungen und nach einem Update vollständig lesen, sonst nur der Status (siehe planStartRead()).
+        $this->planStartRead();
     }
 }
 

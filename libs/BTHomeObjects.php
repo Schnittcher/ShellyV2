@@ -344,7 +344,7 @@ trait BTHomeObjects
             return;
         }
         //Das komplette Gerät (Gateway, Component leer) hat keine BLU-Variablen, die Tasten gehören in die Instanz ShellyBLUDevice.
-        if (@$this->ReadPropertyString('Component') === '') {
+        if ((string) @$this->ReadPropertyString('Component') === '') {
             return;
         }
         //Drehrad: rotate_left/rotate_right mit "steps" - eigene Variablen, nicht die Taste.

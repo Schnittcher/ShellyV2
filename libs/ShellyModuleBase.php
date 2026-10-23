@@ -80,6 +80,10 @@ class ShellyModuleBase extends IPSModuleStrict
         $this->RegisterPropertyBoolean('DebugMissingIdents', false);
         $this->RegisterPropertyString('VariableList', '{}');
         $this->registerCameraStreamProperties();
+        //Stand des letzten vollständigen Abrufs (Version, Konfiguration, Komponentenschlüssel): Damit muss die Instanz beim Start von
+        //Symcon nicht mehr alles vom Gerät lesen, siehe planStartRead(). Der Timer verteilt die Abrufe der Instanzen zeitlich.
+        $this->RegisterAttributeString('ReadState', '{}');
+        $this->RegisterTimer('StartRead', 0, 'SHY_StartRead($_IPS["TARGET"]);');
 
         $this->RegisterVariableBoolean('Reachable', $this->Translate('Reachable'), [
             'PRESENTATION'    => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
@@ -134,10 +138,29 @@ class ShellyModuleBase extends IPSModuleStrict
     {
         parent::MessageSink($TimeStamp, $SenderID, $Message, $Data);
         if ($Message == FM_CONNECT && $SenderID == $this->InstanceID) {
-            if ($this->ReadPropertyString('MQTTTopic') != '' && $this->HasActiveParent()) {
-                $this->requestComponentsStatus();
-            }
+            $this->planStartRead();
         }
+    }
+
+    //Öffentlicher Einstiegspunkt des Timers "StartRead" (siehe scheduleStartRead()).
+    public function StartRead(): void
+    {
+        $this->SetTimerInterval('StartRead', 0);
+        if (!$this->HasActiveParent()) {
+            return;
+        }
+        if ($this->GetBuffer('startReadKind') === 'light') {
+            $this->requestKeysStatus(0);
+        } else {
+            $this->requestComponentsStatus();
+        }
+    }
+
+    //Öffentlicher Einstiegspunkt für den Timer: nächste Seite des Status-Abrufs (entkoppelt von ReceiveData(), siehe
+    //RunNextComponentsPageAsync()).
+    public function RunNextKeysPageAsync(): void
+    {
+        $this->requestKeysStatus((int) $this->GetBuffer('keysNextOffset'));
     }
 
     public function RequestAction(string $Ident, mixed $Value): void
@@ -273,6 +296,10 @@ class ShellyModuleBase extends IPSModuleStrict
                     }
                 }
             }
+            //Antwort auf den Status-Abruf beim Start (siehe planStartRead()/requestKeysStatus()).
+            if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getKeysStatus/' . $this->InstanceID . '/rpc', $Buffer['Topic'])) {
+                $this->handleKeysStatusPage($Payload);
+            }
             //Antwort auf die Status-Abfrage eines BLU-Geräts nach einem Tastendruck (siehe scheduleBTHomeRefresh()).
             if (fnmatch($this->ReadPropertyString('MQTTTopic') . '/getBTHomeStatus/' . $this->InstanceID . '/rpc', $Buffer['Topic'])) {
                 $statusParams = $this->bthomeStatusParams($Payload);
@@ -359,6 +386,116 @@ class ShellyModuleBase extends IPSModuleStrict
         $this->sendMQTT($Topic, json_encode($Payload));
     }
 
+    //Was die Instanz beim Anlegen, nach Änderungen und beim Start von Symcon vom Gerät liest (ApplyChanges() und Verbinden):
+    //- Neue Instanz, geänderte Konfiguration oder neue Version des Moduls (Update): alle Komponenten mit Status und Config lesen, damit
+    //  die Variablen angelegt bzw. angepasst werden.
+    //- Sonst (z.B. Neustart von Symcon): Variablen, Werte und Aktionen funktionieren ohne weiteren Abruf, es wird nur der Status der
+    //  eigenen Komponenten aktualisiert (eine kleine Anfrage mit "keys" statt aller Komponenten samt Config).
+    //Bei vielen Instanzen an einem Gerät (z.B. BLU Geräte an einem Gateway) würden gleichzeitige vollständige Abrufe das Gerät
+    //überlasten, deshalb starten Instanzen mit vorhandenen Variablen versetzt (siehe scheduleStartRead()).
+    protected function planStartRead(): void
+    {
+        if (@$this->ReadPropertyString('MQTTTopic') == '' || !$this->HasActiveParent()) {
+            return;
+        }
+        $state = json_decode($this->ReadAttributeString('ReadState'), true);
+        $state = is_array($state) ? $state : [];
+        $unchanged = ($state['hash'] ?? '') === $this->configurationHash() && ($state['version'] ?? '') === $this->libraryVersion() && count($state['keys'] ?? []) > 0;
+        //Hat der Nutzer die Konfiguration geändert, wird sofort gelesen (er wartet darauf), nicht versetzt.
+        $configChanged = ($state['hash'] ?? '') !== '' && $state['hash'] !== $this->configurationHash();
+        $this->scheduleStartRead($unchanged ? 'light' : 'full', $configChanged);
+    }
+
+    //Abruf sofort (neue Instanz ohne Variablen oder $immediate) oder versetzt: je Instanz zwischen 0,5 und 29 Sekunden später, je nach
+    //Instanz-ID.
+    protected function scheduleStartRead(string $kind, bool $immediate): void
+    {
+        $this->SetBuffer('startReadKind', $kind);
+        if (!$immediate && $this->hasEstablishedVariables()) {
+            $this->SetTimerInterval('StartRead', 500 + ($this->InstanceID % 20) * 1500);
+            return;
+        }
+        $this->StartRead();
+    }
+
+    //Hat die Instanz schon Variablen (außer "Erreichbar")? Dann ist sie nicht neu und kann mit dem Abruf warten.
+    protected function hasEstablishedVariables(): bool
+    {
+        foreach (IPS_GetChildrenIDs($this->InstanceID) as $child) {
+            if (IPS_VariableExists($child) && IPS_GetObject($child)['ObjectIdent'] != 'Reachable') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //Version der Bibliothek (library.json): Ändert sie sich durch ein Update, wird einmal vollständig gelesen, damit neue Variablen entstehen.
+    protected function libraryVersion(): string
+    {
+        $module = @IPS_GetModule(IPS_GetInstance($this->InstanceID)['ModuleInfo']['ModuleID']);
+        $library = is_array($module) ? @IPS_GetLibrary($module['LibraryID']) : null;
+        return is_array($library) ? (string) ($library['Version'] ?? '') : '';
+    }
+
+    //Fingerabdruck der Konfiguration der Instanz: Ändert der Nutzer etwas (z.B. die Auswahl der Variablen), wird vollständig gelesen.
+    protected function configurationHash(): string
+    {
+        return md5((string) IPS_GetConfiguration($this->InstanceID));
+    }
+
+    //Status der eigenen Komponenten abfragen (Schlüssel aus dem letzten vollständigen Abruf), ohne Config; die Antwort kommt auf
+    //<topic>/getKeysStatus/<InstanceID>/rpc. Läuft bereits ein Abruf, wird kein zweiter gestartet.
+    protected function requestKeysStatus(int $offset): void
+    {
+        $state = json_decode($this->ReadAttributeString('ReadState'), true);
+        $keys = is_array($state) ? ($state['keys'] ?? []) : [];
+        if (count($keys) == 0) {
+            $this->requestComponentsStatus();
+            return;
+        }
+        $started = (float) $this->GetBuffer('keysRunStarted');
+        if ($offset == 0 && $started > 0 && (microtime(true) - $started) < 15) {
+            return;
+        }
+        if ($offset == 0) {
+            $this->SetBuffer('keysRunStarted', (string) microtime(true));
+            $this->SetBuffer('keysPageCount', '0');
+        }
+        $topic = $this->ReadPropertyString('MQTTTopic');
+        $payload = [
+            'id'     => 1,
+            'src'    => $topic . '/getKeysStatus/' . $this->InstanceID,
+            'method' => 'Shelly.GetComponents',
+            'params' => ['keys' => array_values($keys), 'include' => ['status'], 'offset' => $offset],
+        ];
+        $this->sendMQTT($topic . '/rpc', json_encode($payload, JSON_UNESCAPED_SLASHES));
+    }
+
+    //Merkt sich nach einem vollständigen Abruf, welche Komponenten die Instanz braucht (Schlüssel wie "switch:0"), zusammen mit
+    //Version und Konfiguration (siehe planStartRead()). $leafPaths = Blattpfade des Status ("switch:0.output"). ShellyBLUDevice
+    //überschreibt das (eigener Stand in "BluState").
+    protected function rememberReadState(array $leafPaths): void
+    {
+        $list = json_decode($this->GetBuffer('variableList'), true);
+        $idents = [];
+        foreach (is_array($list) ? $list : [] as $item) {
+            if (!empty($item['Selected']) && !empty($item['Ident'])) {
+                $idents[$item['Ident']] = true;
+            }
+        }
+        $keys = [];
+        foreach ($leafPaths as $path) {
+            $ident = $this->cleanComponentPath((string) $path)['ident'] ?? '';
+            if ($ident != '' && isset($idents[$ident])) {
+                $keys[explode('.', (string) $path)[0]] = true;
+            }
+        }
+        $state = json_encode(['version' => $this->libraryVersion(), 'hash' => $this->configurationHash(), 'keys' => array_keys($keys)]);
+        if ($state !== $this->ReadAttributeString('ReadState')) {
+            $this->WriteAttributeString('ReadState', $state);
+        }
+    }
+
     //Verarbeitet das vollständige Ergebnis von Shelly.GetComponents ($statusAccumulated = Liste der Komponenteneinträge mit
     //key/status/config): Buffer setzen, Variablenliste und Variablen anlegen, Werte übernehmen. Wird aufgerufen, wenn die
     //letzte Seite eingetroffen ist. Die Instanz für BLU-Geräte an mehreren Gateways (ShellyBLUDevice) ruft es mit dem
@@ -388,6 +525,7 @@ class ShellyModuleBase extends IPSModuleStrict
 
         $this->createVariableListForForm($allComponentsFromShelly, $propertyComponent, $propertyChannel);
         $this->registerComponentVariables();
+        $this->rememberReadState($allComponentsFromShelly);
 
         //Kamera: Stream-Objekte (RTSP) automatisch anlegen, sobald die IP-Adresse bekannt ist.
         $this->autoMaintainCameraStreams();
@@ -395,7 +533,7 @@ class ShellyModuleBase extends IPSModuleStrict
         //BTHome: Name/Typ/Einheit der Messwerte beim Gerät erfragen - entkoppelt per Timer, weil
         //SendDataToParent() direkt aus ReceiveData() heraus den Datenfluss blockieren kann.
         //Nicht beim kompletten Gerät: Dort gibt es keine BLU-Variablen (siehe createVariableListForForm()).
-        if ($propertyComponent !== '' && (count(json_decode($this->GetBuffer('bthomeValueTypes'), true) ?: []) > 0 || $this->bthomeHasSensorConfigs())) {
+        if ((string) $propertyComponent !== '' && (count(json_decode($this->GetBuffer('bthomeValueTypes'), true) ?: []) > 0 || $this->bthomeHasSensorConfigs())) {
             $this->RegisterOnceTimer('BTHomeObjectInfos', 'SHY_RequestBTHomeObjectInfos($_IPS["TARGET"]);');
         }
 
@@ -672,6 +810,30 @@ class ShellyModuleBase extends IPSModuleStrict
             if ($componentsFromShellyResult['clean'] == 'cover.current_pos') {
                 $this->SetValue($componentsFromShellyResult['ident'] . '_ExtraAction', $value);
             }
+        }
+    }
+
+    //Antwort des Status-Abrufs: Werte übernehmen, nächste Seite anfordern, solange das Gerät mehr hat.
+    private function handleKeysStatusPage(array $Payload): void
+    {
+        $components = is_array($Payload['result']['components'] ?? null) ? $Payload['result']['components'] : [];
+        if (count($components) > 0) {
+            $statusDict = $this->getAllComponentsAsStatusDict(['components' => $components]);
+            $this->parsePayloadIntoVariables($statusDict);
+            //Fehlerlisten, die das Gerät nicht mehr meldet, zurücksetzen (wie nach einem vollständigen Abruf).
+            $this->resetMissingErrorLists($this->getArrayLeafKeyPaths($statusDict));
+            $this->SetValue('Reachable', true);
+        }
+        $offset = (int) ($Payload['result']['offset'] ?? 0);
+        $total = (int) ($Payload['result']['total'] ?? 0);
+        $received = $offset + count($components);
+        $pages = (int) $this->GetBuffer('keysPageCount') + 1;
+        $this->SetBuffer('keysPageCount', (string) $pages);
+        if ($received < $total && count($components) > 0 && $pages < 30) {
+            $this->SetBuffer('keysNextOffset', (string) $received);
+            $this->RegisterOnceTimer('KeysStatusNextPage', 'SHY_RunNextKeysPageAsync($_IPS["TARGET"]);');
+        } else {
+            $this->SetBuffer('keysRunStarted', '0');
         }
     }
 

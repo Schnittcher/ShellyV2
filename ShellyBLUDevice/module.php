@@ -53,7 +53,7 @@ class ShellyBLUDevice extends ShellyModuleBase
         $this->maintainGatewayVariables($topics);
 
         //Nach einem Neustart von Symcon sind die Buffer leer: Zuordnung und Kanal aus dem Attribut wiederherstellen, aber nur für dasselbe
-        //Gerät und die eingetragenen Gateways. Den aktuellen Stand ruft die Instanz beim ersten Ereignis ab (siehe handleEvents()).
+        //Gerät und die eingetragenen Gateways.
         if ($this->GetBuffer('bluKeyMap') === '') {
             $saved = json_decode($this->ReadAttributeString('BluState'), true);
             if (is_array($saved) && ($saved['address'] ?? '') === $this->bluAddress() && is_array($saved['keyMap'] ?? null)) {
@@ -61,14 +61,11 @@ class ShellyBLUDevice extends ShellyModuleBase
                 if (count($keyMap) > 0) {
                     $this->SetBuffer('bluKeyMap', json_encode($keyMap));
                     $this->SetBuffer('bluChannel', (string) ($saved['channel'] ?? ''));
-                    $this->SetBuffer('bluRestored', '1');
                 }
             }
         }
 
-        if ($this->HasActiveParent() && count($topics) > 0 && $this->bluAddress() != '') {
-            $this->requestComponentsStatus();
-        }
+        $this->planStartRead();
     }
 
     //HINWEIS: Der seitenweise Abruf (hier und in handleComponentsPage()) ist die Variante je Gateway des Abrufs in ShellyModuleBase
@@ -162,6 +159,41 @@ class ShellyBLUDevice extends ShellyModuleBase
                 $this->requestBTHomeDeviceStatus((string) $gateway, $localKeys);
             }
         }
+    }
+
+    //Ein BLU-Gerät braucht beim Start keinen Abruf: Die Zuordnung liegt im Attribut, die Werte der Variablen bleiben erhalten, und die
+    //Gateways senden laufend Meldungen. Gelesen wird (versetzt, siehe ShellyModuleBase::scheduleStartRead()) nur bei einer neuen Instanz,
+    //geänderter Konfiguration (Gateways, MAC-Adresse, Variablenliste) oder neuer Version des Moduls.
+    protected function planStartRead(): void
+    {
+        if (!$this->HasActiveParent() || count($this->gateways()) == 0 || $this->bluAddress() == '') {
+            return;
+        }
+        $saved = json_decode($this->ReadAttributeString('BluState'), true);
+        $keyMap = json_decode($this->GetBuffer('bluKeyMap'), true);
+        $unchanged = is_array($saved) && ($saved['address'] ?? '') === $this->bluAddress() && ($saved['hash'] ?? '') === $this->configurationHash()
+            && ($saved['version'] ?? '') === $this->libraryVersion() && is_array($keyMap) && count($keyMap) > 0;
+        if (!$unchanged) {
+            //Hat der Nutzer die Konfiguration geändert, wird sofort gelesen, sonst (Update, neue Version) versetzt.
+            $configChanged = is_array($saved) && ($saved['hash'] ?? '') !== '' && $saved['hash'] !== $this->configurationHash();
+            $this->scheduleStartRead('full', $configChanged);
+        }
+    }
+
+    //Neu ist eine BLU-Instanz, solange sie noch keine Variablen des Geräts hat (die Variablen je Gateway gibt es von Anfang an).
+    protected function hasEstablishedVariables(): bool
+    {
+        foreach (IPS_GetChildrenIDs($this->InstanceID) as $child) {
+            if (IPS_VariableExists($child) && strpos(IPS_GetObject($child)['ObjectIdent'], 'bthome') === 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //Den Stand des letzten Abrufs hält BluState (siehe mergeAndApply()), nicht der Stand der Basisklasse.
+    protected function rememberReadState(array $leafPaths): void
+    {
     }
 
     //Kanal (Nummer des bthomedevice am Haupt-Gateway) - ergibt sich aus der MAC-Adresse, nicht aus einer Property.
@@ -388,9 +420,8 @@ class ShellyBLUDevice extends ShellyModuleBase
         }
         $this->SetBuffer('bluKeyMap', json_encode($keyMap));
         $this->SetBuffer('bluLastTs', json_encode($lastTs));
-        $this->SetBuffer('bluRestored', '0');
-        //Für den Start nach einem Neustart merken (nur schreiben, wenn sich etwas geändert hat).
-        $savedState = json_encode(['address' => $this->bluAddress(), 'channel' => $this->GetBuffer('bluChannel'), 'keyMap' => $keyMap]);
+        //Für den Start nach einem Neustart merken (nur schreiben, wenn sich etwas geändert hat), siehe planStartRead().
+        $savedState = json_encode(['address' => $this->bluAddress(), 'version' => $this->libraryVersion(), 'hash' => $this->configurationHash(), 'channel' => $this->GetBuffer('bluChannel'), 'keyMap' => $keyMap]);
         if ($savedState !== $this->ReadAttributeString('BluState')) {
             $this->WriteAttributeString('BluState', $savedState);
         }
@@ -410,19 +441,14 @@ class ShellyBLUDevice extends ShellyModuleBase
         $keyMap = json_decode($this->GetBuffer('bluKeyMap'), true);
         $keyMap = is_array($keyMap) ? ($keyMap[$gateway] ?? []) : [];
         if (count($keyMap) == 0) {
-            //Die Zuordnung der Komponenten ist leer: Buffer überleben keinen Neustart von Symcon, und der Abruf beim Start läuft nur,
-            //wenn der Parent in ApplyChanges() schon aktiv war. Ohne Zuordnung würden alle Meldungen verworfen, deshalb die
-            //Komponenten jetzt abrufen. Entkoppelt per Timer, weil SendDataToParent() nicht direkt aus ReceiveData() heraus
-            //aufgerufen werden soll; requestComponentsStatus() verhindert einen zweiten Abruf innerhalb von 15 Sekunden.
-            $this->RegisterOnceTimer('BLUComponentsRead', 'SHY_requestComponentsStatus($_IPS["TARGET"]);');
+            //Für dieses Gateway gibt es keine Zuordnung der Komponenten (neue Instanz, Gateway war beim letzten Abruf nicht erreichbar):
+            //Ohne sie würden die Meldungen verworfen, deshalb die Komponenten lesen - versetzt und höchstens einmal je 60 Sekunden,
+            //per Timer, weil SendDataToParent() nicht direkt aus ReceiveData() heraus aufgerufen werden soll.
+            if (microtime(true) - (float) $this->GetBuffer('lazyReadPlanned') > 60) {
+                $this->SetBuffer('lazyReadPlanned', (string) microtime(true));
+                $this->scheduleStartRead('full', false);
+            }
             return;
-        }
-        //Die Zuordnung kommt aus dem gespeicherten Stand (nach einem Neustart): Die Meldung wird damit verarbeitet, zusätzlich den
-        //aktuellen Stand abrufen (Typen, Namen und Variablenliste der Instanz sind nach dem Start noch leer, und das Gerät könnte
-        //am Gateway in der Zwischenzeit neu angelernt worden sein).
-        if ($this->GetBuffer('bluRestored') === '1') {
-            $this->SetBuffer('bluRestored', '0');
-            $this->RegisterOnceTimer('BLUComponentsRead', 'SHY_requestComponentsStatus($_IPS["TARGET"]);');
         }
         $lastTs = json_decode($this->GetBuffer('bluLastTs'), true);
         $lastTs = is_array($lastTs) ? $lastTs : [];
