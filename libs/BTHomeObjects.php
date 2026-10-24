@@ -207,7 +207,8 @@ trait BTHomeObjects
     //Doppelt der Sensor (bthomesensor:N) eine Variable, die das BLU-Gerät (bthomedevice:M) in seiner Instanz ohnehin hat?
     //- Batterie (obj_id 1): steht schon als bthomedevice.battery in der Instanz.
     //- Thermostat (blutrv am Gerät): Temperatur idx 0 ist die Zieltemperatur und idx 2 die externe Temperatur - beides
-    //  steht schon als blutrv.target_C / blutrv.current_C (mit Aktion) in der Instanz. idx 1 ist die gemessene Temperatur.
+    //  steht schon als blutrv.target_C / blutrv.ext_C (mit Aktion) in der Instanz, der Wert von ext_C kommt aus diesem Sensor
+    //  (siehe feedTrvExternalTemperature()). idx 1 ist die gemessene Temperatur.
     protected function bthomeSensorDuplicatesDeviceVariable(string $sensorKey, string $deviceKey)
     {
         $configs = json_decode($this->GetBuffer('componentConfigs'), true);

@@ -1373,9 +1373,20 @@ trait Components
             ],
         ],
         'blutrv' => [
+            //Aktuelle Temperatur des Thermostats (laut Shelly-Doku "Current temperature", angenähert an die Raumtemperatur), nur lesbar.
             'current_C' => [
                 'type'         => VARIABLETYPE_FLOAT,
-                //Die am Thermostat hinterlegte externe Temperatur (TRV.SetExternalTemperature), nicht die gemessene.
+                'name'         => 'Current temperature',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' °C'
+                ],
+            ],
+            //Externe Temperatur (TRV.SetExternalTemperature): Das Gerät meldet sie nicht im Status des Thermostats, sondern als
+            //BTHome-Sensor (Objekt 69, idx 2) des BLU-Geräts. Den Wert setzt feedTrvExternalTemperature() aus diesem Sensor, der Pfad
+            //"blutrv:N.ext_C" kommt aus adjustTrvLeafPaths().
+            'ext_C' => [
+                'type'         => VARIABLETYPE_FLOAT,
                 'name'         => 'External temperature',
                 'presentation' => [
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,

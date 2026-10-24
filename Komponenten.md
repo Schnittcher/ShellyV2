@@ -303,7 +303,8 @@ Komponente `blutrv`
 
 Variable | Ident | Typ | Einheit | Aktion
 ------------ | ------------ | ------------ | ------------ | ------------
-Externe Temperatur | `blutrv_<Kanal>_current_C` | Zahl | °C | ja
+Aktuelle Temperatur | `blutrv_<Kanal>_current_C` | Zahl | °C | 
+Externe Temperatur | `blutrv_<Kanal>_ext_C` | Zahl | °C | ja
 Zieltemperatur | `blutrv_<Kanal>_target_C` | Zahl | °C | ja
 Position | `blutrv_<Kanal>_pos` | Ganzzahl | % | ja
 RSSI | `blutrv_<Kanal>_rssi` | Ganzzahl |  | 

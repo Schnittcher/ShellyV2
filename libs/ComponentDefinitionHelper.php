@@ -159,7 +159,7 @@ trait ComponentDefinitionHelper
     {
         $number = null;
         //Ausnahmen: Bei dem der Unterstrich nicht gegen einen Punkt ersetzt werden darf
-        $exceptions = ['current_pos', 'target_C', 'current_C', 'away_mode', 'cg_count'];
+        $exceptions = ['current_pos', 'target_C', 'current_C', 'ext_C', 'away_mode', 'cg_count'];
 
         foreach ($exceptions as $ending) {
             // Prüfen, ob die Endung im String vorkommt

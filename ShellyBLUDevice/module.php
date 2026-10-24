@@ -559,6 +559,12 @@ class ShellyBLUDevice extends ShellyModuleBase
         $this->SetBuffer('bluOnline', json_encode($online));
         $any = in_array(true, $online, true);
         $this->SetValue('Reachable', $any);
+        //Fällt ein Gateway aus (oder kommt es zurück), das stärkste Gateway sofort neu bestimmen - ohne Timer: Die Meldung "online" ist
+        //der Auslöser (bei einem Stromausfall sendet der MQTT-Server den letzten Willen des Geräts nach dem Keep-Alive-Timeout).
+        $state = json_decode($this->GetBuffer('bluGwState'), true);
+        if (is_array($state) && count($state) > 0) {
+            $this->updateGatewayVariables($state);
+        }
         if (!$any) {
             $this->zeroingValues();
         }
@@ -569,6 +575,14 @@ class ShellyBLUDevice extends ShellyModuleBase
     private function nearestGateway(array $state): string
     {
         $maxAge = max(60, $this->ReadPropertyInteger('NearestMaxAge'));
+        //Gateways, die laut "online" offline sind, kommen nicht in Frage (unbekannt = online).
+        $online = json_decode($this->GetBuffer('bluOnline'), true);
+        $online = is_array($online) ? $online : [];
+        foreach (array_keys($state) as $gateway) {
+            if (($online[$gateway] ?? true) === false) {
+                unset($state[$gateway]);
+            }
+        }
         $best = '';
         foreach ($state as $gateway => $info) {
             if ($info['seen'] > 0 && (time() - $info['seen']) <= $maxAge && ($best === '' || $info['rssi'] > $state[$best]['rssi'])) {

@@ -213,7 +213,7 @@ class ShellyModuleBase extends IPSModuleStrict
                 $tmpComponents['action']['params']['params']['target_C'] = $Value;
             } elseif ($IdentKeyPath[0] == 'blutrv.pos') {
                 $tmpComponents['action']['params']['params']['pos'] = $Value;
-            } elseif ($IdentKeyPath[0] == 'blutrv.current_C') {
+            } elseif ($IdentKeyPath[0] == 'blutrv.ext_C') {
                 $tmpComponents['action']['params']['params']['t_C'] = $Value;
             } else {
                 $tmpComponents['action']['params'][$keys[1]] = $Value;
@@ -386,6 +386,65 @@ class ShellyModuleBase extends IPSModuleStrict
         $this->sendMQTT($Topic, json_encode($Payload));
     }
 
+    //Thermostat (BLU TRV): Zum Pfad "blutrv:N.current_C" kommt der virtuelle Pfad "blutrv:N.ext_C" (Variable "Externe Temperatur"),
+    //denn das Gerät meldet die externe Temperatur nicht im Status des Thermostats.
+    protected function adjustTrvLeafPaths(array $paths): array
+    {
+        $result = $paths;
+        foreach ($paths as $path) {
+            if (preg_match('/^(blutrv:\d+)\.current_C$/', (string) $path, $match) && !in_array($match[1] . '.ext_C', $result, true)) {
+                $result[] = $match[1] . '.ext_C';
+            }
+        }
+        return $result;
+    }
+
+    //Sensor der externen Temperatur je Thermostat aus den Configs des letzten Abrufs: {"bthomesensor:312": "blutrv:300"}. Der Sensor
+    //(Objekt 69, idx 2) hat dieselbe MAC-Adresse wie das BLU-Gerät, auf das das "trv" des Thermostats zeigt.
+    protected function collectTrvExternalSensors(): array
+    {
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        $result = [];
+        foreach (is_array($configs) ? $configs : [] as $trvKey => $config) {
+            if (strpos((string) $trvKey, 'blutrv:') !== 0 || !isset($config['trv'])) {
+                continue;
+            }
+            foreach ($configs as $sensorKey => $sensorConfig) {
+                if (strpos((string) $sensorKey, 'bthomesensor:') === 0 && (int) ($sensorConfig['obj_id'] ?? -1) == 69 && (int) ($sensorConfig['idx'] ?? -1) == 2
+                    && $this->bthomeComponentBelongsToDevice((string) $sensorKey, (string) $config['trv'])) {
+                    $result[(string) $sensorKey] = (string) $trvKey;
+                }
+            }
+        }
+        return $result;
+    }
+
+    //Gemerkte Zuordnung Sensor -> Thermostat (Buffer, nach einem Neustart aus dem gespeicherten Stand).
+    protected function trvExternalSensors(): array
+    {
+        $buffer = $this->GetBuffer('trvExt');
+        if ($buffer === '') {
+            $state = json_decode($this->ReadAttributeString('ReadState'), true);
+            $buffer = json_encode(is_array($state) && is_array($state['trvExt'] ?? null) ? $state['trvExt'] : []);
+            $this->SetBuffer('trvExt', $buffer);
+        }
+        $map = json_decode($buffer, true);
+        return is_array($map) ? $map : [];
+    }
+
+    //Wert des Sensors der externen Temperatur (Objekt 69, idx 2) in die Variable "Externe Temperatur" des Thermostats schreiben.
+    protected function feedTrvExternalTemperature(array $Payload): void
+    {
+        foreach ($this->trvExternalSensors() as $sensorKey => $trvKey) {
+            if (isset($Payload[$sensorKey]['value']) && is_numeric($Payload[$sensorKey]['value'])) {
+                $ident = 'blutrv_' . substr($trvKey, strlen('blutrv:')) . '_ext_C';
+                if (@$this->GetIDForIdent($ident)) {
+                    $this->SetValue($ident, (float) $Payload[$sensorKey]['value']);
+                }
+            }
+        }
+    }
+
     //Was die Instanz beim Anlegen, nach Änderungen und beim Start von Symcon vom Gerät liest (ApplyChanges() und Verbinden):
     //- Neue Instanz, geänderte Konfiguration oder neue Version des Moduls (Update): alle Komponenten mit Status und Config lesen, damit
     //  die Variablen angelegt bzw. angepasst werden.
@@ -490,7 +549,13 @@ class ShellyModuleBase extends IPSModuleStrict
                 $keys[explode('.', (string) $path)[0]] = true;
             }
         }
-        $state = json_encode(['version' => $this->libraryVersion(), 'hash' => $this->configurationHash(), 'keys' => array_keys($keys)]);
+        //Externe Temperatur der Thermostate: Sensor (Objekt 69, idx 2) -> Thermostat, die Sensoren gehören auch zu den abzufragenden Schlüsseln.
+        $trvExt = $this->collectTrvExternalSensors();
+        $this->SetBuffer('trvExt', json_encode($trvExt));
+        foreach (array_keys($trvExt) as $sensorKey) {
+            $keys[$sensorKey] = true;
+        }
+        $state = json_encode(['version' => $this->libraryVersion(), 'hash' => $this->configurationHash(), 'keys' => array_keys($keys), 'trvExt' => $trvExt]);
         if ($state !== $this->ReadAttributeString('ReadState')) {
             $this->WriteAttributeString('ReadState', $state);
         }
@@ -596,6 +661,9 @@ class ShellyModuleBase extends IPSModuleStrict
             $oldBase = $this->Translate('Errors');
         } elseif (substr($ident, -6) == '_fault') {
             $oldBase = $this->Translate('Fault');
+        } elseif (preg_match('/^blutrv_\d+_current_C$/', $ident)) {
+            //Thermostat: current_C hieß früher "Externe Temperatur" (die externe Temperatur ist jetzt ext_C).
+            $oldBase = $this->Translate('External temperature');
         } else {
             return;
         }
@@ -732,6 +800,7 @@ class ShellyModuleBase extends IPSModuleStrict
 
     protected function parsePayloadIntoVariables($Payload)
     {
+        $this->feedTrvExternalTemperature(is_array($Payload) ? $Payload : []);
         //Components vom Shelly Params Payload holen.
         $components = $this->getArrayLeafKeyPaths($Payload);
         foreach ($components as $key => $component) {
@@ -1109,6 +1178,9 @@ class ShellyModuleBase extends IPSModuleStrict
                 //Wenn die Komponetene eine Aktion besitzt, wird EnableAction aufgerufen
                 if (array_key_exists('action', $tmpComponent) && $isWritable) {
                     $this->EnableAction($variable['Ident']);
+                } elseif ($variable['CleanKeyPath'] == 'blutrv.current_C') {
+                    //Frühere Versionen setzten damit die externe Temperatur (jetzt die Variable ext_C), die Aktion entfällt.
+                    $this->DisableAction($variable['Ident']);
                 }
             } else {
                 //Mit Extra Action Variable - sprich wenn die Komponente mehrere Variablen zum bedienen hat z.B. Helligkeit in % und Dim down, Dim up, Dim stop
@@ -1158,6 +1230,8 @@ class ShellyModuleBase extends IPSModuleStrict
 
         //Eingänge vom Typ "button": keine Variable "Eingangsstatus", dafür die Tasten-Variable (siehe adjustInputLeafPaths()).
         $allComponentsFromShelly = $this->adjustInputLeafPaths($allComponentsFromShelly);
+        //Thermostat: die Variable "Externe Temperatur" gibt es nicht im Status des Geräts (siehe adjustTrvLeafPaths()).
+        $allComponentsFromShelly = $this->adjustTrvLeafPaths($allComponentsFromShelly);
 
         //Mit 'alwaysCreate' markierte Definitionen auch anlegen, wenn die Antwort das Feld nicht enthält
         //(z.B. Cury mit leerem Fach: "left": null) - siehe getAlwaysCreatedLeafPaths().
