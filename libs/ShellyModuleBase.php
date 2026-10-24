@@ -251,6 +251,12 @@ class ShellyModuleBase extends IPSModuleStrict
                 if (!$Payload) {
                     $this->zeroingValues();
                 }
+                //Verbindet sich das Gerät (wieder), den Status nachholen (nur beim Wechsel von offline/unbekannt auf online).
+                $wasOnline = $this->GetBuffer('deviceOnline') === '1';
+                $this->SetBuffer('deviceOnline', $Payload ? '1' : '0');
+                if ($Payload && !$wasOnline) {
+                    $this->planReadOnOnline();
+                }
             }
 
             //Antwort auf requestComponentsStatus() (Shelly.GetComponents mit "include":["status","config"]).
@@ -457,12 +463,23 @@ class ShellyModuleBase extends IPSModuleStrict
         if (@$this->ReadPropertyString('MQTTTopic') == '' || !$this->HasActiveParent()) {
             return;
         }
-        $state = json_decode($this->ReadAttributeString('ReadState'), true);
-        $state = is_array($state) ? $state : [];
-        $unchanged = ($state['hash'] ?? '') === $this->configurationHash() && ($state['version'] ?? '') === $this->libraryVersion() && count($state['keys'] ?? []) > 0;
+        [$kind, $configChanged] = $this->startReadKind();
         //Hat der Nutzer die Konfiguration geändert, wird sofort gelesen (er wartet darauf), nicht versetzt.
-        $configChanged = ($state['hash'] ?? '') !== '' && $state['hash'] !== $this->configurationHash();
-        $this->scheduleStartRead($unchanged ? 'light' : 'full', $configChanged);
+        $this->scheduleStartRead($kind, $configChanged);
+    }
+
+    //Das Gerät hat sich (wieder) mit dem MQTT-Server verbunden (Meldung "online" = true): Während es getrennt war, hat die Instanz keine
+    //Änderungen mitbekommen, denn die Shellies senden nur Änderungen und nichts nach. Deshalb den Status der eigenen Komponenten abrufen -
+    //immer versetzt (Timer, aus ReceiveData() heraus darf nicht gesendet werden) und nach Instanz-ID verteilt, damit ein Gerät mit vielen
+    //Instanzen direkt nach dem Verbinden nicht mit gleichzeitigen Anfragen belastet wird.
+    protected function planReadOnOnline(): void
+    {
+        if (@$this->ReadPropertyString('MQTTTopic') == '') {
+            return;
+        }
+        [$kind] = $this->startReadKind();
+        $this->SetBuffer('startReadKind', $kind);
+        $this->SetTimerInterval('StartRead', 500 + ($this->InstanceID % 20) * 1500);
     }
 
     //Abruf sofort (neue Instanz ohne Variablen oder $immediate) oder versetzt: je Instanz zwischen 0,5 und 29 Sekunden später, je nach
@@ -880,6 +897,17 @@ class ShellyModuleBase extends IPSModuleStrict
                 $this->SetValue($componentsFromShellyResult['ident'] . '_ExtraAction', $value);
             }
         }
+    }
+
+    //Welcher Abruf nötig ist: 'light' (nur Status der eigenen Komponenten, Konfiguration und Version unverändert) oder 'full', dazu ob die
+    //Konfiguration seit dem letzten vollständigen Abruf geändert wurde.
+    private function startReadKind(): array
+    {
+        $state = json_decode($this->ReadAttributeString('ReadState'), true);
+        $state = is_array($state) ? $state : [];
+        $unchanged = ($state['hash'] ?? '') === $this->configurationHash() && ($state['version'] ?? '') === $this->libraryVersion() && count($state['keys'] ?? []) > 0;
+        $configChanged = ($state['hash'] ?? '') !== '' && $state['hash'] !== $this->configurationHash();
+        return [$unchanged ? 'light' : 'full', $configChanged];
     }
 
     //Antwort des Status-Abrufs: Werte übernehmen, nächste Seite anfordern, solange das Gerät mehr hat.
