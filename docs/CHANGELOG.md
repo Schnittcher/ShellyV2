@@ -1,5 +1,11 @@
 # Changelog
 
+## 24.10.2026 - Version 1.1.5 (Beta Version)
+
+### Fixes
+- BLU TRV: Die Variable "Externe Temperatur" zeigte bisher die aktuelle Temperatur des Thermostats. Jetzt heißt diese Variable "Aktuelle Temperatur" (nur lesbar), und die neue Variable "Externe Temperatur" zeigt den Wert des Sensors der externen Temperatur und ist steuerbar. Achtung: Skripte, die die bisherige Variable zum Setzen der externen Temperatur genutzt haben, müssen die neue Variable verwenden; die bisherige wird beim nächsten Auslesen umbenannt.
+- BLU-Geräte: Fällt ein Gateway aus, wechselt "Stärkstes Gateway" sofort zum nächsten, sobald der MQTT-Server dessen Status "offline" meldet.
+
 ## 23.10.2026 - Version 1.1.4 (Beta Version)
 
 ### Fixes

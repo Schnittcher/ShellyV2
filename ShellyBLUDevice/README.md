@@ -88,7 +88,7 @@ Variable | Ident | Typ | Beschreibung
 Erreichbar | `Reachable` | Online/Offline | Online, solange mindestens ein Gateway online ist.
 RSSI (<Gateway>) | `GwRssi_...` | Ganzzahl (dBm) | Signalstärke, mit der dieses Gateway das Gerät empfängt (eine Variable je Gateway).
 Letzte Aktualisierung (<Gateway>) | `GwSeen_...` | Datum/Uhrzeit | Wann dieses Gateway das Gerät zuletzt gehört hat (eine Variable je Gateway).
-Stärkstes Gateway | `NearestGateway` | Text | Das Gateway mit dem stärksten Signal (nur Gateways, die das Gerät innerhalb des maximalen Alters gehört haben), z. B. für die Raumerkennung.
+Stärkstes Gateway | `NearestGateway` | Text | Das Gateway mit dem stärksten Signal (nur Gateways, die online sind und das Gerät innerhalb des maximalen Alters gehört haben), z. B. für die Raumerkennung. Fällt ein Gateway aus, wechselt die Anzeige zum nächsten, sobald der MQTT-Server dessen Status "offline" meldet.
 
 ## 3. Funktionen
 
