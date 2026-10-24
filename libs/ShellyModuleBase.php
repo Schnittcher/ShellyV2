@@ -242,11 +242,13 @@ class ShellyModuleBase extends IPSModuleStrict
         //IPSModuleStrict: "Payload" ist HEX-kodiert (siehe MQTTHelper::decodeMQTTPayload()).
         $Payload = json_decode($this->decodeMQTTPayload($Buffer), true);
         //Außer beim "online"-Topic (true/false) erwarten alle Zweige ein JSON-Objekt.
-        if (!is_array($Payload) && !fnmatch('*/online', (string) ($Buffer['Topic'] ?? ''))) {
+        if (!is_array($Payload) && ($Buffer['Topic'] ?? '') !== $this->ReadPropertyString('MQTTTopic') . '/online') {
             return '';
         }
         if (array_key_exists('Topic', $Buffer)) {
-            if (fnmatch('*/online', $Buffer['Topic'])) {
+            //Genau das Topic dieser Instanz: Der Empfangsfilter ist nur ein Teilstring-Vergleich, "shelly_a" bekäme sonst auch die
+            //Meldungen von "shelly_a_b".
+            if ($Buffer['Topic'] === $this->ReadPropertyString('MQTTTopic') . '/online') {
                 $this->SetValue('Reachable', $Payload);
                 if (!$Payload) {
                     $this->zeroingValues();

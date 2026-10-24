@@ -5,6 +5,7 @@
 ### Fixes
 - BLU TRV: Die Variable "Externe Temperatur" zeigte bisher die aktuelle Temperatur des Thermostats. Jetzt heißt diese Variable "Aktuelle Temperatur" (nur lesbar), und die neue Variable "Externe Temperatur" zeigt den Wert des Sensors der externen Temperatur und ist steuerbar. Achtung: Skripte, die die bisherige Variable zum Setzen der externen Temperatur genutzt haben, müssen die neue Variable verwenden; die bisherige wird beim nächsten Auslesen umbenannt.
 - BLU-Geräte: Fällt ein Gateway aus, wechselt "Stärkstes Gateway" sofort zum nächsten, sobald der MQTT-Server dessen Status "offline" meldet.
+- Instanzen mit ähnlichen Topics (z. B. "shelly_1og" und "shelly_1og_wohnzimmer") beeinflussen sich nicht mehr: Bisher setzte die Meldung "online" des einen Geräts auch "Erreichbar" des anderen, beim Shelly XT1 galt das auch für Statusmeldungen.
 - Verbindet sich ein Shelly (wieder) mit dem MQTT-Server, z. B. nach einem Neustart oder Stromausfall, rufen die Instanzen dieses Geräts zeitlich verteilt den aktuellen Status ihrer Komponenten ab. Bisher fehlten die Änderungen, die in der Zeit ohne Verbindung geschehen waren, bis zur nächsten Meldung des Geräts.
 
 ## 23.10.2026 - Version 1.1.4 (Beta Version)
