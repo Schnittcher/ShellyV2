@@ -337,5 +337,8 @@ trait ShellyModels
         'S3PL-30110EU' => [
             'Name' => 'Shelly Plug M Gen3'
         ],
+        'S3BL-C010007AEU' => [
+            'Name' => 'Shelly RGBCCT Bulb Gen3'
+        ],
     ];
 }
