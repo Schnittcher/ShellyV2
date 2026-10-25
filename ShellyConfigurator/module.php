@@ -464,6 +464,9 @@ class ShellyConfigurator extends IPSModuleStrict
                             $Shelly['Name'] = $Payload['name'];
                             $Shelly['Firmware'] = $Payload['fw_id'];
                             $Shelly['Gen'] = $Payload['gen'];
+                            //Ohne "App" erscheint das Gerät nicht in der Liste. Meldet es sich nur einmal (z.B. beim Verbinden mit dem MQTT-Server) und
+                            //antwortet nicht auf den Befehl "announce", käme sonst nie eine zweite Meldung, die sie nachträgt.
+                            $Shelly['App'] = $Payload['app'] ?? '';
                         } else {
                             $Shelly['Firmware'] = $Payload['fw_ver'];
                             $Shelly['IP'] = $Payload['ip'];

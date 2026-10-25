@@ -7,6 +7,7 @@
 - BLU TRV: Zieltemperatur, aktuelle und externe Temperatur werden aus den BTHome-Sensoren des Geräts übernommen, die es alle 8 Sekunden sendet. Der Status des Thermostats selbst kommt nur selten, deshalb waren diese Variablen bisher oft veraltet. Ein später eintreffender, älterer Status überschreibt sie nicht mehr.
 - BLU-Geräte: Fällt ein Gateway aus, wechselt "Stärkstes Gateway" sofort zum nächsten, sobald der MQTT-Server dessen Status "offline" meldet.
 - Der Konfigurator zeigt die Shelly RGBCCT Bulb Gen3 mit Namen an statt "Unbekannt".
+- Der Konfigurator zeigt ein Gerät jetzt schon nach seiner ersten Meldung an. Bisher erschien es erst nach einer zweiten, ein Gerät, das nicht auf die Suche antwortet und sich nur einmal meldet (z. B. das Shelly Wall Display), fehlte in der Liste. Das Shelly Wall Display wird mit Namen angezeigt.
 - Instanzen mit ähnlichen Topics (z. B. "shelly_1og" und "shelly_1og_wohnzimmer") beeinflussen sich nicht mehr: Bisher setzte die Meldung "online" des einen Geräts auch "Erreichbar" des anderen, beim Shelly XT1 galt das auch für Statusmeldungen.
 - Verbindet sich ein Shelly (wieder) mit dem MQTT-Server, z. B. nach einem Neustart oder Stromausfall, rufen die Instanzen dieses Geräts zeitlich verteilt den aktuellen Status ihrer Komponenten ab. Bisher fehlten die Änderungen, die in der Zeit ohne Verbindung geschehen waren, bis zur nächsten Meldung des Geräts.
 

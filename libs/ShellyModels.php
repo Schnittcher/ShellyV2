@@ -289,6 +289,9 @@ trait ShellyModels
         'SAWD1' => [
             'Name'  => 'Shelly Wall Display',
         ],
+        'SAWD-0A1XX10EU1' => [
+            'Name'  => 'Shelly Wall Display',
+        ],
         'S3GW-1DBT001' => [
             'Name'  => 'Shelly BLU Gateway Gen3',
         ],
