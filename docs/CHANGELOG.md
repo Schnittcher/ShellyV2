@@ -4,6 +4,7 @@
 
 ### Fixes
 - BLU TRV: Die Variable "Externe Temperatur" zeigte bisher die aktuelle Temperatur des Thermostats. Jetzt heißt diese Variable "Aktuelle Temperatur" (nur lesbar), und die neue Variable "Externe Temperatur" zeigt den Wert des Sensors der externen Temperatur und ist steuerbar. Achtung: Skripte, die die bisherige Variable zum Setzen der externen Temperatur genutzt haben, müssen die neue Variable verwenden; die bisherige wird beim nächsten Auslesen umbenannt.
+- BLU TRV: Zieltemperatur, aktuelle und externe Temperatur werden aus den BTHome-Sensoren des Geräts übernommen, die es alle 8 Sekunden sendet. Der Status des Thermostats selbst kommt nur selten, deshalb waren diese Variablen bisher oft veraltet. Ein später eintreffender, älterer Status überschreibt sie nicht mehr.
 - BLU-Geräte: Fällt ein Gateway aus, wechselt "Stärkstes Gateway" sofort zum nächsten, sobald der MQTT-Server dessen Status "offline" meldet.
 - Der Konfigurator zeigt die Shelly RGBCCT Bulb Gen3 mit Namen an statt "Unbekannt".
 - Instanzen mit ähnlichen Topics (z. B. "shelly_1og" und "shelly_1og_wohnzimmer") beeinflussen sich nicht mehr: Bisher setzte die Meldung "online" des einen Geräts auch "Erreichbar" des anderen, beim Shelly XT1 galt das auch für Statusmeldungen.

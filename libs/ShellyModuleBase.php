@@ -228,6 +228,15 @@ class ShellyModuleBase extends IPSModuleStrict
             }
         }
         $this->callRPCFunction($tmpComponents['action']['method'], $tmpComponents['action']['params']);
+        //Zieltemperatur und externe Temperatur des Thermostats kommen aus den BTHome-Sensoren (siehe feedTrvTemperatures()), die erst mit dem
+        //nächsten Paket (bis zu 8 Sekunden) den neuen Wert zeigen: Den gesetzten Wert sofort anzeigen.
+        if (in_array($IdentKeyPath[0], ['blutrv.target_C', 'blutrv.ext_C'], true) && isset($this->trvSensorFedIdents()[$Ident]) && is_numeric($Value)) {
+            $this->SetValue($Ident, (float) $Value);
+            $pending = json_decode($this->GetBuffer('trvPending'), true);
+            $pending = is_array($pending) ? $pending : [];
+            $pending[$Ident] = ['value' => (float) $Value, 'until' => time() + 30];
+            $this->SetBuffer('trvPending', json_encode($pending));
+        }
     }
 
     public function ReceiveData(string $JSONString): string
@@ -407,9 +416,11 @@ class ShellyModuleBase extends IPSModuleStrict
         return $result;
     }
 
-    //Sensor der externen Temperatur je Thermostat aus den Configs des letzten Abrufs: {"bthomesensor:312": "blutrv:300"}. Der Sensor
-    //(Objekt 69, idx 2) hat dieselbe MAC-Adresse wie das BLU-Gerät, auf das das "trv" des Thermostats zeigt.
-    protected function collectTrvExternalSensors(): array
+    //Temperatur-Sensoren je Thermostat aus den Configs des letzten Abrufs: {"bthomesensor:310": "blutrv:300#target_C", ...}. Die drei
+    //Sensoren (Objekt 69, idx 0 = Zieltemperatur, idx 1 = aktuelle Temperatur, idx 2 = externe Temperatur) haben dieselbe MAC-Adresse wie das
+    //BLU-Gerät, auf das das "trv" des Thermostats zeigt. Das Gerät sendet sie alle 8 Sekunden, den Status des Thermostats (blutrv) dagegen
+    //viel seltener, deshalb kommen die Werte der Variablen des Thermostats aus diesen Sensoren.
+    protected function collectTrvTemperatureSensors(): array
     {
         $configs = json_decode($this->GetBuffer('componentConfigs'), true);
         $result = [];
@@ -418,17 +429,19 @@ class ShellyModuleBase extends IPSModuleStrict
                 continue;
             }
             foreach ($configs as $sensorKey => $sensorConfig) {
-                if (strpos((string) $sensorKey, 'bthomesensor:') === 0 && (int) ($sensorConfig['obj_id'] ?? -1) == 69 && (int) ($sensorConfig['idx'] ?? -1) == 2
+                $field = [0 => 'target_C', 1 => 'current_C', 2 => 'ext_C'][(int) ($sensorConfig['idx'] ?? -1)] ?? '';
+                if (strpos((string) $sensorKey, 'bthomesensor:') === 0 && (int) ($sensorConfig['obj_id'] ?? -1) == 69 && $field != ''
                     && $this->bthomeComponentBelongsToDevice((string) $sensorKey, (string) $config['trv'])) {
-                    $result[(string) $sensorKey] = (string) $trvKey;
+                    $result[(string) $sensorKey] = $trvKey . '#' . $field;
                 }
             }
         }
         return $result;
     }
 
-    //Gemerkte Zuordnung Sensor -> Thermostat (Buffer, nach einem Neustart aus dem gespeicherten Stand).
-    protected function trvExternalSensors(): array
+    //Gemerkte Zuordnung Sensor -> Thermostat und Variable (Buffer, nach einem Neustart aus dem gespeicherten Stand). Einträge ohne "#"
+    //(früherer Stand, nur die externe Temperatur) gelten für ext_C.
+    protected function trvTemperatureSensors(): array
     {
         $buffer = $this->GetBuffer('trvExt');
         if ($buffer === '') {
@@ -440,17 +453,61 @@ class ShellyModuleBase extends IPSModuleStrict
         return is_array($map) ? $map : [];
     }
 
-    //Wert des Sensors der externen Temperatur (Objekt 69, idx 2) in die Variable "Externe Temperatur" des Thermostats schreiben.
-    protected function feedTrvExternalTemperature(array $Payload): void
+    //Werte der Temperatur-Sensoren (Objekt 69) in die Variablen des Thermostats schreiben: Zieltemperatur, aktuelle und externe Temperatur.
+    protected function feedTrvTemperatures(array $Payload): void
     {
-        foreach ($this->trvExternalSensors() as $sensorKey => $trvKey) {
+        $timestamps = json_decode($this->GetBuffer('trvSensorTs'), true);
+        $timestamps = is_array($timestamps) ? $timestamps : [];
+        $changed = false;
+        $pending = json_decode($this->GetBuffer('trvPending'), true);
+        $pending = is_array($pending) ? $pending : [];
+        $pendingChanged = false;
+        foreach ($this->trvTemperatureSensors() as $sensorKey => $target) {
             if (isset($Payload[$sensorKey]['value']) && is_numeric($Payload[$sensorKey]['value'])) {
-                $ident = 'blutrv_' . substr($trvKey, strlen('blutrv:')) . '_ext_C';
+                //Ältere Meldung als die zuletzt übernommene (z.B. verspätete Antwort auf einen Abruf): nicht übernehmen.
+                $ts = isset($Payload[$sensorKey]['last_updated_ts']) ? (int) $Payload[$sensorKey]['last_updated_ts'] : 0;
+                if ($ts > 0 && $ts < ($timestamps[$sensorKey] ?? 0)) {
+                    continue;
+                }
+                if ($ts > 0 && $ts != ($timestamps[$sensorKey] ?? 0)) {
+                    $timestamps[$sensorKey] = $ts;
+                    $changed = true;
+                }
+                [$trvKey, $field] = explode('#', (string) $target) + [1 => 'ext_C'];
+                $ident = 'blutrv_' . substr($trvKey, strlen('blutrv:')) . '_' . $field;
+                //Gerade per Aktion gesetzt: Pakete, die noch den alten Wert zeigen (das Gerät hat den neuen noch nicht gemeldet), ändern die
+                //Anzeige nicht. Gilt höchstens 30 Sekunden oder bis das Gerät den gesetzten Wert meldet.
+                if (isset($pending[$ident])) {
+                    $stillOld = time() < $pending[$ident]['until'] && abs((float) $Payload[$sensorKey]['value'] - $pending[$ident]['value']) > 0.05;
+                    if ($stillOld) {
+                        continue;
+                    }
+                    unset($pending[$ident]);
+                    $pendingChanged = true;
+                }
                 if (@$this->GetIDForIdent($ident)) {
                     $this->SetValue($ident, (float) $Payload[$sensorKey]['value']);
                 }
             }
         }
+        if ($pendingChanged) {
+            $this->SetBuffer('trvPending', json_encode($pending));
+        }
+        if ($changed) {
+            $this->SetBuffer('trvSensorTs', json_encode($timestamps));
+        }
+    }
+
+    //Idents der Thermostat-Variablen, deren Wert aus den BTHome-Sensoren kommt. Der (seltene, oft ältere) Status des Thermostats darf sie
+    //nicht überschreiben, sonst zeigen sie bis zum nächsten Paket (höchstens 8 Sekunden) einen veralteten Wert.
+    protected function trvSensorFedIdents(): array
+    {
+        $idents = [];
+        foreach ($this->trvTemperatureSensors() as $target) {
+            [$trvKey, $field] = explode('#', (string) $target) + [1 => 'ext_C'];
+            $idents['blutrv_' . substr($trvKey, strlen('blutrv:')) . '_' . $field] = true;
+        }
+        return $idents;
     }
 
     //Was die Instanz beim Anlegen, nach Änderungen und beim Start von Symcon vom Gerät liest (ApplyChanges() und Verbinden):
@@ -568,8 +625,8 @@ class ShellyModuleBase extends IPSModuleStrict
                 $keys[explode('.', (string) $path)[0]] = true;
             }
         }
-        //Externe Temperatur der Thermostate: Sensor (Objekt 69, idx 2) -> Thermostat, die Sensoren gehören auch zu den abzufragenden Schlüsseln.
-        $trvExt = $this->collectTrvExternalSensors();
+        //Temperaturen der Thermostate: Sensoren (Objekt 69) -> Thermostat und Variable, die Sensoren gehören auch zu den abzufragenden Schlüsseln.
+        $trvExt = $this->collectTrvTemperatureSensors();
         $this->SetBuffer('trvExt', json_encode($trvExt));
         foreach (array_keys($trvExt) as $sensorKey) {
             $keys[$sensorKey] = true;
@@ -819,7 +876,8 @@ class ShellyModuleBase extends IPSModuleStrict
 
     protected function parsePayloadIntoVariables($Payload)
     {
-        $this->feedTrvExternalTemperature(is_array($Payload) ? $Payload : []);
+        $this->feedTrvTemperatures(is_array($Payload) ? $Payload : []);
+        $sensorFedIdents = $this->trvSensorFedIdents();
         //Components vom Shelly Params Payload holen.
         $components = $this->getArrayLeafKeyPaths($Payload);
         foreach ($components as $key => $component) {
@@ -834,6 +892,10 @@ class ShellyModuleBase extends IPSModuleStrict
             //liefert). SetValue() würde daraus 0 bzw. "" machen und einen echten Messwert vortäuschen - die
             //Variable behält dann lieber ihren letzten Wert.
             if ($value === null) {
+                continue;
+            }
+            //Thermostat: Zieltemperatur und aktuelle Temperatur kommen aus den BTHome-Sensoren (siehe feedTrvTemperatures()).
+            if (isset($sensorFedIdents[$componentsFromShellyResult['ident']])) {
                 continue;
             }
             //BLU-Taster ohne bisherigen Tastendruck melden als Zeitstempel einen Platzhalter weit in der Vergangenheit.
