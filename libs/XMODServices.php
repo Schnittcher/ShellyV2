@@ -292,7 +292,7 @@ trait XMODServices
                             "Value" => true,
                             "Caption" => "Open",
                             "IconActive" => false,
-                            "Icon" => "",
+                            "IconValue" => "",
                             "ColorActive" => true,
                             "ColorValue" => 65280
                         ],
@@ -300,7 +300,7 @@ trait XMODServices
                             "Value" => false,
                             "Caption" => "Closed",
                             "IconActive" => false,
-                            "Icon" => "",
+                            "IconValue" => "",
                             "ColorActive" => true,
                             "ColorValue" => 16711680
                         ]
