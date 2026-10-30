@@ -816,6 +816,46 @@ class ShellyModuleBase extends IPSModuleStrict
 
     //Legt die Variablen aus den bereits gespeicherten Komponentendaten neu an (ohne neue Abfrage beim Gerät) -
     //z.B. wenn nachträglich Zusatzinformationen eingetroffen sind (BTHome.GetObjectInfos).
+    //Zeilen der Liste "Variablen" für das Formular. Die Liste im Buffer gibt es erst nach einem vollständigen Abruf (nach einem Neustart
+    //von Symcon ist er leer). Solange nehmen wir die gespeicherten Zeilen, damit die Auswahl (Selected/Zeroing) angezeigt und beim
+    //Speichern nicht verloren geht. Das Formular lädt die gespeicherten Zeilen nicht selbst dazu (loadValuesFromConfiguration=false):
+    //sonst würden sie nach Position mit den aktuellen Zeilen vermischt, die Haken säßen bei der falschen Variable.
+    protected function variableListValues(): array
+    {
+        $list = json_decode($this->GetBuffer('variableList'), true);
+        if (is_array($list) && count($list) > 0) {
+            return $list;
+        }
+        $saved = json_decode($this->ReadPropertyString('VariableList'), true);
+        $rows = [];
+        foreach (is_array($saved) ? $saved : [] as $row) {
+            if (!is_array($row) || empty($row['Ident']) || empty($row['CleanKeyPath'])) {
+                continue;
+            }
+            $name = (string) ($row['Name'] ?? '');
+            if ($name === '') {
+                $definition = $this->getValueByKeyPath($row['CleanKeyPath']);
+                if (!empty($row['actionWithExtraVariable']) && is_array($definition) && isset($definition['actionWithExtraVariable']['name'])) {
+                    $definition = $definition['actionWithExtraVariable'];
+                }
+                $name = is_array($definition) && isset($definition['name']) ? $this->Translate((string) $definition['name']) : (string) $row['Ident'];
+                if ((int) ($row['Channel'] ?? 0) > 0 && explode('.', (string) $row['CleanKeyPath'])[0] != 'object') {
+                    $name .= ' ' . $row['Channel'];
+                }
+            }
+            $rows[] = [
+                'Name'                    => $name,
+                'Ident'                   => (string) $row['Ident'],
+                'CleanKeyPath'            => (string) $row['CleanKeyPath'],
+                'Channel'                 => $row['Channel'] ?? '',
+                'actionWithExtraVariable' => !empty($row['actionWithExtraVariable']),
+                'Selected'                => $row['Selected'] ?? true,
+                'Zeroing'                 => $row['Zeroing'] ?? false
+            ];
+        }
+        return $rows;
+    }
+
     protected function rebuildVariables(): void
     {
         $allComponentsFromShelly = json_decode($this->GetBuffer('componentsList'), true) ?: [];

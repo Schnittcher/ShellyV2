@@ -44,6 +44,7 @@
             "type": "List",
             "name": "VariableList",
             "caption": "Variables",
+            "loadValuesFromConfiguration": false,
             "rowCount": 10,
             "add": false,
             "delete": false,
@@ -52,7 +53,8 @@
                     "caption": "Name",
                     "name": "Name",
                     "width": "auto",
-                    "add": ""
+                    "add": "",
+                    "save": true
                 },
                 {
                     "caption": "Ident",

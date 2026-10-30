@@ -29,7 +29,7 @@ class ShellyBLUDevice extends ShellyModuleBase
         $Form = json_decode((string) file_get_contents(__DIR__ . '/form.json'), true);
         foreach ($Form['elements'] as &$element) {
             if (($element['name'] ?? '') == 'VariableList') {
-                $element['values'] = json_decode($this->GetBuffer('variableList'), true) ?: [];
+                $element['values'] = $this->variableListValues();
             }
         }
         unset($element);

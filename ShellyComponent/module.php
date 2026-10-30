@@ -16,7 +16,7 @@ class ShellyComponent extends ShellyModuleBase
     {
         $reflector = new ReflectionClass($this);
         $Form = json_decode(file_get_contents(dirname($reflector->getFileName()) . '/form.json'), true);
-        $Form['elements'][4]['values'] = json_decode($this->GetBuffer('variableList'), true);
+        $Form['elements'][4]['values'] = $this->variableListValues();
 
         //Stream-Felder und -Buttons nur bei Kameras anzeigen (siehe libs/CameraStream.php)
         $Form = $this->applyCameraStreamFormVisibility($Form);

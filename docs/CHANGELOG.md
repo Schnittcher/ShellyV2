@@ -1,12 +1,16 @@
 # Changelog
 
+## 30.10.2026 - Version 1.1.6 (Beta Version)
+
+### Fixes
+- Die Liste "Variablen" in der Instanz stimmt wieder mit den Variablen überein: Bisher konnte beim Abwählen einer Variable ein Haken bei einer anderen Variable landen, und Einträge erschienen ohne Namen. Die gespeicherte Auswahl wird jetzt auch nach einem Neustart von Symcon richtig angezeigt.
+
 ## 24.10.2026 - Version 1.1.5 (Beta Version)
 
 ### Fixes
 - BLU TRV: Die Variable "Externe Temperatur" zeigte bisher die aktuelle Temperatur des Thermostats. Jetzt heißt diese Variable "Aktuelle Temperatur" (nur lesbar), und die neue Variable "Externe Temperatur" zeigt den Wert des Sensors der externen Temperatur und ist steuerbar. Achtung: Skripte, die die bisherige Variable zum Setzen der externen Temperatur genutzt haben, müssen die neue Variable verwenden; die bisherige wird beim nächsten Auslesen umbenannt.
 - BLU TRV: Zieltemperatur, aktuelle und externe Temperatur werden aus den BTHome-Sensoren des Geräts übernommen, die es alle 8 Sekunden sendet. Der Status des Thermostats selbst kommt nur selten, deshalb waren diese Variablen bisher oft veraltet. Ein später eintreffender, älterer Status überschreibt sie nicht mehr.
 - BLU-Geräte: Fällt ein Gateway aus, wechselt "Stärkstes Gateway" sofort zum nächsten, sobald der MQTT-Server dessen Status "offline" meldet.
-- Die Liste "Variablen" in der Instanz stimmt wieder mit den Variablen überein: Bisher konnte beim Abwählen einer Variable ein Haken bei einer anderen Variable landen, und Einträge erschienen ohne Namen. Die gespeicherte Auswahl wird jetzt auch nach einem Neustart von Symcon richtig angezeigt.
 - Der Konfigurator zeigt die Shelly RGBCCT Bulb Gen3 mit Namen an statt "Unbekannt".
 - Der Konfigurator zeigt ein Gerät jetzt schon nach seiner ersten Meldung an. Bisher erschien es erst nach einer zweiten, ein Gerät, das nicht auf die Suche antwortet und sich nur einmal meldet (z. B. das Shelly Wall Display), fehlte in der Liste. Das Shelly Wall Display wird mit Namen angezeigt.
 - Instanzen mit ähnlichen Topics (z. B. "shelly_1og" und "shelly_1og_wohnzimmer") beeinflussen sich nicht mehr: Bisher setzte die Meldung "online" des einen Geräts auch "Erreichbar" des anderen, beim Shelly XT1 galt das auch für Statusmeldungen.
