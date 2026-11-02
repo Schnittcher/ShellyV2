@@ -427,6 +427,7 @@ class ShellyBLUDevice extends ShellyModuleBase
         }
 
         $this->applyComponentsResult($merged);
+        $this->updateBTHomeDerivedValues();
         $this->updateGatewayVariables($state);
     }
 
@@ -512,6 +513,7 @@ class ShellyBLUDevice extends ShellyModuleBase
         $this->SetBuffer('bluLastTs', json_encode($lastTs));
         if (count($translated) > 0) {
             $this->parsePayloadIntoVariables($translated);
+            $this->updateBTHomeDerivedValues();
         }
         if ($battery !== null) {
             $this->SetValue('bthomedevice_' . $this->componentChannel() . '_battery', $battery);

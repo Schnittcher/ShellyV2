@@ -12,7 +12,8 @@ Idealerweise wird die Instanz über den Konfigurator angelegt (Gruppe "BLU-Gerä
     - [2.1 Variablen des Geräts](#21-variablen-des-geräts)
     - [2.2 Tasten und Rad](#22-tasten-und-rad)
     - [2.3 Sensoren (Messwerte)](#23-sensoren-messwerte)
-    - [2.4 Variablen der Instanz (mehrere Gateways)](#24-variablen-der-instanz-mehrere-gateways)
+    - [2.4 Berechnete Werte (Wetterstation)](#24-berechnete-werte-wetterstation)
+    - [2.5 Variablen der Instanz (mehrere Gateways)](#25-variablen-der-instanz-mehrere-gateways)
   - [3. Funktionen](#3-funktionen)
   - [4. Modelle](#4-modelle)
   - [5. Spenden](#5-spenden)
@@ -78,7 +79,15 @@ Abstand | 64 | Zahl | mm | Distance
 Kanal | 96 | Zahl | aktiver Kanal | Remote Control ZB
 Luftdruck, Taupunkt, Spannung, Niederschlag, Feuchtigkeit (Regen), Wind (Geschwindigkeit und Böen), UV-Index, Richtung | 4, 8, 12, 95, 32, 68, 70, 94 | Zahl bzw. Ja/Nein | hPa, °C, V, mm, Nass/Trocken, m/s, -, ° | Wetterstation (nach der Doku, nicht an einem echten Gerät geprüft)
 
-### 2.4 Variablen der Instanz (mehrere Gateways)
+### 2.4 Berechnete Werte (Wetterstation)
+Hat das Gerät Temperatur, Luftfeuchtigkeit und Windgeschwindigkeit bzw. eine Windrichtung (z. B. Wetterstation), legt die Instanz zwei weitere Variablen an, die sie aus den Messwerten berechnet. Der Ident beginnt wie beim Gerät mit `bthomedevice_<N>_`. Sie werden bei jedem neuen Messwert aktualisiert und lassen sich in der Liste Variablen abwählen.
+
+Variable | Ident | Typ | Beschreibung
+------------ | ------------ | ------------ | ----------------
+Gefühlte Temperatur | `feels_like` | Zahl (°C) | Bei höchstens 10 °C und mehr als 4,8 km/h Wind die Windchill-Temperatur, ab 27 °C der Hitzeindex (aus Temperatur und Luftfeuchtigkeit), sonst die gemessene Temperatur. Die Windgeschwindigkeit (mittlere Geschwindigkeit, m/s) wird für die Formel in km/h umgerechnet.
+Windrichtung (Text) | `wind_direction_text` | Text | Die Windrichtung als Himmelsrichtung in 16 Stufen (N, NNO, NO, ONO, O, ...).
+
+### 2.5 Variablen der Instanz (mehrere Gateways)
 Beim Zusammenführen der Gateways gilt:
 * Messwerte: der Wert mit dem neuesten Zeitstempel (`last_updated_ts`) aller Gateways.
 * Tastendruck: von jedem Gateway; derselbe Druck, den zwei Gateways kurz nacheinander melden, wird nur einmal gezählt.

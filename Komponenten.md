@@ -426,6 +426,8 @@ Taste 3 | `bthomedevice_<Kanal>_button3` | Text |  |
 Taste 4 | `bthomedevice_<Kanal>_button4` | Text |  | 
 Rad | `bthomedevice_<Kanal>_dial` | Text |  | 
 Rad Schritte | `bthomedevice_<Kanal>_dialsteps` | Ganzzahl |  | 
+Gefühlte Temperatur | `bthomedevice_<Kanal>_feels_like` | Zahl | °C | 
+Windrichtung (Text) | `bthomedevice_<Kanal>_wind_direction_text` | Text |  | 
 Firmware-Version | `bthomedevice_<Kanal>_fw_ver` | Text |  | 
 BLU-Gerät Fehler | `bthomedevice_<Kanal>_errors` | Text |  | 
 BLU-Gerät Störung | `bthomedevice_<Kanal>_fault` | Ja/Nein |  | 

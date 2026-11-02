@@ -544,6 +544,58 @@ trait BTHomeObjects
         return $paths;
     }
 
+    //Berechnete Variablen eines BLU-Geräts (Instanz ShellyBLUDevice): "Gefühlte Temperatur" (Temperatur, Luftfeuchtigkeit und Wind) und
+    //"Windrichtung (Text)" (Windrichtung). Sie gehören in die Liste, wenn das Gerät die Sensoren dazu hat. Die Sensoren heißen in dieser
+    //Instanz bthomesensor:<obj_id * 100 + idx>: Temperatur 69/0 (oder 2/0), Luftfeuchtigkeit 46/0 (oder 3/0), Windgeschwindigkeit 68/0
+    //(idx 0 = Mittelwert, idx 1 = Böe) und Windrichtung 94/0.
+    protected function adjustBTHomeDerivedLeafPaths(array $paths, string $component, string $channel): array
+    {
+        if ($component != 'bthomedevice' || $channel === '') {
+            return $paths;
+        }
+        $sensors = [];
+        foreach ($paths as $path) {
+            if (preg_match('/^bthomesensor:(\d+)\.value$/', (string) $path, $match)) {
+                $sensors[(int) $match[1]] = true;
+            }
+        }
+        $result = $paths;
+        if ((isset($sensors[6900]) || isset($sensors[200])) && (isset($sensors[4600]) || isset($sensors[300])) && isset($sensors[6800])) {
+            $result[] = 'bthomedevice:' . $channel . '.feels_like';
+        }
+        if (isset($sensors[9400])) {
+            $result[] = 'bthomedevice:' . $channel . '.wind_direction_text';
+        }
+        return $result;
+    }
+
+    //Berechnete Variablen aus den Werten der Sensor-Variablen setzen (siehe adjustBTHomeDerivedLeafPaths()). Fehlt eine Variable oder ein
+    //Eingangswert, bleibt der letzte Wert stehen.
+    protected function updateBTHomeDerivedValues(): void
+    {
+        $channel = (string) $this->componentChannel();
+        if ($channel === '') {
+            return;
+        }
+        $feelsLike = 'bthomedevice_' . $channel . '_feels_like';
+        if (@$this->GetIDForIdent($feelsLike)) {
+            $temperature = $this->bthomeSensorNumber([6900, 200]);
+            $humidity = $this->bthomeSensorNumber([4600, 300]);
+            $windSpeed = $this->bthomeSensorNumber([6800]);
+            if ($temperature !== null && $humidity !== null && $windSpeed !== null) {
+                //Die Windgeschwindigkeit der Sensoren ist laut BTHome in m/s, die Formel rechnet in km/h.
+                $this->SetValue($feelsLike, $this->bthomeFeelsLike($temperature, $humidity, $windSpeed * 3.6));
+            }
+        }
+        $direction = 'bthomedevice_' . $channel . '_wind_direction_text';
+        if (@$this->GetIDForIdent($direction)) {
+            $degrees = $this->bthomeSensorNumber([9400]);
+            if ($degrees !== null) {
+                $this->SetValue($direction, $this->bthomeWindDirectionText($degrees));
+            }
+        }
+    }
+
     //Gerätemodelle (attrs.model_id) der BLU-Geräte aus der Antwort von Shelly.GetComponents: Komponenten-Key => model_id.
     protected function collectBTHomeDeviceModels(array $components)
     {
@@ -663,5 +715,55 @@ trait BTHomeObjects
         }
 
         return ['type' => $type, 'name' => $name, 'presentation' => $presentation];
+    }
+
+    //Wert der ersten vorhandenen Sensor-Variable (Ident bthomesensor_<Code>_value), sonst null.
+    private function bthomeSensorNumber(array $codes): ?float
+    {
+        foreach ($codes as $code) {
+            $id = @$this->GetIDForIdent('bthomesensor_' . $code . '_value');
+            if ($id) {
+                $value = GetValue($id);
+                return is_numeric($value) ? (float) $value : null;
+            }
+        }
+        return null;
+    }
+
+    //Gefühlte Temperatur in °C: Windchill bei höchstens 10 °C und mehr als 4,8 km/h Wind, Hitzeindex ab 27 °C, sonst die Temperatur.
+    private function bthomeFeelsLike(float $temperature, float $humidity, float $windSpeedKmh): float
+    {
+        if ($temperature <= 10 && $windSpeedKmh > 4.8) {
+            return round(
+                13.12
+                + 0.6215 * $temperature
+                - 11.37 * pow($windSpeedKmh, 0.16)
+                + 0.3965 * $temperature * pow($windSpeedKmh, 0.16),
+                1
+            );
+        }
+        if ($temperature >= 27) {
+            return round(
+                -8.78469475556
+                + 1.61139411 * $temperature
+                + 2.3385248 * $humidity
+                - 0.14611605 * $temperature * $humidity
+                - 0.012308094 * pow($temperature, 2)
+                - 0.016424828 * pow($humidity, 2)
+                + 0.002211732 * pow($temperature, 2) * $humidity
+                + 0.00072546 * $temperature * pow($humidity, 2)
+                - 0.000003582 * pow($temperature, 2) * pow($humidity, 2),
+                1
+            );
+        }
+        return round($temperature, 1);
+    }
+
+    //Windrichtung in Grad als Himmelsrichtung (16 Richtungen, in der Sprache der Oberfläche).
+    private function bthomeWindDirectionText(float $degrees): string
+    {
+        $directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+        $index = ((int) round(fmod($degrees, 360) / 22.5)) % 16;
+        return $this->Translate($directions[$index < 0 ? $index + 16 : $index]);
     }
 }

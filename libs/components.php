@@ -2461,6 +2461,25 @@ trait Components
                     'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
                 ],
             ],
+            //Berechnete Werte (kein Feld des Geräts) für Geräte mit Temperatur, Luftfeuchtigkeit und Wind (z.B. BLU Weather Station):
+            //Die Variablen kommen nur in die Liste, wenn die Sensoren da sind (adjustBTHomeDerivedLeafPaths()), den Wert setzt
+            //updateBTHomeDerivedValues() - beides in libs/BTHomeObjects.php.
+            'feels_like' => [
+                'type'         => VARIABLETYPE_FLOAT,
+                'name'         => 'Feels like temperature',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                    'SUFFIX'       => ' °C',
+                    'DIGITS'       => 1,
+                ],
+            ],
+            'wind_direction_text' => [
+                'type'         => VARIABLETYPE_STRING,
+                'name'         => 'Wind direction (text)',
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
             'fw_ver' => [
                 'type'         => VARIABLETYPE_STRING,
                 'name'         => 'Firmware version',

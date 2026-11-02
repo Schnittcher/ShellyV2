@@ -1364,6 +1364,8 @@ class ShellyModuleBase extends IPSModuleStrict
         $allComponentsFromShelly = $this->adjustInputLeafPaths($allComponentsFromShelly);
         //Thermostat: die Variable "Externe Temperatur" gibt es nicht im Status des Geräts (siehe adjustTrvLeafPaths()).
         $allComponentsFromShelly = $this->adjustTrvLeafPaths($allComponentsFromShelly);
+        //BLU-Gerät mit Temperatur, Luftfeuchtigkeit und Wind: berechnete Variablen (siehe adjustBTHomeDerivedLeafPaths()).
+        $allComponentsFromShelly = $this->adjustBTHomeDerivedLeafPaths($allComponentsFromShelly, (string) $component, (string) $channel);
 
         //Mit 'alwaysCreate' markierte Definitionen auch anlegen, wenn die Antwort das Feld nicht enthält
         //(z.B. Cury mit leerem Fach: "left": null) - siehe getAlwaysCreatedLeafPaths().
