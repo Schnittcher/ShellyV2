@@ -5,6 +5,9 @@
 ### Neu
 - BLU-Geräte mit Temperatur, Luftfeuchtigkeit und Wind (z. B. die Wetterstation) haben zwei berechnete Variablen: "Gefühlte Temperatur" (Windchill bei Kälte, Hitzeindex bei Wärme) und "Windrichtung (Text)" (Himmelsrichtung). Sie entstehen beim nächsten Auslesen der Komponenten und lassen sich in der Liste Variablen abwählen.
 
+### Fixes
+- Die Adresse der Module (Dokumentation) verweist jetzt auf die Seite der jeweiligen Instanz auf deinsmarthome.info.
+
 ## 30.10.2026 - Version 1.1.6 (Beta Version)
 
 ### Fixes
