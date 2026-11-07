@@ -8,6 +8,7 @@
 ### Fixes
 - Der Shelly Dimmer Gen4 wird im Konfigurator mit Namen angezeigt statt als "Unbekannt".
 - Geräte mit der Komponente Licht (z. B. Shelly Dimmer Gen3 und Gen4) haben wieder die Variable "Temperatur" (Gerätetemperatur).
+- Virtuelle Zahlen, die das Gerät nur lesbar meldet, werden wieder angelegt. Bisher meldete Symcon "Parameter STEP_SIZE is not defined for this presentation" und die Variable fehlte.
 
 ## 02.11.2026 - Version 1.1.7 (Beta Version)
 

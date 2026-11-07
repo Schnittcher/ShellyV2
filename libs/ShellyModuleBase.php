@@ -1265,6 +1265,9 @@ class ShellyModuleBase extends IPSModuleStrict
                 $writeOnlyPresentations = [VARIABLE_PRESENTATION_SLIDER, VARIABLE_PRESENTATION_SWITCH, VARIABLE_PRESENTATION_ENUMERATION, VARIABLE_PRESENTATION_VALUE_INPUT];
                 if (!$isWritable && in_array($presentation['PRESENTATION'], $writeOnlyPresentations, true)) {
                     $presentation['PRESENTATION'] = VARIABLE_PRESENTATION_VALUE_PRESENTATION;
+                    //Nur der Slider kennt Schrittweite und Farbverlauf: In der Darstellung "Wert" meldet Symcon sie als nicht definiert
+                    //("Parameter STEP_SIZE is not defined for this presentation") und legt die Variable nicht an.
+                    unset($presentation['STEP_SIZE'], $presentation['GRADIENT_TYPE'], $presentation['CUSTOM_GRADIENT']);
                 }
 
                 //Optionen der dynamischen Enum-Komponente (siehe oben) je nach endgültiger Darstellung:
