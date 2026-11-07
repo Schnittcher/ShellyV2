@@ -1,5 +1,10 @@
 # Changelog
 
+## 07.11.2026 - Version 1.1.8 (Beta Version)
+
+### Neu
+- BLU TRV: Der Thermostat meldet seine Fehler jetzt in den Variablen "Thermostat Fehler" (`blutrv_<N>_errors`, z. B. Nicht kalibriert, Nicht montiert, Batterie schwach) und "Thermostat Störung" (`blutrv_<N>_fault`). Die Fehler verschwinden, wenn der Thermostat sie nicht mehr meldet. Die Variablen des BLU-Geräts (`bthomedevice_<N>_errors` und `_fault`) bleiben unverändert und zeigen Fehler des BLU-Geräts am Gateway, zum Beispiel bei der Entschlüsselung.
+
 ## 02.11.2026 - Version 1.1.7 (Beta Version)
 
 ### Neu

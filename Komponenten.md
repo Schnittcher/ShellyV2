@@ -309,6 +309,8 @@ Zieltemperatur | `blutrv_<Kanal>_target_C` | Zahl | °C | ja
 Position | `blutrv_<Kanal>_pos` | Ganzzahl | % | ja
 RSSI | `blutrv_<Kanal>_rssi` | Ganzzahl |  | 
 Batterie | `blutrv_<Kanal>_battery` | Ganzzahl | % | 
+Thermostat Fehler | `blutrv_<Kanal>_errors` | Text |  | 
+Thermostat Störung | `blutrv_<Kanal>_fault` | Ja/Nein |  | 
 
 ## Schalter (Switch)
 Relais mit Schaltzustand und (je nach Gerät) Leistungsmessung und Temperatur.

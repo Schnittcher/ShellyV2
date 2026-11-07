@@ -1451,6 +1451,27 @@ trait Components
                     'SUFFIX'       => ' %'
                 ],
             ],
+            //Fehler des Thermostats (z.B. not_calibrated, not_mounted, battery_low): Das Gerät meldet nur die aktiven Fehler, sie
+            //verschwinden aus der Liste, wenn der Fehler behoben ist. Anders als bthomedevice.errors (Fehler des BLU-Geräts am Gateway,
+            //z.B. Entschlüsselung) kommen sie vom Thermostat selbst.
+            'errors' => [
+                'type'             => VARIABLETYPE_STRING,
+                'name'             => 'Thermostat errors',
+                'alwaysCreate'     => true,
+                'resetWhenMissing' => true,
+                'presentation'     => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
+            //Störung: true, sobald 'errors' mindestens einen Eintrag hat (kein Feld des Geräts, siehe parsePayloadIntoVariables()).
+            'fault' => [
+                'type'         => VARIABLETYPE_BOOLEAN,
+                'name'         => 'Thermostat fault',
+                'alwaysCreate' => true,
+                'presentation' => [
+                    'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                ],
+            ],
         ],
         'switch' => [
             'output' => [
