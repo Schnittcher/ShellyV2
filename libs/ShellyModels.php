@@ -65,6 +65,9 @@ trait ShellyModels
         'S3DM-0A101WWL' => [
             'Name'  => 'Shelly Dimmer Gen 3',
         ],
+        'S4DM-0A101WWL' => [
+            'Name'  => 'Shelly Dimmer Gen4',
+        ],
         'SHBDUO-1' => [
             'Name'  => 'Shelly Duo',
         ],

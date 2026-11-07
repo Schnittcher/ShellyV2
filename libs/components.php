@@ -772,6 +772,17 @@ trait Components
                     ],
                 ],
             ],
+            //Gerätetemperatur (z.B. Shelly Dimmer Gen3/Gen4, am echten Dimmer Gen4 geprüft): "temperature": {"tC": .., "tF": ..}.
+            'temperature' => [
+                'tC' => [
+                    'type'         => VARIABLETYPE_FLOAT,
+                    'name'         => 'Temperature',
+                    'presentation' => [
+                        'PRESENTATION' => VARIABLE_PRESENTATION_VALUE_PRESENTATION,
+                        'SUFFIX'       => ' °C'
+                    ],
+                ],
+            ],
             'errors' => [
                 'type'             => VARIABLETYPE_STRING,
                 'name'             => 'Light errors',

@@ -224,6 +224,7 @@ Wirkleistung | `light_<Kanal>_apower` | Zahl | W |
 Spannung | `light_<Kanal>_voltage` | Zahl | V | 
 Stromstärke | `light_<Kanal>_current` | Zahl | A | 
 Gesamtverbrauch | `light_<Kanal>_aenergy_total` | Zahl | kWh | 
+Temperatur | `light_<Kanal>_temperature_tC` | Zahl | °C | 
 Licht Fehler | `light_<Kanal>_errors` | Text |  | 
 Licht Störung | `light_<Kanal>_fault` | Ja/Nein |  | 
 
