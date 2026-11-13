@@ -24,6 +24,7 @@ Mit diesem Modul können alle Shellies ab Generation 2 in Symcon eingebunden wer
 * mindestens IPS Version 8.1
 * Aktiviertes MQTT Protokoll beim Shelly Gerät
 * MQTT Server oder MQTT Client
+* Für Shelly BLU-Geräte: ein Shelly mit Bluetooth-Gateway-Funktion (Gen3, Gen4 oder Pro), zum Beispiel das Shelly BLU Gateway Gen3. Für den BLU TRV ist das Shelly BLU Gateway Gen3 zwingend.
 
 ### 1.1 Aktiviertes MQTT-Protokoll
 Das MQTT Protokoll muss bei jedem Shelly aktiviert sein, damit das Gerät von IP-Symcon mit diesem Modul bedient und angelegt werden kann.
@@ -40,7 +41,7 @@ Sollen Username und Passwort verwendet werden müssen diese Daten in IP-Symcon u
 Die selben Zugangsdaten müssen über das Shelly Webinterface unter Settings -> MQTT hinterlegt werden.
 
 ### 1.2 Shelly BLU-Geräte
-Shelly BLU-Geräte (Bluetooth) sprechen nicht selbst mit IP-Symcon, sondern über ein Gateway: ein Shelly BLU Gateway oder ein anderer Shelly mit Bluetooth-Gateway-Funktion. Das BLU-Gerät muss am Gateway angelernt sein, das Gateway selbst muss wie oben beschrieben per MQTT mit IP-Symcon verbunden sein. Ein BLU-Gerät kann an mehreren Gateways angelernt sein.
+Shelly BLU-Geräte (Bluetooth) sprechen nicht selbst mit IP-Symcon, sondern über ein Gateway: ein Shelly mit Bluetooth-Gateway-Funktion (Gen3, Gen4 oder Pro), zum Beispiel das Shelly BLU Gateway Gen3. Der Shelly BLU TRV (Thermostat) braucht laut Shelly zwingend das Shelly BLU Gateway Gen3. Das BLU-Gerät muss am Gateway angelernt sein, das Gateway selbst muss wie oben beschrieben per MQTT mit IP-Symcon verbunden sein. Ein BLU-Gerät kann an mehreren Gateways angelernt sein.
 
 ## 2. Funktionsumfang
 * Alle Shellies ab Generation 2: Schalten (Switch, Cover, Light/Dimmer, RGB, RGBW, CCT, RGBCCT), Messwerte (Energie, Spannung, Strom, Temperatur, Luftfeuchtigkeit, Helligkeit), Eingänge, Rauch- und Flutsensor, Shelly Pill, Shelly Cury, Shelly Camera, DALI, Leitungsschutzschalter (CB), virtuelle Komponenten (Boolean, Number, Enum, Text) und weitere. Die Komponenten werden vom Gerät selbst ermittelt, welche Variablen es je Komponente gibt steht in [Komponenten.md](Komponenten.md).

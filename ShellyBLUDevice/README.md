@@ -1,5 +1,5 @@
 # ShellyBLUDevice
-Mit dieser Instanz wird ein Shelly BLU-Gerät (z. B. Button, Door/Window, H&T, Motion) angelegt, das an einem **oder mehreren** Gateways angelernt ist (BLU Gateway, Shelly mit Bluetooth-Gateway). Das Gerät wird über seine MAC-Adresse erkannt, es genügt eine Instanz je BLU-Gerät.
+Mit dieser Instanz wird ein Shelly BLU-Gerät (z. B. Button, Door/Window, H&T, Motion) angelegt, das an einem **oder mehreren** Gateways angelernt ist (BLU Gateway, Shelly mit Bluetooth-Gateway). Voraussetzung ist ein Shelly mit Bluetooth-Gateway-Funktion (Gen3, Gen4 oder Pro), zum Beispiel das Shelly BLU Gateway Gen3. Das Gerät wird über seine MAC-Adresse erkannt, es genügt eine Instanz je BLU-Gerät.
 BLU TRVs (Thermostate) sind davon ausgenommen, sie laufen an genau einem Gateway und werden über die Komponenten-Instanz angelegt.
 
 Idealerweise wird die Instanz über den Konfigurator angelegt (Gruppe "BLU-Geräte"), dann wird die gesamte Konfiguration korrekt ausgefüllt.
