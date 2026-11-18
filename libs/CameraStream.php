@@ -109,7 +109,7 @@ trait CameraStream
         if (@$this->ReadPropertyString('Component') == 'camera') {
             return true;
         }
-        $lists = [json_decode($this->GetBuffer('variableList'), true), json_decode($this->ReadPropertyString('VariableList'), true)];
+        $lists = [json_decode($this->GetBuffer('variableList'), true), json_decode($this->ReadPropertyString('VariableList'), true), json_decode($this->ReadAttributeString('VariableListCache'), true)];
         foreach ($lists as $list) {
             foreach (is_array($list) ? $list : [] as $item) {
                 if (strpos((string) ($item['CleanKeyPath'] ?? ''), 'camera.') === 0) {

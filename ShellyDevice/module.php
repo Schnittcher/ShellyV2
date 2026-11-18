@@ -16,7 +16,8 @@ class ShellyDevice extends ShellyModuleBase
         $reflector = new ReflectionClass($this);
         $Form = json_decode(file_get_contents(dirname($reflector->getFileName()) . '/form.json'), true);
 
-        $Form['elements'][2]['values'] = $this->variableListValues();
+        $Form = $this->setVariableListValues($Form);
+        $Form = $this->setChannelNameFormState($Form);
 
         //Stream-Felder und -Buttons nur bei Kameras anzeigen (siehe libs/CameraStream.php)
         $Form = $this->applyCameraStreamFormVisibility($Form);

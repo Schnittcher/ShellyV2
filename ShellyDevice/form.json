@@ -11,6 +11,15 @@
             "caption": "Debug: Missing Idents"
         },
         {
+            "type": "CheckBox",
+            "name": "AddChannelName",
+            "caption": "Always add channel name to variable names"
+        },
+        {
+            "type": "Label",
+            "caption": "Only needed for devices with a single channel per component. If a component has several channels (e.g. two switches), the channel name is always added."
+        },
+        {
             "type": "List",
             "name": "VariableList",
             "caption": "Variables",

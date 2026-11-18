@@ -78,6 +78,17 @@ class ShellyModuleBase extends IPSModuleStrict
         //es dort nicht mehr.
         $this->RegisterPropertyString('MQTTTopic', '');
         $this->RegisterPropertyBoolean('DebugMissingIdents', false);
+        //Kanalname vor den Variablennamen auch bei nur einem Kanal (siehe useChannelNamePrefix()).
+        $this->RegisterPropertyBoolean('AddChannelName', false);
+        //Stand der Einstellung ('0'/'1'), mit dem die Variablennamen zuletzt angelegt bzw. umbenannt wurden. Leer = noch unbekannt
+        //(neue Instanz oder Update): dann wird nichts umbenannt. Ändert der Nutzer die Einstellung, benennt der nächste vollständige
+        //Abruf die Variablen um (siehe registerComponentVariables()).
+        $this->RegisterAttributeString('ChannelNameApplied', '');
+        //Ergebnis des letzten Abrufs, ob die Einstellung "Kanalname" bei diesem Gerät etwas ändert ('1'/'0', leer = unbekannt): Damit
+        //ist die Checkbox im Formular auch nach einem Neustart von Symcon richtig ausgegraut.
+        $this->RegisterAttributeString('ChannelNameRelevant', '');
+        //Zeilen der Liste "Variablen" vom letzten vollständigen Abruf, als Rückfall für das Formular nach einem Neustart (siehe variableListValues()).
+        $this->RegisterAttributeString('VariableListCache', '[]');
         $this->RegisterPropertyString('VariableList', '{}');
         $this->registerCameraStreamProperties();
         //Stand des letzten vollständigen Abrufs (Version, Konfiguration, Komponentenschlüssel): Damit muss die Instanz beim Start von
@@ -814,6 +825,32 @@ class ShellyModuleBase extends IPSModuleStrict
         }
     }
 
+    //Schaltet die Checkbox "AddChannelName" im Formular aus, wenn sie bei diesem Gerät nichts ändert (siehe channelNameOptionRelevant()).
+    protected function setChannelNameFormState(array $form): array
+    {
+        $relevant = $this->channelNameOptionRelevant();
+        foreach ($form['elements'] as &$element) {
+            if (($element['name'] ?? '') === 'AddChannelName') {
+                $element['enabled'] = $relevant;
+            }
+        }
+        unset($element);
+        return $form;
+    }
+
+    //Setzt die Zeilen in die Liste "VariableList" des Formulars. Die Liste wird über ihren Namen gesucht, nicht über die Position:
+    //Ein fester Index verschiebt sich, sobald ein Element davor dazukommt, und die Werte landen am falschen Element.
+    protected function setVariableListValues(array $form): array
+    {
+        foreach ($form['elements'] as &$element) {
+            if (($element['name'] ?? '') === 'VariableList') {
+                $element['values'] = $this->variableListValues();
+            }
+        }
+        unset($element);
+        return $form;
+    }
+
     //Legt die Variablen aus den bereits gespeicherten Komponentendaten neu an (ohne neue Abfrage beim Gerät) -
     //z.B. wenn nachträglich Zusatzinformationen eingetroffen sind (BTHome.GetObjectInfos).
     //Zeilen der Liste "Variablen" für das Formular. Die Liste im Buffer gibt es erst nach einem vollständigen Abruf (nach einem Neustart
@@ -853,7 +890,26 @@ class ShellyModuleBase extends IPSModuleStrict
                 'Zeroing'                 => $row['Zeroing'] ?? false
             ];
         }
-        return $rows;
+        //Zeilen des letzten vollständigen Abrufs (Attribut): Sie sind aktuell (Namen, Komponenten), die Property dagegen nur so, wie das
+        //Formular beim Speichern aussah. Die Auswahl (Select, Zeroing) kommt aus der Property, falls sie die Zeile kennt. Ist sie leer
+        //(das Formular wurde nie gespeichert), gelten die Zeilen des Attributs, damit die Liste nach einem Neustart nicht leer ist.
+        $cached = json_decode($this->ReadAttributeString('VariableListCache'), true);
+        if (!is_array($cached) || count($cached) == 0) {
+            return $rows;
+        }
+        $savedByIdent = [];
+        foreach ($rows as $row) {
+            $savedByIdent[$row['Ident']] = $row;
+        }
+        foreach ($cached as &$cachedRow) {
+            $ident = (string) ($cachedRow['Ident'] ?? '');
+            if (isset($savedByIdent[$ident])) {
+                $cachedRow['Selected'] = $savedByIdent[$ident]['Selected'];
+                $cachedRow['Zeroing'] = $savedByIdent[$ident]['Zeroing'];
+            }
+        }
+        unset($cachedRow);
+        return $cached;
     }
 
     protected function rebuildVariables(): void
@@ -1003,6 +1059,45 @@ class ShellyModuleBase extends IPSModuleStrict
         }
     }
 
+    //Ändert die Einstellung "Kanalname" bei diesem Gerät überhaupt etwas? Nur wenn es eine Komponente mit einem Namen und nur einem
+    //Kanal gibt (z.B. ein einzelner Switch). Hat das Gerät nur Komponenten mit mehreren Kanälen (z.B. vier Switches), steht der Name
+    //immer davor. Ist die Konfiguration des Geräts nicht im Buffer (z.B. nach einem Neustart von Symcon), gilt das Ergebnis des
+    //letzten Abrufs aus dem Attribut "ChannelNameRelevant"; ist auch das unbekannt: ja.
+    private function channelNameOptionRelevant(): bool
+    {
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        if (!is_array($configs) || count($configs) == 0) {
+            return $this->ReadAttributeString('ChannelNameRelevant') !== '0';
+        }
+        return $this->channelNameOptionRelevantFor($configs);
+    }
+
+    //Die Auswertung für die Konfigurationen der Komponenten des Geräts (Schlüssel wie "switch:0" => Config).
+    private function channelNameOptionRelevantFor(array $configs): bool
+    {
+        $counts = [];
+        $supportsName = [];
+        foreach ($configs as $key => $config) {
+            if (!preg_match('/^([A-Za-z0-9_]+):\d+$/', (string) $key, $match)) {
+                continue;
+            }
+            $base = $match[1];
+            if (in_array($base, self::$dynamicComponentTypes, true) || in_array($base, ['object', 'bthomesensor', 'bthomedevice', 'blutrv'], true)) {
+                continue;
+            }
+            $counts[$base] = ($counts[$base] ?? 0) + 1;
+            if (is_array($config) && array_key_exists('name', $config)) {
+                $supportsName[$base] = true;
+            }
+        }
+        foreach ($counts as $base => $channels) {
+            if ($channels == 1 && isset($supportsName[$base])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     //Welcher Abruf nötig ist: 'light' (nur Status der eigenen Komponenten, Konfiguration und Version unverändert) oder 'full', dazu ob die
     //Konfiguration seit dem letzten vollständigen Abruf geändert wurde.
     private function startReadKind(): array
@@ -1091,6 +1186,36 @@ class ShellyModuleBase extends IPSModuleStrict
         return ($name !== null && $name !== '') ? $name : null;
     }
 
+    //Hat die Komponente am Gerät nur einen Kanal (switch:0, aber nicht zusätzlich switch:1)? Nur dann ist der Kanalname im
+    //Variablennamen eine Einstellung. BLU-Geräte zählen nicht dazu, sie behalten ihr Präfix (Name oder MAC-Adresse). Ohne bekannte
+    //Konfiguration des Geräts: false.
+    private function hasSingleChannel($component): bool
+    {
+        if (in_array($component, ['bthomedevice', 'blutrv'], true)) {
+            return false;
+        }
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        if (!is_array($configs)) {
+            return false;
+        }
+        $channels = 0;
+        foreach (array_keys($configs) as $key) {
+            if (preg_match('/^' . preg_quote((string) $component, '/') . ':\d+$/', (string) $key)) {
+                $channels++;
+            }
+        }
+        return $channels <= 1;
+    }
+
+    //Ob der Kanalname den Variablennamen vorangestellt wird: Bei mehreren Kanälen derselben Komponente (switch:0, switch:1, ...)
+    //immer, denn nur er unterscheidet die Variablen. Gibt es nur einen Kanal, entfällt er (der Name der Instanz sagt, welches
+    //Gerät gemeint ist), außer die Einstellung "AddChannelName" ist an. Beim Anlegen gilt der Name sofort, bestehende Variablen
+    //benennt registerComponentVariables() um, wenn der Nutzer die Einstellung ändert.
+    private function useChannelNamePrefix($component): bool
+    {
+        return @$this->ReadPropertyBoolean('AddChannelName') || !$this->hasSingleChannel($component);
+    }
+
     //Generischer Zugriff auf ein einzelnes Feld aus der Geräte-Config einer Komponente (z.B.
     //"ct_range" bei cct) - liefert null, falls (noch) keine Config vorliegt oder das Feld nicht
     //existiert. Nutzt dieselbe componentConfigs-Quelle wie getPhysicalComponentName().
@@ -1116,6 +1241,11 @@ class ShellyModuleBase extends IPSModuleStrict
             }
         }
         $multipleObjectChannels = count($objectChannels) > 1;
+
+        //Hat der Nutzer die Einstellung "Kanalname" geändert, werden die vorhandenen Variablen umbenannt (nicht gelöscht und neu angelegt).
+        $channelNameMode = @$this->ReadPropertyBoolean('AddChannelName') ? '1' : '0';
+        $appliedMode = $this->ReadAttributeString('ChannelNameApplied');
+        $renameChannelNames = $appliedMode !== '' && $appliedMode !== $channelNameMode;
 
         foreach ($allVariables as $variable) {
             $tmpComponent = $this->getValueByKeyPath($variable['CleanKeyPath']);
@@ -1216,12 +1346,22 @@ class ShellyModuleBase extends IPSModuleStrict
 
                 // Gerätename als Präfix für physische Komponenten
                 $physicalName = $this->getPhysicalComponentName($base, $variable['Channel']);
-                if ($physicalName != null) {
-                    $name = $physicalName . ' - ' . $this->Translate($tmpComponent['name']);
+                //Kanalname als Präfix nur bei mehreren Kanälen oder wenn eingestellt (siehe useChannelNamePrefix()).
+                $namePrefix = ($physicalName != null && $this->useChannelNamePrefix($base)) ? $physicalName : null;
+                if ($namePrefix != null) {
+                    $name = $namePrefix . ' - ' . $this->Translate($tmpComponent['name']);
+                } elseif ($physicalName != null) {
+                    //Nur ein Kanal: Name der Komponente statt des Namens mit Kanalnummer.
+                    $name = $this->Translate($tmpComponent['name']);
+                }
+                //Der Name, den die Variable mit der anderen Einstellung hätte (nur wenn die Einstellung hier etwas ändert).
+                $otherName = null;
+                if ($physicalName != null && $this->hasSingleChannel($base)) {
+                    $otherName = $namePrefix != null ? $this->Translate($tmpComponent['name']) : $physicalName . ' - ' . $this->Translate($tmpComponent['name']);
                 }
                 //Gerät mit mehreren Tasten: die erste heißt "Taste 1".
                 if ($variable['CleanKeyPath'] == 'bthomedevice.button' && $this->bthomeDeviceButtonCount('bthomedevice:' . $variable['Channel']) > 1) {
-                    $name = ($physicalName != null ? $physicalName . ' - ' : '') . $this->Translate('Button') . ' 1';
+                    $name = ($namePrefix != null ? $namePrefix . ' - ' : '') . $this->Translate('Button') . ' 1';
                 }
 
                 // CCT-Farbtemperaturbereich vom Gerät übernehmen
@@ -1302,6 +1442,14 @@ class ShellyModuleBase extends IPSModuleStrict
 
                 //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
                 $this->MaintainVariable($variable['Ident'], $name, $variableType, $presentation, 0, $variable['Selected']);
+                //Einstellung "Kanalname" geändert: Eine Variable, die noch den Namen der alten Einstellung trägt, bekommt den neuen. Hat der
+                //Nutzer den Namen selbst geändert, bleibt er.
+                if ($renameChannelNames && $otherName !== null && $variable['Selected']) {
+                    $variableID = @$this->GetIDForIdent((string) $variable['Ident']);
+                    if ($variableID && IPS_GetName($variableID) === $otherName) {
+                        IPS_SetName($variableID, $name);
+                    }
+                }
                 //Fehler/Störung: frühere Versionen nannten sie bei jeder Komponente gleich ("Fehler", "Störung"), jetzt steht die
                 //Komponente im Namen. MaintainVariable() setzt den Namen nur beim Anlegen, deshalb den alten Standardnamen umbenennen.
                 $this->renameOldErrorVariable((string) $variable['Ident'], $variable['Channel'], $physicalName, $name);
@@ -1327,6 +1475,18 @@ class ShellyModuleBase extends IPSModuleStrict
                     $this->MaintainVariable($variable['Ident'], $name, $tmpComponent['actionWithExtraVariable']['type'], $tmpComponent['actionWithExtraVariable']['presentation'], 0, $variable['Selected']);
                     $this->EnableAction($variable['Ident']);
                 }
+            }
+        }
+        //Stand merken - aber erst, wenn die Konfiguration des Geräts bekannt war, sonst wäre die Umbenennung verpasst.
+        $configs = json_decode($this->GetBuffer('componentConfigs'), true);
+        if (is_array($configs) && count($configs) > 0) {
+            if ($appliedMode !== $channelNameMode) {
+                $this->WriteAttributeString('ChannelNameApplied', $channelNameMode);
+            }
+            //Ob die Checkbox "Kanalname" bei diesem Gerät etwas ändert: fürs Formular nach einem Neustart (siehe channelNameOptionRelevant()).
+            $relevant = $this->channelNameOptionRelevantFor($configs) ? '1' : '0';
+            if ($this->ReadAttributeString('ChannelNameRelevant') !== $relevant) {
+                $this->WriteAttributeString('ChannelNameRelevant', $relevant);
             }
         }
     }
@@ -1453,7 +1613,7 @@ class ShellyModuleBase extends IPSModuleStrict
                 // Gerätename als Präfix für physische Komponenten
                 $physicalName = $this->getPhysicalComponentName($componentsFromShellyResult['base'], $componentsFromShellyResult['number']);
                 if ($physicalName != null) {
-                    $name = $physicalName . ' - ' . $this->Translate($tmpComponent['name']);
+                    $name = $this->useChannelNamePrefix($componentsFromShellyResult['base']) ? $physicalName . ' - ' . $this->Translate($tmpComponent['name']) : $this->Translate($tmpComponent['name']);
                 }
 
                 //BTHome: Taster-Sensoren (ohne Status-Wert) bekommen keine Variablen - der Tastendruck steht in der Variable
@@ -1509,6 +1669,12 @@ class ShellyModuleBase extends IPSModuleStrict
         $this->SendDebug('variableList', $variableList, 0);
         //Setze variableList in Buffer, für GetConfiguration Form & zum Anlegen der Variablen
         $this->SetBuffer('variableList', json_encode($variableList));
+        //Zusätzlich als Attribut: Der Buffer ist nach einem Neustart leer, die Property gefüllt nur, wenn das Formular einmal gespeichert
+        //wurde (das Modul schreibt sie nicht selbst). Siehe variableListValues().
+        $encodedList = json_encode($variableList);
+        if ($encodedList !== $this->ReadAttributeString('VariableListCache')) {
+            $this->WriteAttributeString('VariableListCache', $encodedList);
+        }
     }
 }
 

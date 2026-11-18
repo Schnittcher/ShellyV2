@@ -1,5 +1,13 @@
 # Changelog
 
+## 18.11.2026 - Version 1.1.9 (Beta Version)
+
+### Neu
+- Der Name des Kanals steht nur noch bei neu angelegten Variablen vor dem Variablennamen, wenn die Komponente mehrere Kanäle hat (zum Beispiel zwei Switches). Bei einem einzelnen Kanal heißt die Variable nur noch "Ausgang" statt "Wohnzimmer - Ausgang". Mit dem neuen Schalter "Kanalname immer vor die Variablennamen setzen" (Instanzen Shelly Gerät und Shelly Komponente) steht der Name auch bei einem einzelnen Kanal davor. Bestehende Variablen behalten bei einem Update ihren Namen. Ändert man den Schalter, werden die vorhandenen Variablen beim nächsten Auslesen umbenannt (nicht gelöscht, Archive und Verknüpfungen bleiben); selbst vergebene Namen bleiben. Bei Geräten, die nur Komponenten mit mehreren Kanälen haben (zum Beispiel vier Switches), ist der Schalter ausgegraut, denn dort steht der Name immer davor.
+
+### Fixes
+- Die Liste "Variablen" in der Instanz ist nach einem Neustart von Symcon nicht mehr leer, auch wenn das Formular nie gespeichert wurde (zum Beispiel bei Instanzen, die der Konfigurator angelegt hat). Bisher musste man dafür die Komponenten erst neu auslesen.
+
 ## 07.11.2026 - Version 1.1.8 (Beta Version)
 
 ### Neu
