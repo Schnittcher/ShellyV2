@@ -233,6 +233,7 @@
             "Debug: Missing Idents": "Debug: Fehlende Idents",
             "Always add channel name to variable names": "Kanalname immer vor die Variablennamen setzen",
             "Only needed for devices with a single channel per component. If a component has several channels (e.g. two switches), the channel name is always added.": "Nur nötig bei Geräten mit einem einzelnen Kanal je Komponente. Hat eine Komponente mehrere Kanäle (z. B. zwei Switches), steht der Kanalname immer davor.",
+            "Note: If you change this setting, existing variables that still have their default name are renamed when the components are read next (they are not deleted). Names you set yourself are kept.": "Hinweis: Ändert man diese Einstellung, werden vorhandene Variablen, die noch ihren Standardnamen tragen, beim nächsten Auslesen der Komponenten umbenannt (nicht gelöscht). Selbst vergebene Namen bleiben.",
             "Specific features for shelly device": "Spezifische Funktionen für das Shelly-Gerät",
             "Total active energy": "Gesamtwirkenergie",
             "Total active returned energy": "Gesamtwirkenergie Einspeisung",

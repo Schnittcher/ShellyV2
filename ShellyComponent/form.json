@@ -30,6 +30,10 @@
             "caption": "Only needed for devices with a single channel per component. If a component has several channels (e.g. two switches), the channel name is always added."
         },
         {
+            "type": "Label",
+            "caption": "Note: If you change this setting, existing variables that still have their default name are renamed when the components are read next (they are not deleted). Names you set yourself are kept."
+        },
+        {
             "type": "List",
             "name": "VariableList",
             "caption": "Variables",

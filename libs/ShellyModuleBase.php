@@ -78,7 +78,8 @@ class ShellyModuleBase extends IPSModuleStrict
         //es dort nicht mehr.
         $this->RegisterPropertyString('MQTTTopic', '');
         $this->RegisterPropertyBoolean('DebugMissingIdents', false);
-        //Kanalname vor den Variablennamen auch bei nur einem Kanal (siehe useChannelNamePrefix()).
+        //Kanalname vor den Variablennamen auch bei nur einem Kanal (siehe useChannelNamePrefix()). Beim Ändern benennt
+        //registerComponentVariables() vorhandene Variablen um, das Formular weist mit einem Hinweis darauf hin.
         $this->RegisterPropertyBoolean('AddChannelName', false);
         //Stand der Einstellung ('0'/'1'), mit dem die Variablennamen zuletzt angelegt bzw. umbenannt wurden. Leer = noch unbekannt
         //(neue Instanz oder Update): dann wird nichts umbenannt. Ändert der Nutzer die Einstellung, benennt der nächste vollständige
@@ -1443,7 +1444,9 @@ class ShellyModuleBase extends IPSModuleStrict
                 //Legt alle Variablen an, wenn diese in der Liste aktiv geschaltet wurden.
                 $this->MaintainVariable($variable['Ident'], $name, $variableType, $presentation, 0, $variable['Selected']);
                 //Einstellung "Kanalname" geändert: Eine Variable, die noch den Namen der alten Einstellung trägt, bekommt den neuen. Hat der
-                //Nutzer den Namen selbst geändert, bleibt er.
+                //Nutzer den Namen selbst geändert, bleibt er. Der Nutzer löst das selbst mit der Einstellung aus und wird im Formular darauf
+                //hingewiesen: Label "Note: If you change this setting, existing variables ... are renamed" unter der Checkbox
+                //"AddChannelName" in ShellyDevice/form.json und ShellyComponent/form.json (Namen werden sonst nur beim Anlegen gesetzt).
                 if ($renameChannelNames && $otherName !== null && $variable['Selected']) {
                     $variableID = @$this->GetIDForIdent((string) $variable['Ident']);
                     if ($variableID && IPS_GetName($variableID) === $otherName) {
